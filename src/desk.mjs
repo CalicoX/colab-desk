@@ -115,6 +115,34 @@ export function showSession(state, sessionName) {
   return bucket ? bucket.slice() : [];
 }
 
+export function buildContextHandoffPrompt(entries, newPrompt, prevLabel = "", nextLabel = "", lang = "zh-CN") {
+  const list = Array.isArray(entries) ? entries.slice(-8) : [];
+  if (list.length === 0) return newPrompt;
+  const blocks = [];
+  for (const e of list) {
+    if (!e) continue;
+    const userMsg = String(e.label || "").trim();
+    const tools = Array.isArray(e.tools) && e.tools.length
+      ? e.tools.slice(-6).map((t) => `  - ${t.title || "tool"} (${t.status || "done"})`).join("\n")
+      : "";
+    const reply = String(e.text || e.error || "").trim();
+    const shortReply = reply.length > 520 ? `${reply.slice(0, 517)}…` : reply;
+    const parts = [];
+    if (userMsg) parts.push(`User: ${userMsg.slice(0, 300)}`);
+    if (tools) parts.push(`Actions:\n${tools}`);
+    if (shortReply) parts.push(`Assistant: ${shortReply}`);
+    if (parts.length) blocks.push(parts.join("\n"));
+  }
+  if (!blocks.length) return newPrompt;
+  let digest = blocks.join("\n---\n");
+  if (digest.length > 4200) digest = digest.slice(-4200);
+  const transition = prevLabel && nextLabel ? `${prevLabel} -> ${nextLabel}` : (nextLabel || "");
+  if (lang === "en") {
+    return `[Model Context Handoff${transition ? ` (${transition})` : ""}]\nThe user switched models/agents mid-conversation. Here is the recent conversation history from this thread so you can continue seamlessly:\n\n${digest}\n\n[Current User Request]\n${newPrompt}`;
+  }
+  return `【模型切换上下文交接${transition ? `（${transition}）` : ""}】\n用户在对话中途切换了模型/Agent。以下是本对话最近的上下文摘要，请无缝衔接并继续处理用户的最新请求：\n\n${digest}\n\n【用户最新请求】\n${newPrompt}`;
+}
+
 export function parseColabNewSpec(rawInput) {
   if (!rawInput) return null;
   let text = "";

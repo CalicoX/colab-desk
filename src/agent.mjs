@@ -1327,7 +1327,8 @@ export class AgentManager {
     }
 
     const colabSession = input.colabSession || "";
-    const threadKey = `${colabSession}:${providerId}`;
+    const scopeKey = String(input.chatThreadId || colabSession || "");
+    const threadKey = `${scopeKey}:${providerId}`;
     const approvalMode = input.approvalMode === "ask" ? "ask" : "auto";
     const model = String(input.model || "").trim();
     const thoughtLevel = String(input.thoughtLevel || "").trim();

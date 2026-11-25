@@ -26,7 +26,7 @@ import {
   renderParameterizedScript,
 } from "../src/cloud-ops.mjs";
 import { resolveLanguage, t } from "../src/i18n.mjs";
-import { applyNewResult, composeAction, createDeskState, isRetryableColabError, parseColabNewSpec, record, showSession, summarizeColabError } from "../src/desk.mjs";
+import { applyNewResult, buildContextHandoffPrompt, composeAction, createDeskState, isRetryableColabError, parseColabNewSpec, record, showSession, summarizeColabError } from "../src/desk.mjs";
 import { parseCommandOutput } from "../src/parse.mjs";
 import { plan } from "../src/plan.mjs";
 import { runAction } from "../src/run.mjs";
@@ -482,9 +482,12 @@ test("missing colab binary is an error", async () => {
 test("http session list is the parsed fixture and the page has the three regions", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "colab-desk-http-"));
   const bin = installFake(dir);
+  const isolatedStateDir = fs.mkdtempSync(path.join(os.tmpdir(), "colab-desk-http-state-"));
+  const prevStateDir = process.env.COLAB_DESK_STATE_DIR;
   let server;
   try {
     useFakeEnv();
+    process.env.COLAB_DESK_STATE_DIR = isolatedStateDir;
     delete process.env.COLAB_FAKE_SESSION;
     delete process.env.COLAB_FAKE_HARDWARE;
     delete process.env.COLAB_FAKE_EXEC;
@@ -590,6 +593,10 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="setting-busy-send-mode"/);
     assert.match(page, /createDottedOrb/);
     assert.match(page, /thought-orb/);
+    assert.match(page, /id="tools-dropdown-btn"/);
+    assert.match(page, /id="chat-threads-list"/);
+    assert.match(page, /id="new-chat-thread-btn"/);
+    assert.doesNotMatch(page, /id="reset-chat"/);
     assert.doesNotMatch(page, /id="term-new-local"/);
     assert.match(page, /\/vendor\/xterm\/xterm\.js/);
     const xtermAsset = await fetch(`http://127.0.0.1:${port}/vendor/xterm/xterm.js`);
@@ -670,6 +677,8 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(failed.error, /forced failure/);
   } finally {
     if (server) server.close();
+    if (prevStateDir === undefined) delete process.env.COLAB_DESK_STATE_DIR;
+    else process.env.COLAB_DESK_STATE_DIR = prevStateDir;
     restoreEnv();
   }
 });
@@ -900,6 +909,16 @@ test("agent parsers handle ACP updates, model catalogs, and Grok NDJSON events",
     rawOutput: { exit_code: 1, output_for_prompt: "503 Service Unavailable" },
   });
   assert.equal(grokTu.status, "failed");
+  const handoff = buildContextHandoffPrompt(
+    [{ label: "Check GPU", tools: [{ title: "nvidia-smi", status: "completed" }], text: "A100 40GB ready" }],
+    "Now install ComfyUI",
+    "Grok",
+    "AGY",
+    "en",
+  );
+  assert.match(handoff, /Model Context Handoff \(Grok -> AGY\)/);
+  assert.match(handoff, /A100 40GB ready/);
+  assert.match(handoff, /Now install ComfyUI/);
 });
 
 test("mac app does not start a login shell", () => {

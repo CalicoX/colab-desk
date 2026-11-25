@@ -517,6 +517,7 @@
       display: flex;
       flex: 1;
       flex-direction: column;
+      gap: 4px;
       min-height: 0;
       overflow-y: auto;
       padding: 2px 8px 12px;
@@ -530,7 +531,202 @@
       white-space: nowrap;
       width: 1px;
     }
-    #session-items { display: flex; flex: 1; flex-direction: column; gap: 4px; min-height: 0; }
+    .sidebar-section-head {
+      align-items: center;
+      color: var(--faint);
+      display: flex;
+      flex: none;
+      font-size: 11px;
+      font-weight: 600;
+      justify-content: space-between;
+      letter-spacing: 0.03em;
+      padding: 10px 6px 3px;
+      user-select: none;
+    }
+    .sidebar-section-head.is-first { padding-top: 2px; }
+    .sidebar-section-add {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 11px;
+      font-weight: 550;
+      gap: 3px;
+      padding: 2px 6px;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .sidebar-section-add:hover { background: rgba(255, 255, 255, 0.07); color: var(--text); }
+    #session-items { display: flex; flex: none; flex-direction: column; gap: 4px; }
+    .chat-threads-list {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 2px;
+      min-height: 0;
+    }
+    .chat-thread-row {
+      align-items: center;
+      border-radius: 9px;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      gap: 6px;
+      justify-content: space-between;
+      min-width: 0;
+      padding: 7px 8px;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .chat-thread-row:hover { background: rgba(255, 255, 255, 0.045); color: var(--text); }
+    .chat-thread-row.is-active { background: rgba(139, 108, 255, 0.14); color: var(--text); }
+    .chat-thread-main {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .chat-thread-title-line {
+      align-items: center;
+      display: flex;
+      gap: 5px;
+      min-width: 0;
+    }
+    .chat-thread-pin-ico {
+      color: #c2b2ff;
+      flex: none;
+      font-size: 10.5px;
+      line-height: 1;
+    }
+    .chat-thread-title {
+      font-size: 12.5px;
+      font-weight: 520;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .chat-thread-meta {
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .chat-thread-actions {
+      align-items: center;
+      display: flex;
+      flex: none;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+    .chat-thread-row:hover .chat-thread-actions,
+    .chat-thread-row.is-active .chat-thread-actions,
+    .chat-thread-row.is-pinned .chat-thread-actions { opacity: 1; }
+    .chat-thread-act {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 5px;
+      color: var(--faint);
+      cursor: pointer;
+      display: inline-flex;
+      height: 22px;
+      justify-content: center;
+      padding: 0;
+      width: 22px;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .chat-thread-act:hover { background: rgba(255, 255, 255, 0.09); color: var(--text); }
+    .chat-thread-act.is-pinned { color: #c2b2ff; }
+    .chat-thread-act.is-danger:hover { background: rgba(217, 56, 72, 0.16); color: #f08a94; }
+    .chat-thread-act svg {
+      height: 12.5px;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
+      width: 12.5px;
+      fill: none;
+    }
+    .chat-threads-empty {
+      color: var(--faint);
+      font-size: 12px;
+      padding: 8px 8px;
+    }
+    :root[data-theme="light"] .sidebar-section-add:hover { background: rgba(20, 18, 40, 0.06); }
+    :root[data-theme="light"] .chat-thread-row:hover { background: rgba(20, 18, 40, 0.05); }
+    :root[data-theme="light"] .chat-thread-row.is-active { background: rgba(91, 78, 214, 0.12); }
+    :root[data-theme="light"] .chat-thread-pin-ico,
+    :root[data-theme="light"] .chat-thread-act.is-pinned { color: #5b4ed6; }
+
+    /* Topbar Tools Dropdown & Mode Switch */
+    .workspace-head-actions .mode-switch {
+      height: 30px;
+      padding: 2px;
+    }
+    .workspace-head-actions .mode-btn {
+      font-size: 11.5px;
+      height: 26px;
+      padding: 0 9px;
+    }
+    .tools-dropdown-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+    .tools-dropdown-menu {
+      background: #1c1927;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 176px;
+      padding: 5px;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 60;
+    }
+    .tools-dropdown-menu[hidden] { display: none; }
+    .tools-dropdown-item {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 7px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      font-size: 12.5px;
+      gap: 8px;
+      padding: 7px 10px;
+      text-align: left;
+      white-space: nowrap;
+      transition: background 120ms ease;
+    }
+    .tools-dropdown-item:hover { background: rgba(255, 255, 255, 0.08); }
+    .tools-dropdown-item svg {
+      color: var(--muted);
+      flex: none;
+      height: 14px;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
+      width: 14px;
+      fill: none;
+    }
+    :root[data-theme="light"] .tools-dropdown-menu {
+      background: #ffffff;
+      border-color: rgba(20, 18, 40, 0.14);
+      box-shadow: 0 10px 28px rgba(20, 18, 40, 0.14);
+    }
+    :root[data-theme="light"] .tools-dropdown-item:hover { background: rgba(20, 18, 40, 0.06); }
     .session-item { border-radius: 11px; position: relative; transition: background 120ms ease; }
     .session-item:hover { background: var(--sidebar-hover); }
     .session-item.is-current { background: var(--sidebar-active); }
@@ -1368,40 +1564,40 @@
 
     /* ── Composer Queue & Steer Controls ── */
     .composer-queue {
+      border-bottom: 1px solid var(--line);
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-bottom: 8px;
+      gap: 4px;
+      margin: -4px -4px 8px;
+      padding: 2px 4px 8px;
     }
     .composer-queue[hidden] { display: none; }
     .queue-item {
       align-items: center;
-      background: rgba(139, 108, 255, 0.09);
-      border: 1px solid rgba(139, 108, 255, 0.24);
-      border-radius: 10px;
+      border-radius: 8px;
       display: flex;
-      font-size: 12px;
+      font-size: 12.5px;
       gap: 8px;
       justify-content: space-between;
       min-width: 0;
-      padding: 6px 10px;
+      padding: 5px 6px;
+      transition: background 120ms ease;
     }
+    .queue-item:hover { background: rgba(255, 255, 255, 0.035); }
     .queue-item-left {
       align-items: center;
       display: flex;
-      gap: 7px;
+      flex: 1;
+      gap: 8px;
       min-width: 0;
       overflow: hidden;
     }
-    .queue-badge {
-      background: rgba(139, 108, 255, 0.22);
-      border-radius: 999px;
-      color: #d6cbff;
+    .queue-dots {
+      color: var(--faint);
       flex: none;
       font-family: var(--mono);
-      font-size: 10.5px;
-      font-weight: 600;
-      padding: 2px 7px;
+      font-size: 12px;
+      letter-spacing: -0.05em;
     }
     .queue-text {
       color: var(--text);
@@ -1409,25 +1605,37 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .queue-edit-input {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(139, 108, 255, 0.5);
+      border-radius: 6px;
+      color: var(--text);
+      flex: 1;
+      font-size: 12.5px;
+      min-width: 0;
+      outline: none;
+      padding: 3px 8px;
+    }
     .queue-item-actions {
       align-items: center;
       display: flex;
       flex: none;
-      gap: 5px;
+      gap: 4px;
     }
     .queue-mini-btn {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--line);
+      background: transparent;
+      border: 1px solid transparent;
       border-radius: 6px;
       color: var(--muted);
       cursor: pointer;
-      font-size: 11px;
-      font-weight: 550;
-      padding: 2px 8px;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 2px 7px;
       transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
     }
-    .queue-mini-btn:hover { background: rgba(139, 108, 255, 0.22); border-color: rgba(139, 108, 255, 0.45); color: var(--text); }
-    .queue-mini-btn.is-steer { color: #d5c8ff; border-color: rgba(139, 108, 255, 0.35); }
+    .queue-mini-btn:hover { background: rgba(255, 255, 255, 0.07); color: var(--text); }
+    .queue-mini-btn.is-steer { color: #c7b8ff; }
+    .queue-mini-btn.is-steer:hover { background: rgba(139, 108, 255, 0.18); color: #efeaff; }
     .busy-send-actions {
       align-items: center;
       display: inline-flex;
@@ -1459,14 +1667,10 @@
       color: #e4ddff;
     }
     .busy-pill-btn.is-steer:hover { background: rgba(139, 108, 255, 0.34); }
-    :root[data-theme="light"] .queue-item {
-      background: rgba(108, 71, 255, 0.07);
-      border-color: rgba(108, 71, 255, 0.22);
-    }
-    :root[data-theme="light"] .queue-badge {
-      background: rgba(108, 71, 255, 0.16);
-      color: #4f31cc;
-    }
+    :root[data-theme="light"] .queue-item:hover { background: rgba(20, 18, 40, 0.04); }
+    :root[data-theme="light"] .queue-edit-input { background: #ffffff; color: #1f1d2e; }
+    :root[data-theme="light"] .queue-mini-btn:hover { background: rgba(20, 18, 40, 0.07); color: #1f1d2e; }
+    :root[data-theme="light"] .queue-mini-btn.is-steer { color: #5b4ed6; }
     :root[data-theme="light"] .busy-pill-btn {
       background: #f1eff8;
       border-color: rgba(20, 18, 30, 0.16);
@@ -3003,7 +3207,7 @@
               <line x1="20" y1="20" x2="16.65" y2="16.65" />
             </svg>
             <input id="session-filter" class="search" type="search" data-i18n-placeholder="sidebar.search" placeholder="搜索" aria-label="搜索会话" />
-            <button id="open-cmd-palette-kbd" class="search-kbd" type="button" title="打开命令面板 (⌘K)" aria-label="打开命令面板">⌘K</button>
+            <button id="open-cmd-palette-kbd" class="search-kbd" type="button" data-i18n-title="cmd.paletteBtnTitle" title="打开命令面板 (⌘K)" aria-label="Command Palette">⌘K</button>
           </div>
           <div class="tool-icons">
             <button id="refresh-sidebar" class="icon-btn" type="button" data-i18n-title="sidebar.refresh" title="刷新会话 (colab sessions)" aria-label="刷新会话">
@@ -3051,7 +3255,15 @@
 
         <div class="session-list">
           <h2>Sidebar</h2>
+          <div class="sidebar-section-head is-first">
+            <span data-i18n="sidebar.vmsSection">云端虚拟机</span>
+          </div>
           <div id="session-items"></div>
+          <div class="sidebar-section-head">
+            <span data-i18n="sidebar.chatsSection">对话记录</span>
+            <button id="new-chat-thread-btn" class="sidebar-section-add" type="button" data-i18n-title="sidebar.newChatBtn" title="新建对话">+ <span data-i18n="sidebar.newChatBtn">新建对话</span></button>
+          </div>
+          <div id="chat-threads-list" class="chat-threads-list"></div>
         </div>
 
         <div class="sidebar-foot">
@@ -3077,7 +3289,7 @@
           </button>
         </div>
       </aside>
-      <div id="sidebar-resizer" class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="调整侧边栏宽度" title="拖动调整宽度，双击恢复默认"></div>
+      <div id="sidebar-resizer" class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Resize sidebar" data-i18n-title="sidebar.resizerTitle" title="拖动调整宽度，双击恢复默认"></div>
 
       <div class="workspace">
         <header class="workspace-header" data-drag-region>
@@ -3091,7 +3303,7 @@
             </div>
           </div>
           <div class="workspace-head-actions">
-            <div id="view-switch" class="view-switch" role="tablist" aria-label="视图切换" hidden>
+            <div id="view-switch" class="view-switch" role="tablist" aria-label="View Switch" hidden>
               <button id="view-chat-btn" class="view-switch-btn is-active" type="button" role="tab" aria-selected="true" data-i18n="ws.viewChat">对话</button>
               <button id="view-split-btn" class="view-switch-btn" type="button" role="tab" aria-selected="false" data-i18n="ws.viewSplit">分屏</button>
               <button id="view-term-btn" class="view-switch-btn" type="button" role="tab" aria-selected="false" data-i18n-title="ws.viewTerminalTitle" title="切换交互式命令行终端 (⌘J)">
@@ -3099,11 +3311,27 @@
                 <span data-i18n="ws.viewTerminal">终端</span>
               </button>
             </div>
-            <button id="open-runner-btn" class="ghost" type="button" data-i18n="ws.runner" title="参数化直连脚本运行器（不经过 Agent）">脚本</button>
-            <button id="open-templates-btn" class="ghost" type="button" data-i18n="ws.templates">模板</button>
-            <button id="reset-chat" class="ghost" type="button" data-i18n="ws.newChat" data-i18n-title="ws.newChatTitle" title="开启新对话（不影响云端 VM）">新对话</button>
+            <div class="mode-switch" role="tablist" aria-label="Mode">
+              <button id="mode-agent" class="mode-btn is-active" type="button" role="tab" aria-selected="true">Agent</button>
+              <button id="mode-cli" class="mode-btn" type="button" role="tab" aria-selected="false">CLI</button>
+            </div>
+            <div class="tools-dropdown-wrap">
+              <button id="tools-dropdown-btn" class="ghost" type="button" aria-haspopup="menu" aria-expanded="false">
+                <span data-i18n="ws.toolsMenu">脚本与模板</span> ▾
+              </button>
+              <div id="tools-dropdown-menu" class="tools-dropdown-menu" role="menu" hidden>
+                <button id="open-runner-btn" class="tools-dropdown-item" type="button" role="menuitem">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span data-i18n="ws.toolsRunner">直连脚本运行器</span>
+                </button>
+                <button id="open-templates-btn" class="tools-dropdown-item" type="button" role="menuitem">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/></svg>
+                  <span data-i18n="ws.toolsTemplates">常用任务模板</span>
+                </button>
+              </div>
+            </div>
             <button id="refresh" class="ghost" type="button" data-i18n="ws.refresh">刷新</button>
-            <button id="rail-toggle" class="icon-btn is-active" type="button" title="收起右侧面板 (⌘.)" aria-label="切换右侧面板" aria-expanded="true">
+            <button id="rail-toggle" class="icon-btn is-active" type="button" title="收起右侧面板 (⌘.)" aria-label="Toggle Inspector" aria-expanded="true">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3" y="3" width="18" height="18" rx="3" />
                 <line x1="15" y1="3" x2="15" y2="21" />
@@ -3121,7 +3349,7 @@
           <span id="guard-alert-text" class="env-banner-text"></span>
           <div class="guard-banner-actions">
             <button id="guard-alert-action" class="s-btn is-danger" type="button" hidden></button>
-            <button id="guard-alert-dismiss" class="s-btn" type="button">知道了</button>
+            <button id="guard-alert-dismiss" class="s-btn" type="button" data-i18n="rail.dismiss">知道了</button>
           </div>
         </div>
 
@@ -3175,24 +3403,19 @@
           <textarea id="code" aria-label="code" rows="2" placeholder="直接说你想在 Colab 上做什么，比如「看看显存还剩多少」或拖入数据文件…（⌘Enter 发送）"></textarea>
           <input id="attach-file-input" type="file" multiple hidden />
           <div class="composer-foot">
-            <div class="mode-switch" role="tablist" aria-label="操作模式">
-              <button id="mode-agent" class="mode-btn is-active" type="button" role="tab" aria-selected="true">Agent</button>
-              <button id="mode-cli" class="mode-btn" type="button" role="tab" aria-selected="false">CLI</button>
-            </div>
-
             <div id="agent-controls" class="agent-controls">
               <select id="agent-provider" aria-label="Agent 引擎">
                 <option value="agy">AGY</option>
                 <option value="grok">Grok</option>
                 <option value="opencode">OpenCode</option>
               </select>
-              <select id="agent-model" aria-label="Agent 模型">
-                <option value="">默认模型</option>
+              <select id="agent-model" aria-label="Agent Model">
+                <option value="" data-i18n="composer.defaultModel">默认模型</option>
               </select>
-              <select id="agent-thought" aria-label="思考深度" title="思考深度 / Thinking Level" hidden></select>
-              <button id="approval-toggle" class="pill-toggle" type="button" title="切换 Agent 执行前是否询问确认">自动</button>
-              <button id="busy-mode-toggle" class="pill-toggle" type="button" title="切换 Agent 运行中按 Enter 的默认模式：Queue（排队） / Steer（立即转向）">Queue</button>
-              <button id="attach-file-btn" class="attach-btn" type="button" title="附加本地文件（可让 Agent 自动上传到 Colab）" aria-label="附加本地文件">
+              <select id="agent-thought" aria-label="Thinking Level" data-i18n-title="composer.thoughtTitle" title="思考深度" hidden></select>
+              <button id="approval-toggle" class="pill-toggle" type="button">自动</button>
+              <button id="busy-mode-toggle" class="pill-toggle" type="button">排队</button>
+              <button id="attach-file-btn" class="attach-btn" type="button" data-i18n-title="composer.attachTitle" title="附加本地文件（可让 Agent 自动上传到 Colab）" aria-label="Attach local files">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                 </svg>
@@ -3201,30 +3424,30 @@
 
             <div id="cli-controls" class="cli-controls" hidden>
               <select id="command" aria-label="command">
-                <optgroup label="执行">
+                <optgroup label="执行" data-i18n-label="composer.cliExec">
                   <option value="exec">exec</option>
                   <option value="ssh">ssh -- cmd</option>
                   <option value="run">run</option>
                 </optgroup>
-                <optgroup label="会话">
+                <optgroup label="会话" data-i18n-label="composer.cliSession">
                   <option value="status">status</option>
                   <option value="restart-kernel">restart-kernel</option>
                   <option value="stop">stop</option>
                   <option value="url">url</option>
                 </optgroup>
-                <optgroup label="文件">
+                <optgroup label="文件" data-i18n-label="composer.cliFiles">
                   <option value="ls">ls</option>
                   <option value="upload">upload</option>
                   <option value="download">download</option>
                   <option value="rm">rm</option>
                 </optgroup>
-                <optgroup label="环境与日志">
+                <optgroup label="环境与日志" data-i18n-label="composer.cliEnv">
                   <option value="install">install</option>
                   <option value="log">log</option>
                   <option value="drivemount">drivemount</option>
                   <option value="auth">auth</option>
                 </optgroup>
-                <optgroup label="账号与诊断">
+                <optgroup label="账号与诊断" data-i18n-label="composer.cliAccount">
                   <option value="usage">usage</option>
                   <option value="whoami">whoami</option>
                   <option value="version">version</option>
@@ -3234,8 +3457,8 @@
             </div>
 
             <div id="busy-send-actions" class="busy-send-actions" hidden>
-              <button id="queue-send-btn" class="busy-pill-btn" type="button" title="加入待发送队列，当前回合结束后自动发送">排队</button>
-              <button id="steer-send-btn" class="busy-pill-btn is-steer" type="button" title="立即中断当前回合，改按这条新指令执行">⚡ 转向</button>
+              <button id="queue-send-btn" class="busy-pill-btn" type="button" data-i18n-title="composer.queueTitle" title="加入待发送队列，当前回合结束后自动发送">排队</button>
+              <button id="steer-send-btn" class="busy-pill-btn is-steer" type="button" data-i18n-title="composer.steerTitle" title="立即中断当前回合，改按这条新指令执行">⚡ 转向</button>
             </div>
             <button id="send-btn" class="send" type="submit" aria-label="Submit" title="发送 (⌘Enter)">↑</button>
           </div>
@@ -3277,7 +3500,7 @@
               </svg>
               <span id="inspector-host" class="host-name">未连接 Colab VM</span>
             </span>
-            <button id="inspector-ls" class="icon-btn" type="button" title="查看远程文件 (colab ls)" aria-label="查看远程文件" disabled>
+            <button id="inspector-ls" class="icon-btn" type="button" data-i18n-title="rail.lsTitle" title="查看远程文件 (colab ls)" aria-label="Remote files" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
               </svg>
@@ -3353,7 +3576,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                 <span data-i18n="rail.endpoint">节点 ID</span>
               </span>
-              <button id="info-endpoint" class="kv-copy" type="button" title="点击复制节点 Endpoint">—</button>
+              <button id="info-endpoint" class="kv-copy" type="button" data-i18n-title="rail.endpointTitle" title="点击复制节点 Endpoint">—</button>
             </div>
             <div class="runtime-kv">
               <span class="kv-label">
@@ -3433,7 +3656,7 @@
             <span class="rail-mini-title" data-i18n="rail.tunnelsTitle">端口转发</span>
             <div style="display:flex;gap:8px;">
               <button id="inspector-sync-btn" class="meter-refresh" type="button" disabled data-i18n="ws.sync">同步</button>
-              <button id="inspector-bootstrap-btn" class="meter-refresh" type="button" disabled>初始化</button>
+              <button id="inspector-bootstrap-btn" class="meter-refresh" type="button" disabled data-i18n="rail.bootstrap">初始化</button>
             </div>
           </div>
           <div id="detected-ports-box" class="detected-ports" hidden></div>
@@ -3446,7 +3669,7 @@
             <button class="rail-chip" type="button" data-tunnel-port="6006" data-tunnel-label="TB" disabled>TB :6006</button>
           </div>
           <div class="tunnel-form">
-            <input id="tunnel-port-input" class="tunnel-input" type="number" min="1" max="65535" placeholder="远程端口 e.g. 8080" />
+            <input id="tunnel-port-input" class="tunnel-input" type="number" min="1" max="65535" data-i18n-placeholder="rail.portPlaceholder" placeholder="远程端口，如 8080" />
             <button id="tunnel-open-btn" class="rail-chip" type="button" disabled>+</button>
           </div>
           <div id="tunnel-list" class="tunnel-list"></div>
@@ -3500,7 +3723,7 @@
           <label><input type="radio" name="hardware" value="v6e1" /> v6e1</label>
         </div>
         <label class="high-mem"><input id="high-mem" type="checkbox" checked /> <span data-i18n="modal.newSession.highMem">high-mem（高内存规格）</span></label>
-        <p class="high-mem-note" id="high-mem-note" hidden>L4 / TPU 仅提供单一内存规格，CLI 会忽略 --high-mem。</p>
+        <p class="high-mem-note" id="high-mem-note" hidden data-i18n="modal.newSession.highMemNote">L4 / TPU 仅提供单一内存规格，CLI 会忽略 --high-mem。</p>
       </fieldset>
       <div id="new-session-cmd" class="modal-cmd">colab new -s &lt;name&gt;</div>
       <div id="new-session-status" class="modal-status" hidden></div>
@@ -3713,8 +3936,8 @@
                 </div>
                 <div class="s-row" data-search="gpu 监控 显存 轮询 telemetry poll">
                   <div class="s-copy">
-                    <span class="s-title">GPU 显存与端口自动轮询</span>
-                    <span class="s-desc">连接 GPU 会话时每 15 秒自动刷新显存占用、GPU 进程与新启动的 Web 端口。</span>
+                    <span class="s-title" data-i18n="settings.general.gpuPollTitle">GPU 显存与端口自动轮询</span>
+                    <span class="s-desc" data-i18n="settings.general.gpuPollDesc">连接 GPU 会话时每 15 秒自动刷新显存占用、GPU 进程与新启动的 Web 端口。</span>
                   </div>
                   <label class="s-toggle"><input id="setting-gpu-poll" type="checkbox" checked /><span class="s-toggle-track"></span></label>
                 </div>
@@ -3963,8 +4186,8 @@
               <div class="s-card">
                 <div class="s-row is-column" data-search="环境变量 env vault hf_token wandb civitai 密钥 token">
                   <div class="s-copy">
-                    <span class="s-title">云端 VM 环境变量与 Token</span>
-                    <span class="s-desc">安全保存在本机 0600 状态文件中，新开会话或点击「注入当前 VM」时自动写入 /etc/profile.d 与脚本运行器。</span>
+                    <span class="s-title" data-i18n="settings.colab.envTitle">云端 VM 环境变量与 Token</span>
+                    <span class="s-desc" data-i18n="settings.colab.envDesc">安全保存在本机 0600 状态文件中，新开会话或点击「注入当前 VM」时自动写入 /etc/profile.d 与脚本运行器。</span>
                   </div>
                   <div class="s-presets">
                     <button class="s-preset" type="button" data-env-preset="HF_TOKEN">HF_TOKEN</button>
@@ -3976,17 +4199,17 @@
                   <div id="env-vars-list" class="env-var-list"></div>
                   <div class="s-form-grid">
                     <div class="s-field">
-                      <label for="env-key-input">变量名</label>
+                      <label for="env-key-input" data-i18n="settings.colab.envKey">变量名</label>
                       <input id="env-key-input" class="s-input" type="text" placeholder="HF_TOKEN" />
                     </div>
                     <div class="s-field">
-                      <label for="env-val-input">变量值</label>
+                      <label for="env-val-input" data-i18n="settings.colab.envVal">变量值</label>
                       <input id="env-val-input" class="s-input" type="password" placeholder="hf_..." autocomplete="off" />
                     </div>
                   </div>
                   <div class="s-actions">
-                    <button id="env-var-add-btn" class="s-btn is-primary" type="button">保存变量</button>
-                    <button id="env-inject-now-btn" class="s-btn" type="button">立即注入当前 VM</button>
+                    <button id="env-var-add-btn" class="s-btn is-primary" type="button" data-i18n="settings.colab.envSave">保存变量</button>
+                    <button id="env-inject-now-btn" class="s-btn" type="button" data-i18n="settings.colab.envInject">立即注入当前 VM</button>
                   </div>
                 </div>
               </div>
@@ -3997,47 +4220,47 @@
               <div class="s-card">
                 <div class="s-row" data-search="自动 挂载 google drive bootstrap">
                   <div class="s-copy">
-                    <span class="s-title">开卡后自动挂载 Google Drive</span>
-                    <span class="s-desc">新建会话成功后自动运行 colab drivemount。</span>
+                    <span class="s-title" data-i18n="settings.colab.bootDriveTitle">开卡后自动挂载 Google Drive</span>
+                    <span class="s-desc" data-i18n="settings.colab.bootDriveDesc">新建会话成功后自动运行 colab drivemount。</span>
                   </div>
                   <label class="s-toggle"><input id="boot-mount-drive" type="checkbox" /><span class="s-toggle-track"></span></label>
                 </div>
                 <div class="s-row" data-search="hf_transfer 高速 下载 权重 huggingface">
                   <div class="s-copy">
-                    <span class="s-title">启用 HuggingFace 高速下载 (hf_transfer)</span>
-                    <span class="s-desc">自动安装 hf_transfer 并开启 HF_HUB_ENABLE_HF_TRANSFER=1，大幅加速生图/生视频大模型权重拉取。</span>
+                    <span class="s-title" data-i18n="settings.colab.bootHfTitle">启用 HuggingFace 高速下载 (hf_transfer)</span>
+                    <span class="s-desc" data-i18n="settings.colab.bootHfDesc">自动安装 hf_transfer 并开启 HF_HUB_ENABLE_HF_TRANSFER=1，大幅加速生图/生视频大模型权重拉取。</span>
                   </div>
                   <label class="s-toggle"><input id="boot-hf-transfer" type="checkbox" checked /><span class="s-toggle-track"></span></label>
                 </div>
                 <div class="s-row" data-search="缓存 持久化 drive hf_home huggingface cache">
                   <div class="s-copy">
-                    <span class="s-title">HuggingFace 缓存持久化到 Google Drive</span>
-                    <span class="s-desc">自动将 HF_HOME 指向 /content/drive/MyDrive/.cache/huggingface，重开 VM 无需重复下大模型。</span>
+                    <span class="s-title" data-i18n="settings.colab.bootCacheTitle">HuggingFace 缓存持久化到 Google Drive</span>
+                    <span class="s-desc" data-i18n="settings.colab.bootCacheDesc">自动将 HF_HOME 指向 /content/drive/MyDrive/.cache/huggingface，重开 VM 无需重复下大模型。</span>
                   </div>
                   <label class="s-toggle"><input id="boot-hf-drive-cache" type="checkbox" /><span class="s-toggle-track"></span></label>
                 </div>
                 <div class="s-row" data-search="自动 安装 uv 包管理">
                   <div class="s-copy">
-                    <span class="s-title">自动安装 uv 加速包管理</span>
-                    <span class="s-desc">确保远程 VM 已安装 uv，加快后续依赖安装速度。</span>
+                    <span class="s-title" data-i18n="settings.colab.bootUvTitle">自动安装 uv 加速包管理</span>
+                    <span class="s-desc" data-i18n="settings.colab.bootUvDesc">确保远程 VM 已安装 uv，加快后续依赖安装速度。</span>
                   </div>
                   <label class="s-toggle"><input id="boot-install-uv" type="checkbox" /><span class="s-toggle-track"></span></label>
                 </div>
                 <div class="s-row" data-search="自动 注入 环境变量">
                   <div class="s-copy">
-                    <span class="s-title">开卡后自动注入环境变量保险箱</span>
-                    <span class="s-desc">将上方配置的环境变量自动写入新 VM 的 shell 配置。</span>
+                    <span class="s-title" data-i18n="settings.colab.bootEnvTitle">开卡后自动注入环境变量保险箱</span>
+                    <span class="s-desc" data-i18n="settings.colab.bootEnvDesc">将上方配置的环境变量自动写入新 VM 的 shell 配置。</span>
                   </div>
                   <label class="s-toggle"><input id="boot-inject-env" type="checkbox" checked /><span class="s-toggle-track"></span></label>
                 </div>
                 <div class="s-row is-column" data-search="自定义 启动 脚本 bootstrap custom script">
                   <div class="s-copy">
-                    <span class="s-title">自定义启动脚本（Bash，可选）</span>
-                    <span class="s-desc">每次初始化 VM 时在云端执行的额外命令（例如拉取仓库或启动后台服务）。</span>
+                    <span class="s-title" data-i18n="settings.colab.bootScriptTitle">自定义启动脚本（Bash，可选）</span>
+                    <span class="s-desc" data-i18n="settings.colab.bootScriptDesc">每次初始化 VM 时在云端执行的额外命令（例如拉取仓库或启动后台服务）。</span>
                   </div>
-                  <textarea id="boot-custom-script" class="tpl-textarea" style="min-height:76px;width:100%;font-family:var(--mono);font-size:12px;" placeholder="# 可选，例如：\n# pip install -q diffusers accelerate"></textarea>
+                  <textarea id="boot-custom-script" class="tpl-textarea" style="min-height:76px;width:100%;font-family:var(--mono);font-size:12px;" placeholder="# pip install -q diffusers accelerate"></textarea>
                   <div class="s-actions">
-                    <button id="boot-run-now-btn" class="s-btn is-primary" type="button">对当前 VM 立即执行初始化</button>
+                    <button id="boot-run-now-btn" class="s-btn is-primary" type="button" data-i18n="settings.colab.bootRunNow">对当前 VM 立即执行初始化</button>
                   </div>
                   <pre id="boot-run-log" class="s-log" hidden></pre>
                 </div>
@@ -4088,7 +4311,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc">当前版本 v0.1.0（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.1.0（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -4130,7 +4353,7 @@
       <div class="files-body">
         <div id="files-list" class="files-list"></div>
         <div id="files-preview" class="files-preview">
-          <p class="s-desc">点击左侧文件即可预览内容，或直接拖入本地文件上传到当前目录。</p>
+          <p class="s-desc" data-i18n="files.previewHint">点击左侧文件即可预览内容，或直接拖入本地文件上传到当前目录。</p>
         </div>
       </div>
     </div>
@@ -4149,8 +4372,8 @@
         <div id="templates-list" class="templates-list"></div>
         <form id="template-form" class="tpl-form">
           <span class="s-title" data-i18n="templates.addTitle">保存新模板</span>
-          <input id="tpl-title-input" class="s-input" type="text" placeholder="模板名称，例如：部署 Ollama 推理" required />
-          <textarea id="tpl-prompt-input" class="tpl-textarea" placeholder="输入让 Agent 执行的完整指令…" required></textarea>
+          <input id="tpl-title-input" class="s-input" type="text" data-i18n-placeholder="templates.titlePlaceholder" placeholder="模板名称，例如：部署 Ollama 推理" required />
+          <textarea id="tpl-prompt-input" class="tpl-textarea" data-i18n-placeholder="templates.promptPlaceholder" placeholder="输入让 Agent 执行的完整指令…" required></textarea>
           <button class="s-btn is-primary" type="submit" data-i18n="templates.save">保存模板</button>
         </form>
       </div>
@@ -4163,7 +4386,7 @@
       <div class="wide-modal-head">
         <h3 id="runner-modal-title" data-i18n="runner.title">参数化直连运行器（不经过 Agent）</h3>
         <div class="s-actions">
-          <button id="runner-new-btn" class="s-btn" type="button">+ 新建脚本</button>
+          <button id="runner-new-btn" class="s-btn" type="button" data-i18n="runner.newBtn">+ 新建脚本</button>
           <button id="close-runner-modal" class="icon-btn" type="button" aria-label="Close">
             <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -4174,11 +4397,11 @@
         <div class="runner-main">
           <div class="s-form-grid">
             <div class="s-field">
-              <label for="runner-name">脚本名称</label>
-              <input id="runner-name" class="s-input" type="text" placeholder="例如：MiniMax / Diffusers 生图脚本" />
+              <label for="runner-name" data-i18n="runner.nameLabel">脚本名称</label>
+              <input id="runner-name" class="s-input" type="text" data-i18n-placeholder="runner.namePlaceholder" placeholder="例如：MiniMax / Diffusers 生图脚本" />
             </div>
             <div class="s-field">
-              <label for="runner-runtime">执行环境</label>
+              <label for="runner-runtime" data-i18n="runner.runtimeLabel">执行环境</label>
               <select id="runner-runtime" class="s-select" style="width:100%;">
                 <option value="python">Python (colab exec)</option>
                 <option value="bash">Bash (colab ssh)</option>
@@ -4187,13 +4410,13 @@
           </div>
           <div id="runner-params-wrap" class="runner-params-grid"></div>
           <div class="s-field">
-            <label for="runner-code">脚本内容（支持 {{prompt}}、{{seed}} 等占位符，自动生成上方参数表单）</label>
+            <label for="runner-code" data-i18n="runner.codeLabel">脚本内容（支持 {{prompt}}、{{seed}} 等占位符，自动生成上方参数表单）</label>
             <textarea id="runner-code" class="tpl-textarea" style="min-height:150px;font-family:var(--mono);font-size:12px;" placeholder="import os&#10;prompt = os.environ.get('COLAB_PARAM_PROMPT', '''{{prompt}}''')&#10;print('Running:', prompt)"></textarea>
           </div>
           <div class="s-actions">
             <button id="runner-exec-btn" class="s-btn is-primary" type="button" data-i18n="runner.run">▶ 直接在 VM 运行</button>
             <button id="runner-save-btn" class="s-btn" type="button" data-i18n="runner.save">保存脚本</button>
-            <button id="runner-delete-btn" class="s-btn is-danger" type="button" hidden>删除</button>
+            <button id="runner-delete-btn" class="s-btn is-danger" type="button" hidden data-i18n="runner.deleteBtn">删除</button>
             <span id="runner-status" class="s-desc"></span>
           </div>
           <div id="runner-media" class="runner-media-grid"></div>
@@ -4213,11 +4436,11 @@
         </button>
       </div>
       <div class="s-field">
-        <label for="sync-local-input">本机目录绝对路径（自动排除 .git / node_modules / __pycache__）</label>
+        <label for="sync-local-input" data-i18n="sync.localLabel">本机目录绝对路径（自动排除 .git / node_modules / __pycache__）</label>
         <input id="sync-local-input" class="s-input" type="text" placeholder="~/Projects/my-model" />
       </div>
       <div class="s-field">
-        <label for="sync-remote-input">Colab 云端目录路径</label>
+        <label for="sync-remote-input" data-i18n="sync.remoteLabel">Colab 云端目录路径</label>
         <input id="sync-remote-input" class="s-input" type="text" placeholder="/content/my-model" />
       </div>
       <pre id="sync-log" class="s-log" hidden></pre>
@@ -4235,7 +4458,7 @@
   </dialog>
 
   <script type="module">
-    import { applyNewResult, composeAction, createDeskState, isRetryableColabError, parseColabNewSpec, record, showSession, summarizeColabError } from "/desk.mjs";
+    import { applyNewResult, buildContextHandoffPrompt, composeAction, createDeskState, isRetryableColabError, parseColabNewSpec, record, showSession, summarizeColabError } from "/desk.mjs";
     import { resolveLanguage, t } from "/i18n.mjs";
 
     const SINGLE_SHAPE = new Set(["L4", "v5e1", "v6e1"]);
@@ -4258,6 +4481,10 @@
     const termReconnectBtn = document.querySelector("#term-reconnect");
     const termClearBtn = document.querySelector("#term-clear");
     const sessionItems = document.querySelector("#session-items");
+    const chatThreadsListEl = document.querySelector("#chat-threads-list");
+    const newChatThreadBtn = document.querySelector("#new-chat-thread-btn");
+    const toolsDropdownBtn = document.querySelector("#tools-dropdown-btn");
+    const toolsDropdownMenu = document.querySelector("#tools-dropdown-menu");
     const miniSessionItems = document.querySelector("#mini-session-items");
     const transcript = document.querySelector("#transcript");
     const empty = document.querySelector("#transcript-empty");
@@ -4490,7 +4717,12 @@
     let gpuAutoPoll = true;
     let defaultHighMem = true;
     let busySendMode = "queue"; // "queue" | "steer"
+    let chatThreads = []; // [{ id, title, sessionName, pinned, createdAt, updatedAt }]
+    let activeThreadId = null;
     const messageQueues = new Map();
+    const pendingUnfinishedTasks = new Map();
+    let activeAgentTurnContext = null;
+    let editingQueueItemId = null;
     let pendingSteerItem = null;
     let stopReasonKind = null; // "stop" | "steer" | null
     let filesViewMode = "list"; // "list" | "gallery"
@@ -4563,6 +4795,10 @@
       return t(activeLang, key, vars);
     }
 
+    function L(zh, en) {
+      return activeLang === "en" ? en : zh;
+    }
+
     function applyLanguage(pref = languagePref, persist = false) {
       languagePref = pref === "en" || pref === "zh-CN" ? pref : "auto";
       const sysLang = navigator.language || navigator.languages?.[0] || "en";
@@ -4581,6 +4817,9 @@
       document.querySelectorAll("[data-i18n-title]").forEach((el) => {
         el.setAttribute("title", tr(el.dataset.i18nTitle));
       });
+      document.querySelectorAll("[data-i18n-label]").forEach((el) => {
+        el.setAttribute("label", tr(el.dataset.i18nLabel));
+      });
       document.querySelectorAll("[data-starter-key]").forEach((btn) => {
         btn.dataset.starter = tr(btn.dataset.starterKey);
       });
@@ -4592,6 +4831,19 @@
         crumbName.textContent = tr("ws.unselected");
         meta.textContent = tr("ws.noSessionMeta");
       }
+      if (typeof syncBusyModeToggle === "function") syncBusyModeToggle(false);
+      if (typeof syncApprovalToggle === "function") syncApprovalToggle(false);
+      if (typeof syncSendButton === "function") syncSendButton();
+      if (typeof renderComposerQueue === "function") renderComposerQueue();
+      if (typeof renderExtra === "function") renderExtra();
+      if (typeof renderSessions === "function") renderSessions();
+      if (typeof renderChatThreads === "function") renderChatThreads();
+      if (typeof renderInspector === "function") renderInspector();
+      if (typeof renderTunnels === "function") renderTunnels();
+      if (typeof renderTranscript === "function") renderTranscript(selected || "");
+      if (typeof renderSnipeBanner === "function") renderSnipeBanner();
+      if (typeof renderRunnerSidebar === "function") renderRunnerSidebar();
+      if (usageModal && usageModal.open && typeof renderUsageModal === "function") renderUsageModal();
       syncApprovalToggle(false);
     syncBusyModeToggle(false);
       syncComposer();
@@ -4700,19 +4952,23 @@
     function formatResetCountdown(iso) {
       if (!iso) return "";
       const ms = new Date(iso).getTime() - Date.now();
-      if (!Number.isFinite(ms) || ms <= 0) return "即将重置";
+      if (!Number.isFinite(ms) || ms <= 0) return L("即将重置", "Resets soon");
       const mins = Math.floor(ms / 60_000);
       const days = Math.floor(mins / 1440);
       const hours = Math.floor((mins % 1440) / 60);
       const remMins = mins % 60;
-      if (days > 0) return `${days}天${hours}小时后重置`;
-      if (hours > 0) return `${hours}小时${remMins}分后重置`;
-      return `${remMins}分钟后重置`;
+      if (days > 0) return L(`${days}天${hours}小时后重置`, `Resets in ${days}d ${hours}h`);
+      if (hours > 0) return L(`${hours}小时${remMins}分后重置`, `Resets in ${hours}h ${remMins}m`);
+      return L(`${remMins}分钟后重置`, `Resets in ${remMins}m`);
     }
 
     function shortBucketLabel(b) {
       const g = /claude|gpt|3p/i.test(`${b.group} ${b.id}`) ? "Claude & GPT" : "Gemini";
-      const w = b.window === "5h" ? "5-hour" : b.window === "weekly" ? "Weekly" : (b.name || "");
+      const w = b.window === "5h"
+        ? L("5小时", "5-hour")
+        : b.window === "weekly"
+          ? L("每周", "Weekly")
+          : (b.name || "");
       return `${g} · ${w}`;
     }
 
@@ -4753,13 +5009,16 @@
       const s = agentUsageStats;
       const total = s.inputTokens + s.outputTokens;
       const costPart = s.costUsd > 0 ? ` · $${s.costUsd.toFixed(4)}` : "";
-      statLocalSummary.textContent = `${s.turns} 轮 · ${formatCompactNum(total)} tok${costPart}`;
+      statLocalSummary.textContent = L(
+        `${s.turns} 轮 · ${formatCompactNum(total)} tok${costPart}`,
+        `${s.turns} turns · ${formatCompactNum(total)} tok${costPart}`,
+      );
 
       agentQuotaBody.replaceChildren();
       if (!latestAgentQuota) {
         const loading = document.createElement("p");
         loading.className = "quota-note";
-        loading.textContent = "正在查询 AGY / Grok / OpenCode 剩余额度…";
+        loading.textContent = L("正在查询 AGY / Grok / OpenCode 剩余额度…", "Checking AGY / Grok / OpenCode quotas…");
         agentQuotaBody.append(loading);
         return;
       }
@@ -4767,7 +5026,11 @@
       // 1. AGY Remaining Quota Bars
       const agy = latestAgentQuota.agy || {};
       agentQuotaBody.append(
-        renderQuotaBarsCard("AGY 剩余额度", "agy", agy.ok ? "实时配额" : (agy.available ? "获取失败" : "未安装"), (card) => {
+        renderQuotaBarsCard(
+          L("AGY 剩余额度", "AGY Quota"),
+          "agy",
+          agy.ok ? L("实时配额", "Live quota") : (agy.available ? L("获取失败", "Failed") : L("未安装", "Not installed")),
+          (card) => {
           if (agy.ok && Array.isArray(agy.buckets) && agy.buckets.length > 0) {
             for (const b of agy.buckets) {
               const pct = b.remainingPct ?? 0;
@@ -4801,7 +5064,7 @@
           } else {
             const p = document.createElement("p");
             p.className = "quota-note";
-            p.textContent = agy.error || "未获取到 AGY 剩余额度";
+            p.textContent = agy.error || L("未获取到 AGY 剩余额度", "Unable to fetch AGY quota");
             card.append(p);
           }
         })
@@ -4856,8 +5119,11 @@
             const p = document.createElement("p");
             p.className = "quota-note";
             const localTxt = grokLocal
-              ? `本应用已用 ${grokLocal.turns} 轮 · ${formatCompactNum(grokLocal.tokens)} tok · $${(grokLocal.costUsd || 0).toFixed(4)}`
-              : (activeLang === "en" ? "No Grok turns recorded yet" : "本应用暂无 Grok 对话记录");
+              ? L(
+                `本应用已用 ${grokLocal.turns} 轮 · ${formatCompactNum(grokLocal.tokens)} tok · $${(grokLocal.costUsd || 0).toFixed(4)}`,
+                `Local app: ${grokLocal.turns} turns · ${formatCompactNum(grokLocal.tokens)} tok · $${(grokLocal.costUsd || 0).toFixed(4)}`,
+              )
+              : L("本应用暂无 Grok 对话记录", "No Grok turns recorded yet");
             p.textContent = grok.note ? `${grok.note}。${localTxt}` : localTxt;
             card.append(p);
           }
@@ -4916,7 +5182,7 @@
       const btn = document.querySelector("#refresh-agent-quota");
       if (btn) {
         btn.disabled = true;
-        btn.textContent = "查询中…";
+        btn.textContent = L("查询中…", "Checking…");
       }
       try {
         const res = await fetch(`/api/agent/quota${force ? "?refresh=1" : ""}`);
@@ -4930,14 +5196,14 @@
       finally {
         if (btn) {
           btn.disabled = false;
-          btn.textContent = "刷新额度";
+          btn.textContent = tr("modal.usage.refresh");
         }
       }
     }
 
     async function openColabCuModal() {
       openDialog(cuModal);
-      cuRawEl.textContent = "正在查询 colab usage…";
+      cuRawEl.textContent = L("正在查询 colab usage…", "Querying colab usage…");
       if (usageInfo) paintCuModal(usageInfo, null);
       await refreshColabCuModal();
     }
@@ -4951,19 +5217,19 @@
       if (info && info.ratePerHour != null) {
         cuRateEl.textContent = `${info.ratePerHour.toFixed(2)} /hr`;
         cuEstHoursEl.textContent = info.ratePerHour > 0 && info.balance != null
-          ? `预计可用：约 ${(info.balance / info.ratePerHour).toFixed(1)} 小时`
-          : "当前无计费消耗";
+          ? L(`预计可用：约 ${(info.balance / info.ratePerHour).toFixed(1)} 小时`, `Est. remaining: ~${(info.balance / info.ratePerHour).toFixed(1)}h`)
+          : L("当前无计费消耗", "No active burn");
       } else {
         cuRateEl.textContent = "—";
-        cuEstHoursEl.textContent = "预计可用时长：—";
+        cuEstHoursEl.textContent = L("预计可用时长：—", "Est. remaining: —");
       }
-      cuActiveEl.textContent = `活跃实例：${info && info.activeAssignments != null ? info.activeAssignments : "—"}`;
+      cuActiveEl.textContent = tr("rail.activeCount", { count: info && info.activeAssignments != null ? info.activeAssignments : "—" });
       if (rawText != null) cuRawEl.textContent = rawText;
     }
 
     async function refreshColabCuModal() {
       const btn = document.querySelector("#refresh-cu-modal");
-      if (btn) { btn.disabled = true; btn.textContent = "刷新中…"; }
+      if (btn) { btn.disabled = true; btn.textContent = L("刷新中…", "Refreshing…"); }
       try {
         const res = await fetch("/api/usage");
         const data = await res.json();
@@ -4972,14 +5238,14 @@
             usageInfo = data.state.usage;
             renderInspector();
           }
-          paintCuModal(usageInfo, (data.stdout || "").trim() || "无输出");
+          paintCuModal(usageInfo, (data.stdout || "").trim() || L("无输出", "(no output)"));
         } else {
-          paintCuModal(usageInfo, data.error || "查询 colab usage 失败");
+          paintCuModal(usageInfo, data.error || L("查询 colab usage 失败", "Failed to query colab usage"));
         }
       } catch (err) {
-        paintCuModal(usageInfo, (err && err.message) || "查询失败");
+        paintCuModal(usageInfo, (err && err.message) || L("查询失败", "Query failed"));
       } finally {
-        if (btn) { btn.disabled = false; btn.textContent = "刷新"; }
+        if (btn) { btn.disabled = false; btn.textContent = tr("modal.cu.refresh"); }
       }
     }
 
@@ -5339,6 +5605,8 @@
         gpuAutoPoll,
         defaultHighMem,
         busySendMode,
+        chatThreads,
+        activeThreadId,
         provider: agentProviderSelect.value || "agy",
         modelsByProvider: savedModelsByProvider,
         thoughtByProvider: savedThoughtByProvider,
@@ -5435,6 +5703,12 @@
             busySendMode = settings.busySendMode;
             syncBusyModeToggle(false);
           }
+          if (Array.isArray(settings.chatThreads)) {
+            chatThreads = settings.chatThreads.filter((x) => x && typeof x.id === "string");
+          }
+          if (typeof settings.activeThreadId === "string" && settings.activeThreadId) {
+            activeThreadId = settings.activeThreadId;
+          }
           if (settings.modelsByProvider && typeof settings.modelsByProvider === "object") {
             Object.assign(savedModelsByProvider, settings.modelsByProvider);
           }
@@ -5500,25 +5774,250 @@
     function syncBusyModeToggle(sync = true) {
       if (!busyModeToggle) return;
       const isSteer = busySendMode === "steer";
-      busyModeToggle.textContent = isSteer
-        ? (activeLang === "en" ? "⚡ Steer" : "⚡ 转向")
-        : (activeLang === "en" ? "Queue" : "排队");
+      busyModeToggle.textContent = isSteer ? L("⚡ 转向", "⚡ Steer") : L("排队", "Queue");
       busyModeToggle.classList.toggle("is-steer", isSteer);
       busyModeToggle.title = isSteer
-        ? (activeLang === "en" ? "While running: Enter immediately interrupts & steers (click to switch to Queue)" : "运行中按 Enter：立即中断并转向新指令（点击切换为排队）")
-        : (activeLang === "en" ? "While running: Enter queues message for next turn (click to switch to Steer)" : "运行中按 Enter：加入队列等待本轮结束发送（点击切换为转向）");
+        ? L("运行中按 Enter：立即中断并转向新指令（点击切换为排队）", "While running: Enter interrupts & steers immediately (click for Queue)")
+        : L("运行中按 Enter：加入队列等待本轮结束发送（点击切换为转向）", "While running: Enter queues message for next turn (click for Steer)");
       if (settingBusySendMode) settingBusySendMode.value = busySendMode;
+      if (typeof syncSendButton === "function") syncSendButton();
       if (sync) scheduleStoreSync();
     }
 
-    function getSessionQueue(key = selected || "") {
+    function currentTranscriptKey() {
+      return activeThreadId || (selected || "");
+    }
+
+    function deriveThreadTitle(entries, fallback = "") {
+      if (Array.isArray(entries)) {
+        const firstUser = entries.find((e) => e && e.label && String(e.label).trim());
+        if (firstUser) {
+          const clean = String(firstUser.label).replace(/\s+/g, " ").trim();
+          return clean.length > 36 ? `${clean.slice(0, 35)}…` : clean;
+        }
+      }
+      if (fallback) return fallback;
+      return L("新对话", "New Chat");
+    }
+
+    function migrateLegacyThreads() {
+      const existingIds = new Set(chatThreads.map((tItem) => tItem.id));
+      for (const [k, list] of Object.entries(desk.bySession)) {
+        if (!Array.isArray(list) || list.length === 0) continue;
+        let id = k;
+        if (!id) {
+          id = "chat-general";
+          if (!desk.bySession[id] || desk.bySession[id].length === 0) {
+            desk.bySession[id] = list;
+          }
+          delete desk.bySession[""];
+        }
+        if (!existingIds.has(id)) {
+          existingIds.add(id);
+          chatThreads.push({
+            id,
+            title: deriveThreadTitle(desk.bySession[id], k || L("历史对话", "Saved Chat")),
+            sessionName: k || "",
+            pinned: false,
+            createdAt: Date.now() - 1000,
+            updatedAt: Date.now() - 1000,
+          });
+        }
+      }
+      // Keep only threads that either have entries or are the active empty thread
+      chatThreads = chatThreads.filter((tItem) => tItem.id === activeThreadId || (Array.isArray(desk.bySession[tItem.id]) && desk.bySession[tItem.id].length > 0));
+      if (!activeThreadId || !chatThreads.some((tItem) => tItem.id === activeThreadId)) {
+        activeThreadId = chatThreads[0]?.id || null;
+      }
+    }
+
+    function ensureActiveThread(firstPromptText = "") {
+      let cur = chatThreads.find((tItem) => tItem.id === activeThreadId);
+      if (!cur) {
+        const id = `chat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`;
+        cur = {
+          id,
+          title: firstPromptText ? deriveThreadTitle([{ label: firstPromptText }]) : L("新对话", "New Chat"),
+          sessionName: selected || "",
+          pinned: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        chatThreads.unshift(cur);
+        activeThreadId = id;
+        if (!desk.bySession[id]) desk.bySession[id] = [];
+      } else {
+        if (firstPromptText && (!cur.title || cur.title === "新对话" || cur.title === "New Chat")) {
+          cur.title = deriveThreadTitle([{ label: firstPromptText }]);
+        }
+        if (selected && !cur.sessionName) cur.sessionName = selected;
+        cur.updatedAt = Date.now();
+      }
+      renderChatThreads();
+      return cur.id;
+    }
+
+    function openChatThread(threadId) {
+      const target = chatThreads.find((tItem) => tItem.id === threadId);
+      if (!target) return;
+      activeThreadId = target.id;
+      if (target.sessionName && sessions.some((s) => s.name === target.sessionName) && selected !== target.sessionName) {
+        selected = target.sessionName;
+        renderSessions();
+        renderInspector();
+        renderTunnels();
+      }
+      renderChatThreads();
+      renderTranscript(activeThreadId);
+      renderComposerQueue();
+      scheduleStoreSync();
+    }
+
+    async function createNewChatThread() {
+      if (activeAgentController) {
+        stopReasonKind = "stop";
+        activeAgentController.abort();
+      }
+      const id = `chat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`;
+      const thread = {
+        id,
+        title: L("新对话", "New Chat"),
+        sessionName: selected || "",
+        pinned: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      chatThreads.unshift(thread);
+      desk.bySession[id] = [];
+      activeThreadId = id;
+      renderChatThreads();
+      renderTranscript(id);
+      renderInspector();
+      renderComposerQueue();
+      persistDeskHistory();
+      try {
+        await fetch("/api/agent/reset", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ colabSession: selected || "", provider: "" }),
+        });
+      } catch {}
+      code.focus();
+      showToast(tr("toast.newChat"));
+    }
+
+    function togglePinChatThread(threadId) {
+      const target = chatThreads.find((tItem) => tItem.id === threadId);
+      if (!target) return;
+      target.pinned = !target.pinned;
+      renderChatThreads();
+      scheduleStoreSync();
+    }
+
+    function deleteChatThread(threadId) {
+      const idx = chatThreads.findIndex((tItem) => tItem.id === threadId);
+      if (idx < 0) return;
+      chatThreads.splice(idx, 1);
+      delete desk.bySession[threadId];
+      messageQueues.delete(threadId);
+      if (activeThreadId === threadId) {
+        activeThreadId = chatThreads[0]?.id || null;
+      }
+      renderChatThreads();
+      renderTranscript(currentTranscriptKey());
+      renderInspector();
+      renderComposerQueue();
+      persistDeskHistory();
+      flushStoreToDisk();
+    }
+
+    function renderChatThreads() {
+      if (!chatThreadsListEl) return;
+      const q = (filter ? filter.value : "").trim().toLowerCase();
+      const sorted = chatThreads
+        .filter((tItem) => {
+          if (!q) return true;
+          return (tItem.title || "").toLowerCase().includes(q) || (tItem.sessionName || "").toLowerCase().includes(q);
+        })
+        .sort((a, b) => {
+          if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+          return (b.updatedAt || 0) - (a.updatedAt || 0);
+        });
+      chatThreadsListEl.replaceChildren();
+      if (!sorted.length) {
+        const emptyEl = document.createElement("div");
+        emptyEl.className = "chat-threads-empty";
+        emptyEl.textContent = tr("sidebar.chatsEmpty");
+        chatThreadsListEl.append(emptyEl);
+        return;
+      }
+      for (const tItem of sorted) {
+        const row = document.createElement("div");
+        row.className = "chat-thread-row" + (tItem.id === activeThreadId ? " is-active" : "") + (tItem.pinned ? " is-pinned" : "");
+        row.addEventListener("click", () => openChatThread(tItem.id));
+
+        const main = document.createElement("div");
+        main.className = "chat-thread-main";
+        const titleLine = document.createElement("div");
+        titleLine.className = "chat-thread-title-line";
+        if (tItem.pinned) {
+          const pinBadge = document.createElement("span");
+          pinBadge.className = "chat-thread-pin-ico";
+          pinBadge.textContent = "★";
+          titleLine.append(pinBadge);
+        }
+        const titleEl = document.createElement("span");
+        titleEl.className = "chat-thread-title";
+        titleEl.textContent = tItem.title || L("新对话", "New Chat");
+        titleEl.title = titleEl.textContent;
+        titleLine.append(titleEl);
+
+        const count = (desk.bySession[tItem.id] || []).length;
+        const metaEl = document.createElement("span");
+        metaEl.className = "chat-thread-meta";
+        const parts = [];
+        if (tItem.sessionName) parts.push(tItem.sessionName);
+        parts.push(tr("rail.historyCount", { count }));
+        metaEl.textContent = parts.join(" · ");
+        main.append(titleLine, metaEl);
+
+        const actions = document.createElement("div");
+        actions.className = "chat-thread-actions";
+
+        const pinBtn = document.createElement("button");
+        pinBtn.type = "button";
+        pinBtn.className = "chat-thread-act" + (tItem.pinned ? " is-pinned" : "");
+        pinBtn.title = tItem.pinned ? L("取消置顶", "Unpin") : L("置顶对话", "Pin chat");
+        pinBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
+        pinBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          togglePinChatThread(tItem.id);
+        });
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "chat-thread-act is-danger";
+        delBtn.title = L("删除对话", "Delete chat");
+        delBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>';
+        delBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deleteChatThread(tItem.id);
+        });
+
+        actions.append(pinBtn, delBtn);
+        row.append(main, actions);
+        chatThreadsListEl.append(row);
+      }
+    }
+
+    function getSessionQueue(key = currentTranscriptKey()) {
       if (!messageQueues.has(key)) messageQueues.set(key, []);
       return messageQueues.get(key);
     }
 
     function renderComposerQueue() {
       if (!composerQueueEl) return;
-      const key = selected || "";
+      const key = currentTranscriptKey();
       const list = getSessionQueue(key);
       composerQueueEl.replaceChildren();
       if (!list.length) {
@@ -5526,48 +6025,97 @@
         return;
       }
       composerQueueEl.hidden = false;
-      const isEn = activeLang === "en";
-      list.forEach((item, idx) => {
+      list.forEach((item) => {
         const row = document.createElement("div");
         row.className = "queue-item";
         const left = document.createElement("div");
         left.className = "queue-item-left";
-        const badge = document.createElement("span");
-        badge.className = "queue-badge";
-        badge.textContent = isEn ? `Q#${idx + 1}` : `排队 #${idx + 1}`;
+        const dots = document.createElement("span");
+        dots.className = "queue-dots";
+        dots.textContent = "⁘";
+        left.append(dots);
+
+        const isEditing = editingQueueItemId === item.id;
+        if (isEditing) {
+          const inp = document.createElement("input");
+          inp.type = "text";
+          inp.className = "queue-edit-input";
+          inp.value = item.promptText;
+          const commitEdit = () => {
+            const next = inp.value.trim();
+            if (next) item.promptText = next;
+            editingQueueItemId = null;
+            renderComposerQueue();
+          };
+          inp.addEventListener("keydown", (e) => {
+            if (e.isComposing || e.keyCode === 229) return;
+            if (e.key === "Enter") { e.preventDefault(); commitEdit(); }
+            else if (e.key === "Escape") { e.preventDefault(); editingQueueItemId = null; renderComposerQueue(); }
+          });
+          left.append(inp);
+          const actions = document.createElement("div");
+          actions.className = "queue-item-actions";
+          const saveBtn = document.createElement("button");
+          saveBtn.type = "button";
+          saveBtn.className = "queue-mini-btn is-steer";
+          saveBtn.textContent = L("保存", "Save");
+          saveBtn.addEventListener("click", commitEdit);
+          const cancelBtn = document.createElement("button");
+          cancelBtn.type = "button";
+          cancelBtn.className = "queue-mini-btn";
+          cancelBtn.textContent = L("取消", "Cancel");
+          cancelBtn.addEventListener("click", () => { editingQueueItemId = null; renderComposerQueue(); });
+          actions.append(saveBtn, cancelBtn);
+          row.append(left, actions);
+          composerQueueEl.append(row);
+          requestAnimationFrame(() => { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); });
+          return;
+        }
+
         const text = document.createElement("span");
         text.className = "queue-text";
-        const fileTag = item.files?.length ? ` [+${item.files.length} file]` : "";
+        const fileTag = item.files?.length ? L(` [+${item.files.length} 个文件]`, ` [+${item.files.length} file${item.files.length > 1 ? "s" : ""}]`) : "";
         text.textContent = `${item.promptText.replace(/\s+/g, " ")}${fileTag}`;
-        left.append(badge, text);
+        text.title = item.promptText;
+        left.append(text);
 
         const actions = document.createElement("div");
         actions.className = "queue-item-actions";
-        const steerBtn = document.createElement("button");
-        steerBtn.type = "button";
-        steerBtn.className = "queue-mini-btn is-steer";
-        steerBtn.textContent = activeAgentController
-          ? (isEn ? "⚡ Steer" : "⚡ 转向")
-          : (isEn ? "Send" : "发送");
-        steerBtn.addEventListener("click", () => {
+
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "queue-mini-btn";
+        editBtn.textContent = L("修改", "Edit");
+        editBtn.addEventListener("click", () => {
+          editingQueueItemId = item.id;
+          renderComposerQueue();
+        });
+
+        const sendNowBtn = document.createElement("button");
+        sendNowBtn.type = "button";
+        sendNowBtn.className = "queue-mini-btn is-steer";
+        sendNowBtn.textContent = L("立即发送", "Send now");
+        sendNowBtn.title = L("立即发送并要求 Agent 完成所有未完成的会话任务", "Send immediately and continue all unfinished tasks");
+        sendNowBtn.addEventListener("click", () => {
           const cur = getSessionQueue(key);
           const pos = cur.findIndex((x) => x.id === item.id);
           if (pos >= 0) cur.splice(pos, 1);
           renderComposerQueue();
           steerAgentMessage(item.promptText, item.files);
         });
+
         const delBtn = document.createElement("button");
         delBtn.type = "button";
         delBtn.className = "queue-mini-btn";
-        delBtn.textContent = "×";
-        delBtn.title = isEn ? "Remove from queue" : "移出队列";
+        delBtn.textContent = L("取消", "Cancel");
         delBtn.addEventListener("click", () => {
           const cur = getSessionQueue(key);
           const pos = cur.findIndex((x) => x.id === item.id);
           if (pos >= 0) cur.splice(pos, 1);
           renderComposerQueue();
         });
-        actions.append(steerBtn, delBtn);
+
+        actions.append(editBtn, sendNowBtn, delBtn);
         row.append(left, actions);
         composerQueueEl.append(row);
       });
@@ -5586,7 +6134,7 @@
     }
 
     function enqueueAgentMessage(promptText, files = []) {
-      const key = selected || "";
+      const key = currentTranscriptKey();
       const list = getSessionQueue(key);
       list.push({
         id: `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
@@ -5595,18 +6143,36 @@
         createdAt: Date.now(),
       });
       renderComposerQueue();
-      showToast(activeLang === "en" ? `Queued message (#${list.length})` : `已加入队列（第 ${list.length} 条），当前回合结束后自动发送`);
+      showToast(L(`已加入队列（第 ${list.length} 条），当前回合结束后自动发送`, `Queued message (#${list.length}); will send when current turn finishes`));
+    }
+
+    function buildSteerContinuationPrompt(newPrompt, unfinishedList) {
+      if (!Array.isArray(unfinishedList) || unfinishedList.length === 0) return newPrompt;
+      const unique = Array.from(new Set(unfinishedList.map((s) => String(s || "").trim()).filter(Boolean)));
+      if (!unique.length) return newPrompt;
+      const summary = unique.map((u, i) => `${i + 1}. ${u}`).join("\n");
+      if (activeLang === "en") {
+        return `[Mid-turn Steer / Continuation]\nYou were interrupted while working on unfinished session task(s):\n${summary}\n\nUser's immediate follow-up / new instruction:\n${newPrompt}\n\nImportant: Please address this new instruction AND make sure ALL unfinished tasks above are completed thoroughly without dropping any earlier requirements.`;
+      }
+      return `【中途插队 / Steer 任务衔接】\n你上一轮正在执行但尚未完成的会话任务如下：\n${summary}\n\n用户刚刚发送的最新指令/补充：\n${newPrompt}\n\n请务必结合用户的最新指令，把上述所有尚未完成的会话任务与本次新要求一并完整执行完毕，不要遗漏前面未做完的步骤。`;
     }
 
     function steerAgentMessage(promptText, files = []) {
-      const key = selected || "";
+      const key = currentTranscriptKey();
       if (activeAgentController) {
+        const prevList = pendingUnfinishedTasks.get(key) || [];
+        if (activeAgentTurnContext && activeAgentTurnContext.key === key && activeAgentTurnContext.prompt) {
+          prevList.push(activeAgentTurnContext.prompt);
+        }
+        pendingUnfinishedTasks.set(key, prevList);
         pendingSteerItem = { promptText, files: Array.isArray(files) ? files : [], key };
         stopReasonKind = "steer";
         activeAgentController.abort();
-        showToast(activeLang === "en" ? "Steering Agent to new instruction…" : "正在中断当前回合并转向新指令…");
+        showToast(L("正在衔接未完成任务并转向新指令…", "Steering Agent while preserving unfinished tasks…"));
       } else {
-        sendAgentMessage(promptText, Array.isArray(files) ? files : []);
+        const unfinished = pendingUnfinishedTasks.get(key) || [];
+        const apiPrompt = unfinished.length ? buildSteerContinuationPrompt(promptText, unfinished) : promptText;
+        sendAgentMessage(promptText, Array.isArray(files) ? files : [], apiPrompt);
       }
     }
 
@@ -5615,8 +6181,16 @@
       const hasDraft = !!code.value.trim();
       if (busySendActionsEl) {
         busySendActionsEl.hidden = !(isRunningAgent && composerMode === "agent" && hasDraft);
-        if (queueSendBtn) queueSendBtn.textContent = activeLang === "en" ? "Queue" : "排队";
-        if (steerSendBtn) steerSendBtn.textContent = activeLang === "en" ? "⚡ Steer" : "⚡ 转向";
+        if (queueSendBtn) queueSendBtn.textContent = L("排队", "Queue");
+        if (steerSendBtn) steerSendBtn.textContent = L("⚡ 转向", "⚡ Steer");
+      }
+      if (isRunningAgent && composerMode === "agent") {
+        const hint = busySendMode === "steer"
+          ? L("继续输入… 按 Enter 立即转向（自动延续未完成任务）", "Send follow-up · Enter to steer now (completes unfinished tasks)")
+          : L("继续输入… 按 Enter 加入排队，或点右侧「立即转向」", "Send follow-up · Enter to queue for later");
+        code.setAttribute("placeholder", hint);
+      } else if (typeof updateComposerPlaceholder === "function") {
+        updateComposerPlaceholder();
       }
       if (isRunningAgent) {
         sendBtn.disabled = false;
@@ -5800,7 +6374,7 @@
           const body = (lang ? lines.slice(1) : lines).join("\n").replace(/\n$/, "");
           const safeLang = escapeHtml(lang || "code");
           htmlParts.push(
-            `<div class="code-wrap"><div class="code-head"><span>${safeLang}</span><div class="code-head-actions"><button type="button" class="code-run" data-lang="${safeLang}">▶ 运行</button><button type="button" class="code-copy">复制</button></div></div><pre><code>${escapeHtml(body)}</code></pre></div>`
+            `<div class="code-wrap"><div class="code-head"><span>${safeLang}</span><div class="code-head-actions"><button type="button" class="code-run" data-lang="${safeLang}">${L("▶ 运行", "▶ Run")}</button><button type="button" class="code-copy">${L("复制", "Copy")}</button></div></div><pre><code>${escapeHtml(body)}</code></pre></div>`
           );
           continue;
         }
@@ -5850,8 +6424,8 @@
           if (!codeEl) return;
           try {
             await navigator.clipboard.writeText(codeEl.textContent || "");
-            btn.textContent = "已复制";
-            setTimeout(() => { btn.textContent = "复制"; }, 1400);
+            btn.textContent = L("已复制", "Copied");
+            setTimeout(() => { btn.textContent = L("复制", "Copy"); }, 1400);
           } catch {}
         });
       });
@@ -5867,7 +6441,7 @@
           const lang = String(btn.dataset.lang || "").toLowerCase();
           const isShell = ["bash", "sh", "shell", "zsh"].includes(lang);
           btn.disabled = true;
-          btn.textContent = "运行中…";
+          btn.textContent = L("运行中…", "Running…");
           try {
             if (isShell) {
               await callAction({ type: "ssh", session: selected, command: src }, `ssh ${selected}`, selected);
@@ -5876,7 +6450,7 @@
             }
           } finally {
             btn.disabled = false;
-            btn.textContent = "▶ 运行";
+            btn.textContent = L("▶ 运行", "▶ Run");
           }
         });
       });
@@ -6351,7 +6925,7 @@
           metaRow.append(dot, pName, mName);
           if (entry.streaming) {
             const live = document.createElement("span");
-            live.textContent = "· 处理中…";
+            live.textContent = L("· 处理中…", "· Working…");
             metaRow.append(live);
           }
           block.append(metaRow);
@@ -6467,7 +7041,7 @@
               pCard.className = "perm-card";
               const pHead = document.createElement("div");
               pHead.className = "perm-head";
-              pHead.textContent = `请求确认：${perm.title}`;
+              pHead.textContent = L(`请求确认：${perm.title}`, `Approval requested: ${perm.title}`);
               pCard.append(pHead);
               if (perm.detail) {
                 const pDet = document.createElement("div");
@@ -6480,12 +7054,12 @@
               const allowBtn = document.createElement("button");
               allowBtn.type = "button";
               allowBtn.className = "perm-allow";
-              allowBtn.textContent = "允许执行";
+              allowBtn.textContent = L("允许执行", "Allow");
               allowBtn.addEventListener("click", () => respondPermission(entry, perm.requestId, true));
               const denyBtn = document.createElement("button");
               denyBtn.type = "button";
               denyBtn.className = "perm-deny";
-              denyBtn.textContent = "拒绝";
+              denyBtn.textContent = L("拒绝", "Deny");
               denyBtn.addEventListener("click", () => respondPermission(entry, perm.requestId, false));
               pActs.append(allowBtn, denyBtn);
               pCard.append(pActs);
@@ -6610,7 +7184,12 @@
         ? `${session.hardware}${session.status ? " · " + session.status : ""}${session.shape ? " · " + session.shape : ""}`
         : "Selected session";
       renderSessions();
-      renderTranscript(name);
+      if (!activeThreadId) {
+        const matchThread = chatThreads.find((tItem) => tItem.sessionName === name);
+        if (matchThread) activeThreadId = matchThread.id;
+      }
+      renderChatThreads();
+      renderTranscript(currentTranscriptKey());
       renderInspector();
       renderTunnels();
       renderComposerQueue();
@@ -6621,7 +7200,8 @@
     }
 
     function appendResult(label, result, key) {
-      record(desk, key, {
+      const targetKey = ensureActiveThread(label);
+      record(desk, targetKey, {
         kind: "cli",
         label,
         ok: !!result.ok,
@@ -6634,7 +7214,8 @@
         mergeStatusIntoSessions(result.state.sessions);
       }
       persistDeskHistory();
-      renderTranscript(key);
+      renderChatThreads();
+      renderTranscript(targetKey);
       renderInspector();
     }
 
@@ -6829,14 +7410,38 @@
       }
     }
 
-    async function sendAgentMessage(promptText, overrideFiles = null) {
+    async function sendAgentMessage(promptText, overrideFiles = null, overrideApiPrompt = null) {
       const text = String(promptText || "").trim();
       if (!text || activeAgentController) return;
+      let promptForApi = String(overrideApiPrompt || text);
 
-      const key = selected || "";
+      const key = ensureActiveThread(text);
+      const threadObj = chatThreads.find((tItem) => tItem.id === key);
       const provider = agentProviderSelect.value || "agy";
-      const providerLabel = agentProviderSelect.selectedOptions[0]?.textContent?.replace(/\s*\(未安装\)/, "") || provider;
+      const providerLabel = agentProviderSelect.selectedOptions[0]?.textContent?.replace(/\s*\((?:未安装|Not installed)\)/, "") || provider;
       const model = agentModelSelect.value || "";
+      const nextModelLabel = model ? `${providerLabel} · ${model}` : providerLabel;
+      const priorEntries = Array.isArray(desk.bySession[key]) ? desk.bySession[key] : [];
+      if (threadObj && priorEntries.length > 0) {
+        const prevProvider = threadObj.lastProvider || "";
+        const prevModel = threadObj.lastModel || "";
+        const switchedProvider = Boolean(prevProvider && prevProvider !== provider);
+        const switchedModel = Boolean(prevModel && model && prevModel !== model);
+        if (switchedProvider || switchedModel) {
+          const prevLabel = threadObj.lastModelLabel || prevModel || prevProvider;
+          promptForApi = buildContextHandoffPrompt(priorEntries, promptForApi, prevLabel, nextModelLabel, activeLang);
+          showToast(L(
+            `已自动交接对话上下文（${prevLabel} → ${nextModelLabel}）`,
+            `Handed off context (${prevLabel} → ${nextModelLabel})`,
+          ));
+        }
+      }
+      if (threadObj) {
+        threadObj.lastProvider = provider;
+        threadObj.lastModel = model;
+        threadObj.lastModelLabel = nextModelLabel;
+        threadObj.updatedAt = Date.now();
+      }
       const attached = Array.isArray(overrideFiles) ? overrideFiles.slice() : stagedFiles.slice();
       if (!Array.isArray(overrideFiles)) {
         stagedFiles = [];
@@ -6850,7 +7455,7 @@
         files: attached,
         provider,
         providerName: providerLabel,
-        model: model || "默认模型",
+        model: model || tr("composer.defaultModel"),
         ok: true,
         streaming: true,
         thought: "",
@@ -6868,6 +7473,7 @@
 
       const controller = new AbortController();
       activeAgentController = controller;
+      activeAgentTurnContext = { key, prompt: text };
       syncSendButton();
 
       let renderScheduled = false;
@@ -6899,7 +7505,8 @@
             model,
             thoughtLevel,
             approvalMode,
-            prompt: text,
+            prompt: promptForApi,
+            chatThreadId: key,
             colabSession: selected,
             sessionInfo: currentSessionObject(),
             files: attached,
@@ -7031,20 +7638,29 @@
         }
         const nextSteer = pendingSteerItem;
         const wasManualStop = stopReasonKind === "stop";
+        const wasSteerAbort = stopReasonKind === "steer";
         pendingSteerItem = null;
         stopReasonKind = null;
         if (activeAgentController === controller) activeAgentController = null;
+        if (activeAgentTurnContext && activeAgentTurnContext.prompt === text) activeAgentTurnContext = null;
+        if (!wasSteerAbort && !wasManualStop) {
+          pendingUnfinishedTasks.delete(key);
+        } else if (wasManualStop) {
+          const prevList = pendingUnfinishedTasks.get(key) || [];
+          prevList.push(text);
+          pendingUnfinishedTasks.set(key, prevList);
+        }
         lastActivityAt = Date.now();
         const elapsedMs = Date.now() - turnStartedAt;
         if (!nextSteer && (elapsedMs >= 8000 || !document.hasFocus())) {
           if (!entry.ok && entry.error) {
             sendDesktopNotification(
-              activeLang === "en" ? "Colab Desk — Task Error" : "Colab Desk — 任务异常",
+              L("Colab Desk — 任务异常", "Colab Desk — Task Error"),
               entry.error.slice(0, 120),
             );
           } else if (entry.text) {
             sendDesktopNotification(
-              activeLang === "en" ? "Colab Desk — Task Completed" : "Colab Desk — 任务已完成",
+              L("Colab Desk — 任务已完成", "Colab Desk — Task Completed"),
               `${selected || "Colab"} · ${entry.text.replace(/\s+/g, " ").slice(0, 100)}`,
             );
           }
@@ -7056,7 +7672,9 @@
         renderComposerQueue();
 
         if (nextSteer) {
-          setTimeout(() => sendAgentMessage(nextSteer.promptText, nextSteer.files), 0);
+          const unfinished = pendingUnfinishedTasks.get(nextSteer.key) || [];
+          const wrappedPrompt = buildSteerContinuationPrompt(nextSteer.promptText, unfinished);
+          setTimeout(() => sendAgentMessage(nextSteer.promptText, nextSteer.files, wrappedPrompt), 0);
         } else if (!wasManualStop) {
           const q = getSessionQueue(key);
           if (q.length > 0 && (selected || "") === key) {
@@ -8067,35 +8685,39 @@
       agentUsageStats = emptyAgentUsageStats();
       saveJsonStorage("colab-desk.agent-usage-stats", agentUsageStats);
       flushStoreToDisk();
-      showToast("已重置本应用本地用量统计");
+      showToast(tr("toast.usageReset"));
     });
 
     document.querySelector("#clear-all-history").addEventListener("click", () => {
       for (const k of Object.keys(desk.bySession)) delete desk.bySession[k];
+      chatThreads = [];
+      activeThreadId = null;
+      messageQueues.clear();
+      pendingUnfinishedTasks.clear();
       persistDeskHistory();
       flushStoreToDisk();
-      renderTranscript(selected || "");
+      renderChatThreads();
+      renderTranscript("");
       renderInspector();
+      renderComposerQueue();
       closeDialog(settingsModal);
-      showToast("已清空全部本地聊天记录");
+      showToast(tr("toast.historyCleared"));
     });
 
-    document.querySelector("#reset-chat").addEventListener("click", async () => {
-      if (activeAgentController) activeAgentController.abort();
-      const key = selected || "";
-      desk.bySession[key] = [];
-      persistDeskHistory();
-      renderTranscript(key);
-      renderInspector();
-      try {
-        await fetch("/api/agent/reset", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ colabSession: selected || "", provider: "" }),
-        });
-      } catch {}
-      showToast("已开启新对话");
+    newChatThreadBtn.addEventListener("click", () => createNewChatThread());
+
+    function closeToolsDropdown() {
+      if (toolsDropdownMenu) toolsDropdownMenu.hidden = true;
+      if (toolsDropdownBtn) toolsDropdownBtn.setAttribute("aria-expanded", "false");
+    }
+    toolsDropdownBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const opening = toolsDropdownMenu.hidden;
+      toolsDropdownMenu.hidden = !opening;
+      toolsDropdownBtn.setAttribute("aria-expanded", opening ? "true" : "false");
     });
+    toolsDropdownMenu.addEventListener("click", (e) => e.stopPropagation());
+    document.addEventListener("click", closeToolsDropdown);
 
     navBack.addEventListener("click", () => {
       if (navIndex <= 0) return;
@@ -8177,7 +8799,8 @@
         if (match && navigator.clipboard && navigator.clipboard.writeText) {
           try {
             await navigator.clipboard.writeText(match[0]);
-            showToast("已复制 Colab 浏览器链接到剪贴板");
+            renderComposerQueue();
+      showToast(tr("toast.urlCopied"));
           } catch {}
         }
       }
@@ -8855,6 +9478,7 @@
     }
 
     document.querySelector("#open-templates-btn").addEventListener("click", () => {
+      closeToolsDropdown();
       renderTemplatesModal();
       openDialog(templatesModal);
     });
@@ -9241,7 +9865,7 @@
       const key = envKeyInput.value.trim();
       const value = envValInput.value;
       if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
-        showToast("变量名仅支持字母、数字与下划线");
+        showToast(L("变量名仅支持字母、数字与下划线", "Variable names may only contain letters, digits, and underscores"));
         return;
       }
       const idx = envVars.findIndex((x) => x.key === key);
@@ -9251,19 +9875,19 @@
       envValInput.value = "";
       flushStoreToDisk();
       renderEnvVarsList();
-      showToast(`已保存环境变量 ${key}`);
+      showToast(L(`已保存环境变量 ${key}`, `Saved variable ${key}`));
     });
 
     async function runBootstrapOnSession(targetSession, silent = false) {
       const sess = targetSession || selected;
       if (!sess) {
-        if (!silent) showToast("请先连接一台 Colab 虚拟机");
+        if (!silent) showToast(L("请先连接一台 Colab 虚拟机", "Please connect to a Colab VM first"));
         return;
       }
-      if (!silent) showToast(`正在初始化 ${sess}…`);
+      if (!silent) showToast(L(`正在初始化 ${sess}…`, `Bootstrapping ${sess}…`));
       if (bootRunLog && !silent) {
         bootRunLog.hidden = false;
-        bootRunLog.textContent = `正在初始化 ${sess}（挂载 / 注入环境变量 / 安装加速工具）…`;
+        bootRunLog.textContent = L(`正在初始化 ${sess}（挂载 / 注入环境变量 / 安装加速工具）…`, `Bootstrapping ${sess} (mount / env injection / tools)…`);
       }
       try {
         const res = await fetch("/api/bootstrap", {
@@ -9272,9 +9896,11 @@
           body: JSON.stringify({ session: sess, envVars, config: bootstrapConfig }),
         }).then((r) => r.json());
         if (bootRunLog && !silent) {
-          bootRunLog.textContent = res.ok ? `初始化完成：\n${res.log || "ok"}` : `初始化失败：${res.error}\n${res.log || ""}`;
+          bootRunLog.textContent = res.ok
+            ? L(`初始化完成：\n${res.log || "ok"}`, `Bootstrap completed:\n${res.log || "ok"}`)
+            : L(`初始化失败：${res.error}\n${res.log || ""}`, `Bootstrap failed: ${res.error}\n${res.log || ""}`);
         }
-        showToast(res.ok ? `VM ${sess} 初始化完成` : `初始化失败：${res.error}`);
+        showToast(res.ok ? L(`VM ${sess} 初始化完成`, `VM ${sess} bootstrapped`) : L(`初始化失败：${res.error}`, `Bootstrap failed: ${res.error}`));
       } catch (err) {
         if (bootRunLog && !silent) bootRunLog.textContent = err.message;
       }
@@ -9333,23 +9959,23 @@
         {
           id: "builtin-hf-dl",
           builtin: true,
-          name: "HF 高速下载模型 (hf_transfer)",
+          name: L("HF 高速下载模型 (hf_transfer)", "HF Fast Model Download (hf_transfer)"),
           runtime: "bash",
           code: "export HF_HUB_ENABLE_HF_TRANSFER=1\npip install -q huggingface_hub hf_transfer\nhuggingface-cli download {{repo_id}} --local-dir {{local_dir}}",
         },
         {
           id: "builtin-comfyui",
           builtin: true,
-          name: "启动 ComfyUI (:8188)",
+          name: L("启动 ComfyUI (:8188)", "Launch ComfyUI (:8188)"),
           runtime: "bash",
           code: "if [ ! -d /content/ComfyUI ]; then git clone --depth 1 https://github.com/comfyanonymous/ComfyUI /content/ComfyUI && pip install -q -r /content/ComfyUI/requirements.txt; fi\nnohup python3 /content/ComfyUI/main.py --listen 127.0.0.1 --port 8188 > /content/comfyui.log 2>&1 &\nsleep 2 && tail -n 15 /content/comfyui.log",
         },
         {
           id: "builtin-diffusers",
           builtin: true,
-          name: "直连 Python 生成模板（参数化）",
+          name: L("直连 Python 生成模板（参数化）", "Direct Python Inference Template"),
           runtime: "python",
-          code: "import os\nprompt = '''{{prompt}}'''\nsteps = int('{{steps}}' or '25')\nout = '{{output_path}}' or '/content/output.png'\nprint('Prompt:', prompt, 'Steps:', steps, 'Target:', out)\n# 在此处调用你的本地推理管道（如 MiniMax / Flux / Wan / Diffusers）\n# 保存到 /content/*.png 或 /content/*.mp4 并 print(out)，下方会自动预览",
+          code: "import os\nprompt = '''{{prompt}}'''\nsteps = int('{{steps}}' or '25')\nout = '{{output_path}}' or '/content/output.png'\nprint('Prompt:', prompt, 'Steps:', steps, 'Target:', out)\n# Run your local inference pipeline here (e.g. Diffusers / Flux / Wan)\n# Save to /content/*.png or /content/*.mp4 and print(out) for inline preview",
         },
       ];
     }
@@ -9419,13 +10045,16 @@
       openDialog(runnerModal);
     }
 
-    document.querySelector("#open-runner-btn").addEventListener("click", openRunnerModal);
+    document.querySelector("#open-runner-btn").addEventListener("click", () => {
+      closeToolsDropdown();
+      openRunnerModal();
+    });
     document.querySelector("#close-runner-modal").addEventListener("click", () => closeDialog(runnerModal));
     runnerModal.addEventListener("click", (e) => { if (e.target === runnerModal) closeDialog(runnerModal); });
     runnerCodeInput.addEventListener("input", renderRunnerParams);
     document.querySelector("#runner-new-btn").addEventListener("click", () => selectRunnerScript(null));
     document.querySelector("#runner-save-btn").addEventListener("click", () => {
-      const name = runnerNameInput.value.trim() || "未命名脚本";
+      const name = runnerNameInput.value.trim() || L("未命名脚本", "Untitled Script");
       const runtime = runnerRuntimeSelect.value === "bash" ? "bash" : "python";
       const codeVal = runnerCodeInput.value;
       const isCustomExisting = directScripts.some((x) => x.id === activeRunnerScriptId);
@@ -9440,7 +10069,7 @@
       flushStoreToDisk();
       renderRunnerSidebar();
       runnerDeleteBtn.hidden = false;
-      runnerStatusEl.textContent = "已保存到本地";
+      runnerStatusEl.textContent = L("已保存到本地", "Saved locally");
     });
     runnerDeleteBtn.addEventListener("click", () => {
       directScripts = directScripts.filter((x) => x.id !== activeRunnerScriptId);
@@ -9449,14 +10078,14 @@
     });
     document.querySelector("#runner-exec-btn").addEventListener("click", async () => {
       if (!selected) {
-        runnerStatusEl.textContent = "请先连接一台 Colab 虚拟机";
+        runnerStatusEl.textContent = L("请先连接一台 Colab 虚拟机", "Connect to a Colab VM first");
         return;
       }
       const btn = document.querySelector("#runner-exec-btn");
       btn.disabled = true;
-      runnerStatusEl.textContent = `正在直连 ${selected} 执行（不经过 Agent）…`;
+      runnerStatusEl.textContent = L(`正在直连 ${selected} 执行（不经过 Agent）…`, `Running directly on ${selected} (no Agent)…`);
       runnerOutputEl.hidden = false;
-      runnerOutputEl.textContent = "Running…";
+      runnerOutputEl.textContent = L("执行中…", "Running…");
       runnerMediaEl.replaceChildren();
       try {
         const res = await fetch("/api/runner/exec", {
@@ -9470,8 +10099,8 @@
             envVars,
           }),
         }).then((r) => r.json());
-        runnerStatusEl.textContent = res.ok ? "执行完成" : `执行失败：${res.error || ""}`;
-        runnerOutputEl.textContent = [res.stdout, res.stderr, res.error].filter(Boolean).join("\n").trim() || "(无输出)";
+        runnerStatusEl.textContent = res.ok ? L("执行完成", "Completed") : L(`执行失败：${res.error || ""}`, `Failed: ${res.error || ""}`);
+        runnerOutputEl.textContent = [res.stdout, res.stderr, res.error].filter(Boolean).join("\n").trim() || L("(无输出)", "(no output)");
         if (Array.isArray(res.media)) {
           for (const m of res.media) {
             if (m.kind === "video") {
@@ -9509,11 +10138,13 @@
     document.querySelector("#close-sync-modal").addEventListener("click", () => closeDialog(syncModal));
     syncModal.addEventListener("click", (e) => { if (e.target === syncModal) closeDialog(syncModal); });
     async function triggerFolderSync(direction) {
-      if (!selected) { showToast("请先连接 Colab 虚拟机"); return; }
+      if (!selected) { showToast(L("请先连接 Colab 虚拟机", "Connect to a Colab VM first")); return; }
       syncConfig = { localDir: syncLocalInput.value.trim(), remoteDir: syncRemoteInput.value.trim() || "/content/project" };
       flushStoreToDisk();
       syncLogEl.hidden = false;
-      syncLogEl.textContent = direction === "push" ? "正在打包并推送到云端…" : "正在从云端打包拉回本地…";
+      syncLogEl.textContent = direction === "push"
+        ? L("正在打包并推送到云端…", "Archiving and pushing to Colab…")
+        : L("正在从云端打包拉回本地…", "Archiving and pulling from Colab…");
       try {
         const res = await fetch(`/api/sync/${direction}`, {
           method: "POST",
@@ -9521,8 +10152,11 @@
           body: JSON.stringify({ session: selected, ...syncConfig }),
         }).then((r) => r.json());
         syncLogEl.textContent = res.ok
-          ? `${direction === "push" ? "推送" : "拉回"}成功（${formatFileSize(res.bytes)}）：${res.localDir} ↔ ${res.remoteDir}`
-          : `同步失败：${res.error}`;
+          ? L(
+            `${direction === "push" ? "推送" : "拉回"}成功（${formatFileSize(res.bytes)}）：${res.localDir} ↔ ${res.remoteDir}`,
+            `${direction === "push" ? "Push" : "Pull"} complete (${formatFileSize(res.bytes)}): ${res.localDir} ↔ ${res.remoteDir}`,
+          )
+          : L(`同步失败：${res.error}`, `Sync failed: ${res.error}`);
       } catch (err) {
         syncLogEl.textContent = err.message;
       }
@@ -9535,29 +10169,29 @@
     let paletteIdx = 0;
     function buildPaletteCommands() {
       const cmds = [
-        { label: "新建 Colab 会话 / New Session", kbd: "⌘N", run: openNewSessionModal },
-        { label: "参数化直连脚本运行器 / Direct Runner (No Agent)", kbd: "", run: openRunnerModal },
-        { label: "云端文件与媒体画廊 / Cloud Files & Gallery", kbd: "", run: () => selected && openFilesModal("/content") },
-        { label: "本地 ↔ 云端目录同步 / Folder Sync", kbd: "", run: openSyncModal },
-        { label: "常用任务模板 / Prompt Templates", kbd: "", run: () => { renderTemplatesModal(); openDialog(templatesModal); } },
-        { label: "切换视图：对话 / View: Chat", kbd: "", run: () => setWorkspaceView("chat") },
-        { label: "切换视图：对话 + 终端分屏 / View: Split", kbd: "", run: () => setWorkspaceView("split") },
-        { label: "切换视图：全屏终端 / View: Terminal", kbd: "⌘J", run: () => setWorkspaceView("terminal") },
-        { label: "对当前 VM 执行初始化 / Bootstrap Current VM", kbd: "", run: () => runBootstrapOnSession(selected, false) },
-        { label: "导出 Jupyter Notebook (.ipynb)", kbd: "", run: () => exportCurrentSession("ipynb") },
-        { label: "导出 Markdown (.md)", kbd: "", run: () => exportCurrentSession("md") },
-        { label: "收起/展开左侧栏 / Toggle Sidebar", kbd: "⌘B", run: toggleSidebar },
-        { label: "收起/展开右侧面板 / Toggle Inspector", kbd: "⌘.", run: toggleRail },
-        { label: "外观：深色主题 / Theme: Dark", kbd: "", run: () => applyTheme("dark", true) },
-        { label: "外观：浅色主题 / Theme: Light", kbd: "", run: () => applyTheme("light", true) },
-        { label: "外观：跟随系统 / Theme: System", kbd: "", run: () => applyTheme("system", true) },
-        { label: "语言：简体中文 / Language: Chinese", kbd: "", run: () => applyLanguage("zh-CN", true) },
-        { label: "语言：English", kbd: "", run: () => applyLanguage("en", true) },
-        { label: "打开设置 / Settings", kbd: "", run: () => openSettings("general") },
-        { label: "打开环境变量保险箱 / Env Vault & Bootstrap", kbd: "", run: () => openSettings("colab") },
+        { label: L("新建 Colab 会话", "New Colab Session"), kbd: "⌘N", run: openNewSessionModal },
+        { label: L("参数化直连脚本运行器（不经过 Agent）", "Direct Script Runner (No Agent)"), kbd: "", run: openRunnerModal },
+        { label: L("云端文件与媒体画廊", "Cloud Files & Media Gallery"), kbd: "", run: () => selected && openFilesModal("/content") },
+        { label: L("本地 ↔ 云端目录同步", "Local ↔ Cloud Folder Sync"), kbd: "", run: openSyncModal },
+        { label: L("常用任务模板", "Prompt Templates"), kbd: "", run: () => { renderTemplatesModal(); openDialog(templatesModal); } },
+        { label: L("切换视图：对话", "View: Chat"), kbd: "", run: () => setWorkspaceView("chat") },
+        { label: L("切换视图：对话 + 终端分屏", "View: Split (Chat + Terminal)"), kbd: "", run: () => setWorkspaceView("split") },
+        { label: L("切换视图：全屏终端", "View: Terminal"), kbd: "⌘J", run: () => setWorkspaceView("terminal") },
+        { label: L("对当前 VM 执行初始化", "Bootstrap Current VM"), kbd: "", run: () => runBootstrapOnSession(selected, false) },
+        { label: L("导出 Jupyter Notebook (.ipynb)", "Export Jupyter Notebook (.ipynb)"), kbd: "", run: () => exportCurrentSession("ipynb") },
+        { label: L("导出 Markdown (.md)", "Export Markdown (.md)"), kbd: "", run: () => exportCurrentSession("md") },
+        { label: L("收起 / 展开左侧栏", "Toggle Sidebar"), kbd: "⌘B", run: toggleSidebar },
+        { label: L("收起 / 展开右侧面板", "Toggle Inspector"), kbd: "⌘.", run: toggleRail },
+        { label: L("外观：深色主题", "Theme: Dark"), kbd: "", run: () => applyTheme("dark", true) },
+        { label: L("外观：浅色主题", "Theme: Light"), kbd: "", run: () => applyTheme("light", true) },
+        { label: L("外观：跟随系统", "Theme: System"), kbd: "", run: () => applyTheme("system", true) },
+        { label: L("语言：简体中文", "Language: 简体中文"), kbd: "", run: () => applyLanguage("zh-CN", true) },
+        { label: L("语言：English", "Language: English"), kbd: "", run: () => applyLanguage("en", true) },
+        { label: L("打开设置", "Open Settings"), kbd: "", run: () => openSettings("general") },
+        { label: L("打开环境变量保险箱与初始化", "Open Env Vault & Bootstrap"), kbd: "", run: () => openSettings("colab") },
       ];
       for (const s of sessions) {
-        cmds.unshift({ label: `切换会话：${s.name} (${s.hardware})`, kbd: "VM", run: () => selectSession(s.name) });
+        cmds.unshift({ label: L(`切换会话：${s.name} (${s.hardware})`, `Switch Session: ${s.name} (${s.hardware})`), kbd: "VM", run: () => selectSession(s.name) });
       }
       return cmds;
     }
@@ -9611,16 +10245,19 @@
     document.querySelector("#check-updates-btn").addEventListener("click", async () => {
       const btn = document.querySelector("#check-updates-btn");
       btn.disabled = true;
-      updateStatusDesc.textContent = "正在连接 GitHub 检查最新版本…";
+      updateStatusDesc.textContent = L("正在连接 GitHub 检查最新版本…", "Checking GitHub Releases…");
       try {
         const res = await fetch("/api/updates/check").then((r) => r.json());
         if (!res.ok) {
-          updateStatusDesc.textContent = `检查失败：${res.error}`;
+          updateStatusDesc.textContent = L(`检查失败：${res.error}`, `Check failed: ${res.error}`);
         } else if (res.hasUpdate) {
-          updateStatusDesc.innerHTML = `发现新版本 <strong>v${escapeHtml(res.latestVersion)}</strong>（当前 v${escapeHtml(res.currentVersion)}）`;
+          updateStatusDesc.innerHTML = L(
+            `发现新版本 <strong>v${escapeHtml(res.latestVersion)}</strong>（当前 v${escapeHtml(res.currentVersion)}）`,
+            `New version available: <strong>v${escapeHtml(res.latestVersion)}</strong> (current v${escapeHtml(res.currentVersion)})`,
+          );
           openExternalUrl(res.releaseUrl);
         } else {
-          updateStatusDesc.textContent = `已是最新版本 v${res.currentVersion}`;
+          updateStatusDesc.textContent = L(`已是最新版本 v${res.currentVersion}`, `You are up to date (v${res.currentVersion})`);
         }
       } catch (err) {
         updateStatusDesc.textContent = err.message;
@@ -9687,18 +10324,21 @@
     document.querySelector("#refresh-usage").addEventListener("click", async () => {
       await refreshUsageSilently();
       if (selected) await refreshStatusSilently(selected);
-      showToast("已更新用量与会话状态");
+      showToast(tr("toast.usageUpdated"));
     });
     infoEndpoint.addEventListener("click", async () => {
       const full = infoEndpoint.dataset.full;
       if (!full) return;
       try {
         await navigator.clipboard.writeText(full);
-        showToast("已复制节点 Endpoint");
+        showToast(tr("toast.endpointCopied"));
       } catch {}
     });
 
-    filter.addEventListener("input", renderSessions);
+    filter.addEventListener("input", () => {
+      renderSessions();
+      renderChatThreads();
+    });
     command.addEventListener("change", syncComposer);
     code.addEventListener("input", autoGrowCode);
 
@@ -9902,6 +10542,9 @@
     renderInspector();
     renderTunnels();
     hydrateFromLocalDisk().then(() => {
+      migrateLegacyThreads();
+      renderChatThreads();
+      renderTranscript(currentTranscriptKey());
       initProviders();
       refreshSessions(null).then(() => {
         refreshGpuTelemetry(true);
