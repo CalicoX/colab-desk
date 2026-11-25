@@ -6,12 +6,20 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { AgentManager, IMAGE_DIR, UPLOAD_DIR } from "./agent.mjs";
 import { checkColabEnvironment, installColabCli, loginColabCli } from "./colab-env.mjs";
 import {
+  bootstrapSession,
+  checkForUpdates,
+  copyFilesToDrive,
   deleteRemoteFile,
   downloadRemoteFile,
+  ensureRemoteMedia,
   exportSession,
   fetchGpuTelemetry,
+  killRemoteProcess,
   listRemoteFiles,
   previewRemoteFile,
+  runDirectScript,
+  syncPullFolder,
+  syncPushFolder,
   TunnelManager,
   uploadRemoteFile,
 } from "./cloud-ops.mjs";
@@ -266,7 +274,7 @@ async function handle(req, res) {
     return;
   }
 
-  // GPU Telemetry
+  // GPU Telemetry & Process Kill
   if (req.method === "GET" && url.pathname === "/api/gpu") {
     const session = url.searchParams.get("session") || "";
     const controller = new AbortController();
@@ -275,6 +283,132 @@ async function handle(req, res) {
     const result = await fetchGpuTelemetry(session, controller.signal);
     res.off("close", onClose);
     if (res.writableEnded || res.destroyed) return;
+    sendJson(res, 200, result);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/gpu/kill") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const result = await killRemoteProcess(body.session || "", body.pid);
+    sendJson(res, 200, result);
+    return;
+  }
+
+  // Media Streaming (supports HTTP Range for <video controls>)
+  if (req.method === "GET" && url.pathname === "/api/files/media") {
+    const session = url.searchParams.get("session") || "";
+    const remotePath = url.searchParams.get("path") || "";
+    const result = await ensureRemoteMedia(session, remotePath);
+    if (!result.ok) {
+      sendJson(res, 404, result);
+      return;
+    }
+    const total = result.size;
+    const range = req.headers.range;
+    if (range) {
+      const m = range.match(/bytes=(\d*)-(\d*)/);
+      const start = m && m[1] ? Number(m[1]) : 0;
+      const end = m && m[2] ? Math.min(total - 1, Number(m[2])) : total - 1;
+      if (start >= total || start > end) {
+        res.writeHead(416, { "content-range": `bytes */${total}` });
+        res.end();
+        return;
+      }
+      res.writeHead(206, {
+        "content-type": result.mime,
+        "content-range": `bytes ${start}-${end}/${total}`,
+        "accept-ranges": "bytes",
+        "content-length": end - start + 1,
+        "cache-control": "no-store",
+      });
+      fs.createReadStream(result.localPath, { start, end }).pipe(res);
+    } else {
+      res.writeHead(200, {
+        "content-type": result.mime,
+        "accept-ranges": "bytes",
+        "content-length": total,
+        "cache-control": "no-store",
+      });
+      fs.createReadStream(result.localPath).pipe(res);
+    }
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/files/copy-to-drive") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const result = await copyFilesToDrive(body.session || "", body.paths || [], body.targetDir);
+    sendJson(res, 200, result);
+    return;
+  }
+
+  // Direct Parameterized Script Runner (zero Agent)
+  if (req.method === "POST" && url.pathname === "/api/runner/exec") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const controller = new AbortController();
+    const onClose = () => { if (!res.writableEnded) controller.abort(); };
+    res.on("close", onClose);
+    const savedEnv = loadStore().settings?.envVars || [];
+    const result = await runDirectScript({
+      session: body.session || "",
+      runtime: body.runtime || "python",
+      script: body.script || "",
+      params: body.params || {},
+      envVars: Array.isArray(body.envVars) ? body.envVars : savedEnv,
+      signal: controller.signal,
+    });
+    res.off("close", onClose);
+    if (res.writableEnded || res.destroyed) return;
+    sendJson(res, 200, result);
+    return;
+  }
+
+  // Auto-Bootstrap & Env Vault Injection
+  if (req.method === "POST" && url.pathname === "/api/bootstrap") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const storeSettings = loadStore().settings || {};
+    const controller = new AbortController();
+    const onClose = () => { if (!res.writableEnded) controller.abort(); };
+    res.on("close", onClose);
+    const result = await bootstrapSession({
+      session: body.session || "",
+      envVars: Array.isArray(body.envVars) ? body.envVars : (storeSettings.envVars || []),
+      config: body.config || storeSettings.bootstrapConfig || {},
+      signal: controller.signal,
+    });
+    res.off("close", onClose);
+    if (res.writableEnded || res.destroyed) return;
+    sendJson(res, 200, result);
+    return;
+  }
+
+  // Local <-> Colab Folder Sync
+  if (req.method === "POST" && url.pathname === "/api/sync/push") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const result = await syncPushFolder(body);
+    sendJson(res, 200, result);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/sync/pull") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const result = await syncPullFolder(body);
+    sendJson(res, 200, result);
+    return;
+  }
+
+  // In-app Update Check
+  if (req.method === "GET" && url.pathname === "/api/updates/check") {
+    let ver = "0.1.0";
+    try {
+      ver = JSON.parse(fs.readFileSync(path.join(rootDir, "../package.json"), "utf8")).version || ver;
+    } catch {}
+    const result = await checkForUpdates(ver);
     sendJson(res, 200, result);
     return;
   }

@@ -14,7 +14,15 @@ import {
   parseGrokEvent,
 } from "../src/agent.mjs";
 import { parseWhoami } from "../src/colab-env.mjs";
-import { buildMarkdownFromHistory, buildNotebookFromHistory, parseNvidiaSmi } from "../src/cloud-ops.mjs";
+import {
+  buildMarkdownFromHistory,
+  buildNotebookFromHistory,
+  extractTemplateParams,
+  parseGpuProcesses,
+  parseListeningPorts,
+  parseNvidiaSmi,
+  renderParameterizedScript,
+} from "../src/cloud-ops.mjs";
 import { resolveLanguage, t } from "../src/i18n.mjs";
 import { applyNewResult, composeAction, createDeskState, record, showSession } from "../src/desk.mjs";
 import { parseCommandOutput } from "../src/parse.mjs";
@@ -557,8 +565,17 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="tunnels-section"/);
     assert.match(page, /id="guard-alert-banner"/);
     assert.match(page, /id="view-switch"[^>]*hidden/);
+    assert.match(page, /id="view-split-btn"/);
     assert.match(page, /id="view-term-btn"/);
     assert.match(page, /id="terminal-view"/);
+    assert.match(page, /id="term-send-agent"/);
+    assert.match(page, /id="runner-modal"/);
+    assert.match(page, /id="sync-modal"/);
+    assert.match(page, /id="cmd-palette-modal"/);
+    assert.match(page, /id="env-vars-list"/);
+    assert.match(page, /id="boot-hf-transfer"/);
+    assert.match(page, /id="files-mode-gallery"/);
+    assert.match(page, /id="check-updates-btn"/);
     assert.doesNotMatch(page, /id="term-new-local"/);
     assert.match(page, /\/vendor\/xterm\/xterm\.js/);
     const xtermAsset = await fetch(`http://127.0.0.1:${port}/vendor/xterm/xterm.js`);
@@ -829,6 +846,18 @@ test("agent parsers handle ACP updates, model catalogs, and Grok NDJSON events",
   assert.ok(nb.cells.length >= 3);
   const md = buildMarkdownFromHistory("gpu-1", [{ kind: "agent", prompt: "test", text: "ok", tools: [] }]);
   assert.match(md, /# Colab Desk Export — gpu-1/);
+
+  const procs = parseGpuProcesses("1234, /usr/bin/python3, 8192\n5678, vllm, 12000\n");
+  assert.equal(procs.length, 2);
+  assert.equal(procs[0].pid, 1234);
+  assert.equal(procs[0].name, "python3");
+  assert.equal(procs[0].memMb, 8192);
+
+  const ports = parseListeningPorts("22\n7860\n8188\n6000\n11434\n45000\n");
+  assert.deepEqual(ports, [7860, 8188, 11434]);
+
+  assert.deepEqual(extractTemplateParams("echo {{prompt}} {{seed}} {{prompt}}"), ["prompt", "seed"]);
+  assert.equal(renderParameterizedScript("run {{prompt}} --seed {{seed}}", { prompt: "sunset", seed: 42 }), "run sunset --seed 42");
 });
 
 test("mac app does not start a login shell", () => {

@@ -7,6 +7,22 @@ import { runAction } from "./run.mjs";
 
 const EXPORT_DIR = path.join(os.tmpdir(), "colab-desk-exports");
 const DOWNLOAD_DIR = path.join(os.tmpdir(), "colab-desk-downloads");
+const MEDIA_DIR = path.join(os.tmpdir(), "colab-desk-media");
+const SYNC_DIR = path.join(os.tmpdir(), "colab-desk-sync");
+
+export const MEDIA_MIME_MAP = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".mov": "video/quicktime",
+  ".m4v": "video/x-m4v",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+};
 
 export function parseNvidiaSmi(text) {
   const gpus = [];
@@ -31,15 +47,70 @@ export function parseNvidiaSmi(text) {
   return gpus;
 }
 
+export function parseGpuProcesses(text) {
+  const procs = [];
+  for (const rawLine of String(text || "").split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || /not found|failed|error|no running/i.test(line)) continue;
+    const parts = line.split(",").map((s) => s.trim());
+    if (parts.length < 3) continue;
+    const pid = Number(parts[0]);
+    const memMb = Number(parts[2]);
+    if (!Number.isInteger(pid) || pid <= 0) continue;
+    procs.push({
+      pid,
+      name: path.basename(parts[1] || "python"),
+      memMb: Number.isFinite(memMb) ? memMb : 0,
+    });
+  }
+  return procs;
+}
+
+export function parseListeningPorts(text) {
+  const ports = new Set();
+  const ignore = new Set([22, 6000, 9000, 9001, 9002]);
+  for (const rawLine of String(text || "").split(/\r?\n/)) {
+    const m = rawLine.trim().match(/^(\d+)$/);
+    if (!m) continue;
+    const port = Number(m[1]);
+    if (port >= 1024 && port <= 65535 && !ignore.has(port) && port < 30000) {
+      ports.add(port);
+    }
+  }
+  return Array.from(ports).sort((a, b) => a - b);
+}
+
 export async function fetchGpuTelemetry(session, signal) {
-  if (!session) return { ok: true, available: false, gpus: [] };
-  const cmd = "nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu --format=csv,noheader,nounits 2>/dev/null || true";
+  if (!session) return { ok: true, available: false, gpus: [], processes: [], listeningPorts: [] };
+  const cmd = [
+    "echo '===GPU==='",
+    "nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu --format=csv,noheader,nounits 2>/dev/null || true",
+    "echo '===PROCS==='",
+    "nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv,noheader,nounits 2>/dev/null || true",
+    "echo '===PORTS==='",
+    "python3 -c \"import glob; ps=set(); [ps.add(int(l.split()[1].split(':')[1],16)) for fn in ('/proc/net/tcp','/proc/net/tcp6') for l in (open(fn).read().splitlines()[1:] if glob.glob(fn) else []) if len(l.split())>3 and l.split()[3]=='0A']; print('\\n'.join(str(p) for p in sorted(ps)))\" 2>/dev/null || true",
+  ].join("; ");
   const res = await runAction({ type: "ssh", session, command: cmd }, { signal });
   if (!res.ok) {
-    return { ok: false, available: false, gpus: [], error: res.error || "telemetry failed" };
+    return { ok: false, available: false, gpus: [], processes: [], listeningPorts: [], error: res.error || "telemetry failed" };
   }
-  const gpus = parseNvidiaSmi(res.stdout);
-  return { ok: true, available: gpus.length > 0, gpus };
+  const out = String(res.stdout || "");
+  const gpuSec = out.split("===GPU===")[1]?.split("===PROCS===")[0] || out;
+  const procSec = out.split("===PROCS===")[1]?.split("===PORTS===")[0] || "";
+  const portSec = out.split("===PORTS===")[1] || "";
+  const gpus = parseNvidiaSmi(gpuSec);
+  const processes = parseGpuProcesses(procSec);
+  const listeningPorts = parseListeningPorts(portSec);
+  return { ok: true, available: gpus.length > 0, gpus, processes, listeningPorts };
+}
+
+export async function killRemoteProcess(session, pid, signal) {
+  const numPid = Number(pid);
+  if (!session || !Number.isInteger(numPid) || numPid <= 1) {
+    return { ok: false, error: "invalid session or pid" };
+  }
+  const res = await runAction({ type: "ssh", session, command: `kill -9 ${numPid} 2>&1 || true` }, { signal });
+  return { ok: res.ok, error: res.ok ? null : (res.error || "kill failed") };
 }
 
 export async function listRemoteFiles(session, remotePath = "/content", signal) {
@@ -100,6 +171,15 @@ export async function previewRemoteFile(session, remotePath, signal) {
       url: `/api/image?path=${encodeURIComponent(localPath)}`,
     };
   }
+  if ([".mp4", ".webm", ".mov", ".m4v"].includes(ext)) {
+    return {
+      ok: true,
+      kind: "video",
+      name,
+      path: remotePath,
+      url: `/api/files/media?session=${encodeURIComponent(session)}&path=${encodeURIComponent(remotePath)}`,
+    };
+  }
 
   const b64 = Buffer.from(remotePath, "utf8").toString("base64");
   const py = [
@@ -157,6 +237,304 @@ export async function deleteRemoteFile(session, remotePath, signal) {
   if (!session || !remotePath) return { ok: false, error: "session and path required" };
   const res = await runAction({ type: "rm", session, path: remotePath }, { signal });
   return { ok: res.ok, error: res.ok ? null : (res.error || "delete failed") };
+}
+
+export async function ensureRemoteMedia(session, remotePath, signal) {
+  if (!session || !remotePath) return { ok: false, error: "session and path required" };
+  fs.mkdirSync(MEDIA_DIR, { recursive: true });
+  const ext = path.extname(remotePath).toLowerCase();
+  const mime = MEDIA_MIME_MAP[ext] || "application/octet-stream";
+  const name = path.basename(remotePath) || "media.bin";
+  const safeKey = Buffer.from(`${session}:${remotePath}`).toString("base64url").slice(0, 64);
+  const localPath = path.join(MEDIA_DIR, `${safeKey}${ext}`);
+  // Reuse recent cached download within 45s for smooth video range scrubbing
+  try {
+    const st = fs.statSync(localPath);
+    if (st.size > 0 && Date.now() - st.mtimeMs < 45_000) {
+      return { ok: true, localPath, mime, size: st.size, name };
+    }
+  } catch {}
+  const res = await runAction({ type: "download", session, remote: remotePath, local: localPath }, { signal });
+  if (!res.ok || !fs.existsSync(localPath)) {
+    return { ok: false, error: res.error || "failed to fetch media" };
+  }
+  const st = fs.statSync(localPath);
+  return { ok: true, localPath, mime, size: st.size, name };
+}
+
+export async function copyFilesToDrive(session, paths = [], targetDir = "/content/drive/MyDrive/ColabDesk_Exports", signal) {
+  if (!session || !Array.isArray(paths) || paths.length === 0) {
+    return { ok: false, error: "session and paths required" };
+  }
+  const payloadB64 = Buffer.from(JSON.stringify({ paths, targetDir }), "utf8").toString("base64");
+  const py = [
+    "import os, shutil, json, base64",
+    `cfg = json.loads(base64.b64decode('${payloadB64}').decode('utf-8'))`,
+    "if not os.path.isdir('/content/drive/MyDrive'): raise RuntimeError('Google Drive 未挂载，请先挂载 Drive')",
+    "os.makedirs(cfg['targetDir'], exist_ok=True)",
+    "copied = []",
+    "for src in cfg['paths']:",
+    "  dst = os.path.join(cfg['targetDir'], os.path.basename(src.rstrip('/')))",
+    "  if os.path.isdir(src): shutil.copytree(src, dst, dirs_exist_ok=True)",
+    "  else: shutil.copy2(src, dst)",
+    "  copied.append(dst)",
+    "print(json.dumps({'ok': True, 'copied': copied}))",
+  ].join("\n");
+  const pyB64 = Buffer.from(py, "utf8").toString("base64");
+  const res = await runAction({
+    type: "ssh",
+    session,
+    command: `python3 -c "import base64; exec(base64.b64decode('${pyB64}').decode())"`,
+  }, { signal });
+  if (!res.ok) return { ok: false, error: res.error || res.stderr || "copy to Drive failed" };
+  return { ok: true, output: res.stdout };
+}
+
+export function extractTemplateParams(template) {
+  const names = [];
+  const seen = new Set();
+  const re = /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g;
+  let m;
+  while ((m = re.exec(String(template || ""))) !== null) {
+    if (!seen.has(m[1])) {
+      seen.add(m[1]);
+      names.push(m[1]);
+    }
+  }
+  return names;
+}
+
+export function renderParameterizedScript(template, values = {}) {
+  return String(template || "").replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, key) => {
+    const val = values[key];
+    return val == null ? "" : String(val);
+  });
+}
+
+export async function runDirectScript({ session, runtime = "python", script = "", params = {}, envVars = [], signal }) {
+  if (!session) return { ok: false, error: "请先选择一个活跃的 Colab 会话" };
+  const rendered = renderParameterizedScript(script, params);
+  if (!rendered.trim()) return { ok: false, error: "脚本内容为空" };
+
+  const envMap = {};
+  for (const item of Array.isArray(envVars) ? envVars : []) {
+    if (item && /^[A-Za-z_][A-Za-z0-9_]*$/.test(String(item.key || "").trim())) {
+      envMap[String(item.key).trim()] = String(item.value ?? "");
+    }
+  }
+  for (const [k, v] of Object.entries(params || {})) {
+    const safeKey = `COLAB_PARAM_${String(k).replace(/[^A-Za-z0-9_]/g, "_").toUpperCase()}`;
+    envMap[safeKey] = String(v ?? "");
+  }
+
+  let res;
+  if (runtime === "bash") {
+    const b64 = Buffer.from(rendered, "utf8").toString("base64");
+    const envPrefix = Object.entries(envMap)
+      .map(([k, v]) => `export ${k}=${JSON.stringify(v)}`)
+      .join("; ");
+    const cmd = `${envPrefix ? `${envPrefix}; ` : ""}echo '${b64}' | base64 -d | bash`;
+    res = await runAction({ type: "ssh", session, command: cmd }, { signal });
+  } else {
+    const envLines = Object.entries(envMap)
+      .map(([k, v]) => `os.environ[${JSON.stringify(k)}] = ${JSON.stringify(v)}`)
+      .join("\n");
+    const code = envLines ? `import os\n${envLines}\n\n${rendered}` : rendered;
+    res = await runAction({ type: "exec", session, code }, { signal });
+  }
+
+  // Detect any media paths mentioned in stdout for instant inline preview
+  const mediaMatches = [];
+  const seen = new Set();
+  const pathRe = /(\/content\/[^\s"'`<>]+\.(?:png|jpe?g|webp|gif|mp4|webm|mov))/gi;
+  let m;
+  while ((m = pathRe.exec(`${res.stdout || ""}\n${res.stderr || ""}`)) !== null) {
+    if (!seen.has(m[1])) {
+      seen.add(m[1]);
+      const ext = path.extname(m[1]).toLowerCase();
+      mediaMatches.push({
+        path: m[1],
+        name: path.basename(m[1]),
+        kind: [".mp4", ".webm", ".mov"].includes(ext) ? "video" : "image",
+        url: `/api/files/media?session=${encodeURIComponent(session)}&path=${encodeURIComponent(m[1])}`,
+      });
+    }
+  }
+
+  return {
+    ok: res.ok,
+    stdout: res.stdout || "",
+    stderr: res.stderr || "",
+    error: res.ok ? null : (res.error || "执行失败"),
+    media: mediaMatches,
+  };
+}
+
+export async function bootstrapSession({ session, envVars = [], config = {}, signal }) {
+  if (!session) return { ok: false, error: "请先选择一个活跃的 Colab 会话", log: "" };
+  const logs = [];
+
+  if (config.autoMountDrive) {
+    const drv = await runAction({ type: "drivemount", session }, { signal });
+    logs.push(`[drivemount] ${drv.ok ? "ok" : (drv.error || "failed")}`);
+  }
+
+  const effectiveEnv = [];
+  for (const item of Array.isArray(envVars) ? envVars : []) {
+    const k = String(item?.key || "").trim();
+    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(k)) {
+      effectiveEnv.push([k, String(item.value ?? "")]);
+    }
+  }
+  if (config.enableHfTransfer && !effectiveEnv.some(([k]) => k === "HF_HUB_ENABLE_HF_TRANSFER")) {
+    effectiveEnv.push(["HF_HUB_ENABLE_HF_TRANSFER", "1"]);
+  }
+  if (config.hfCacheToDrive && !effectiveEnv.some(([k]) => k === "HF_HOME")) {
+    effectiveEnv.push(["HF_HOME", "/content/drive/MyDrive/.cache/huggingface"]);
+  }
+
+  const shellSteps = ["set -e"];
+  if (config.autoInjectEnv !== false && effectiveEnv.length > 0) {
+    const exportLines = effectiveEnv.map(([k, v]) => `export ${k}=${JSON.stringify(v)}`).join("\n");
+    const envB64 = Buffer.from(exportLines + "\n", "utf8").toString("base64");
+    shellSteps.push(`echo '${envB64}' | base64 -d > /etc/profile.d/colab-desk-env.sh`);
+    shellSteps.push(`grep -q 'colab-desk-env.sh' /root/.bashrc 2>/dev/null || echo 'source /etc/profile.d/colab-desk-env.sh' >> /root/.bashrc`);
+    shellSteps.push(`source /etc/profile.d/colab-desk-env.sh`);
+    shellSteps.push(`echo "[env] injected ${effectiveEnv.length} vars"`);
+  }
+  if (config.hfCacheToDrive) {
+    shellSteps.push(`mkdir -p /content/drive/MyDrive/.cache/huggingface 2>/dev/null || true`);
+  }
+  if (config.autoInstallUv) {
+    shellSteps.push(`command -v uv >/dev/null 2>&1 || pip install -q uv`);
+    shellSteps.push(`echo "[uv] ready"`);
+  }
+  if (config.enableHfTransfer) {
+    shellSteps.push(`python3 -c "import hf_transfer" 2>/dev/null || (command -v uv >/dev/null 2>&1 && uv pip install --system -q hf_transfer || pip install -q hf_transfer)`);
+    shellSteps.push(`echo "[hf_transfer] ready"`);
+  }
+  if (config.customScript && String(config.customScript).trim()) {
+    const customB64 = Buffer.from(String(config.customScript), "utf8").toString("base64");
+    shellSteps.push(`echo '${customB64}' | base64 -d | bash`);
+  }
+
+  if (shellSteps.length > 1) {
+    const scriptB64 = Buffer.from(shellSteps.join("\n") + "\n", "utf8").toString("base64");
+    const res = await runAction({
+      type: "ssh",
+      session,
+      command: `echo '${scriptB64}' | base64 -d | bash`,
+    }, { signal });
+    if (res.stdout) logs.push(res.stdout.trim());
+    if (!res.ok) {
+      return { ok: false, error: res.error || res.stderr || "bootstrap failed", log: logs.join("\n") };
+    }
+  }
+
+  return { ok: true, log: logs.join("\n") || "ok" };
+}
+
+function runLocalCommand(exe, args, timeoutMs = 60_000) {
+  return new Promise((resolve) => {
+    const child = spawn(exe, args, { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    const timer = setTimeout(() => {
+      try { child.kill("SIGTERM"); } catch {}
+      resolve({ ok: false, stdout, stderr: "timeout" });
+    }, timeoutMs);
+    timer.unref();
+    child.stdout.on("data", (d) => { stdout += d.toString("utf8"); });
+    child.stderr.on("data", (d) => { stderr += d.toString("utf8"); });
+    child.on("error", (err) => { clearTimeout(timer); resolve({ ok: false, stdout, stderr: err.message }); });
+    child.on("close", (code) => { clearTimeout(timer); resolve({ ok: code === 0, stdout, stderr }); });
+  });
+}
+
+export async function syncPushFolder({ session, localDir, remoteDir, signal }) {
+  if (!session || !localDir) return { ok: false, error: "需要指定会话与本地目录" };
+  const resolvedLocal = path.resolve(localDir.replace(/^~(?=\/|$)/, os.homedir()));
+  if (!fs.existsSync(resolvedLocal) || !fs.statSync(resolvedLocal).isDirectory()) {
+    return { ok: false, error: `本地目录不存在: ${resolvedLocal}` };
+  }
+  const targetRemote = String(remoteDir || `/content/${path.basename(resolvedLocal)}`).trim();
+  fs.mkdirSync(SYNC_DIR, { recursive: true });
+  const archiveLocal = path.join(SYNC_DIR, `push-${Date.now().toString(36)}.tar.gz`);
+  const archiveRemote = `/tmp/colab-desk-push-${Date.now().toString(36)}.tar.gz`;
+
+  const tarRes = await runLocalCommand("tar", [
+    "-czf", archiveLocal,
+    "--exclude=.git",
+    "--exclude=node_modules",
+    "--exclude=__pycache__",
+    "--exclude=.DS_Store",
+    "--exclude=.venv",
+    "--exclude=dist",
+    "-C", resolvedLocal,
+    ".",
+  ]);
+  if (!tarRes.ok) {
+    try { fs.unlinkSync(archiveLocal); } catch {}
+    return { ok: false, error: `打包本地目录失败: ${tarRes.stderr}` };
+  }
+  const size = fs.statSync(archiveLocal).size;
+  const upRes = await runAction({ type: "upload", session, local: archiveLocal, remote: archiveRemote }, { signal });
+  try { fs.unlinkSync(archiveLocal); } catch {}
+  if (!upRes.ok) return { ok: false, error: `上传失败: ${upRes.error}` };
+
+  const remoteB64 = Buffer.from(targetRemote, "utf8").toString("base64");
+  const extractCmd = `R=$(echo '${remoteB64}' | base64 -d); mkdir -p "$R" && tar -xzf "${archiveRemote}" -C "$R" && rm -f "${archiveRemote}" && echo "synced:$R"`;
+  const exRes = await runAction({ type: "ssh", session, command: extractCmd }, { signal });
+  if (!exRes.ok) return { ok: false, error: `云端解压失败: ${exRes.error}` };
+  return { ok: true, localDir: resolvedLocal, remoteDir: targetRemote, bytes: size };
+}
+
+export async function syncPullFolder({ session, localDir, remoteDir, signal }) {
+  if (!session || !localDir || !remoteDir) return { ok: false, error: "需要指定会话、远程目录和本地目录" };
+  const resolvedLocal = path.resolve(localDir.replace(/^~(?=\/|$)/, os.homedir()));
+  fs.mkdirSync(resolvedLocal, { recursive: true });
+  fs.mkdirSync(SYNC_DIR, { recursive: true });
+  const archiveLocal = path.join(SYNC_DIR, `pull-${Date.now().toString(36)}.tar.gz`);
+  const archiveRemote = `/tmp/colab-desk-pull-${Date.now().toString(36)}.tar.gz`;
+  const remoteB64 = Buffer.from(String(remoteDir).trim(), "utf8").toString("base64");
+
+  const packCmd = `R=$(echo '${remoteB64}' | base64 -d); tar -czf "${archiveRemote}" --exclude='__pycache__' --exclude='.git' -C "$R" .`;
+  const packRes = await runAction({ type: "ssh", session, command: packCmd }, { signal });
+  if (!packRes.ok) return { ok: false, error: `云端打包失败: ${packRes.error}` };
+
+  const dlRes = await runAction({ type: "download", session, remote: archiveRemote, local: archiveLocal }, { signal });
+  await runAction({ type: "ssh", session, command: `rm -f "${archiveRemote}"` }).catch(() => {});
+  if (!dlRes.ok || !fs.existsSync(archiveLocal)) {
+    return { ok: false, error: `下载失败: ${dlRes.error}` };
+  }
+  const size = fs.statSync(archiveLocal).size;
+  const untarRes = await runLocalCommand("tar", ["-xzf", archiveLocal, "-C", resolvedLocal]);
+  try { fs.unlinkSync(archiveLocal); } catch {}
+  if (!untarRes.ok) return { ok: false, error: `本地解压失败: ${untarRes.stderr}` };
+  return { ok: true, localDir: resolvedLocal, remoteDir, bytes: size };
+}
+
+export async function checkForUpdates(currentVersion = "0.1.0") {
+  try {
+    const res = await fetch("https://api.github.com/repos/CalicoX/colab-desk/releases/latest", {
+      headers: { Accept: "application/vnd.github+json", "User-Agent": "colab-desk" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return { ok: false, currentVersion, error: `HTTP ${res.status}` };
+    const data = await res.json();
+    const latest = String(data.tag_name || "").replace(/^v/i, "");
+    const hasUpdate = Boolean(latest && latest !== currentVersion);
+    return {
+      ok: true,
+      currentVersion,
+      latestVersion: latest || currentVersion,
+      hasUpdate,
+      releaseUrl: data.html_url || "https://github.com/CalicoX/colab-desk/releases",
+      publishedAt: data.published_at || null,
+    };
+  } catch (err) {
+    return { ok: false, currentVersion, error: err.message || String(err) };
+  }
 }
 
 export function buildNotebookFromHistory(sessionName, entries = []) {

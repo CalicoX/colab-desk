@@ -2427,6 +2427,22 @@
     .term-live-dot[hidden] { display: none; }
     .workspace.is-terminal-view #transcript,
     .workspace.is-terminal-view #composer { display: none; }
+    .workspace-panes {
+      display: flex;
+      flex: 1 1 0;
+      min-height: 0;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .chat-pane {
+      display: flex;
+      flex: 1 1 0;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .workspace.is-terminal-view .chat-pane { display: none; }
     #terminal-view {
       display: none;
       flex: 1 1 0;
@@ -2436,6 +2452,178 @@
       overflow: hidden;
     }
     .workspace.is-terminal-view #terminal-view { display: flex; }
+    .workspace.is-split-view .chat-pane { flex: 1 1 50%; border-right: 1px solid var(--line); }
+    .workspace.is-split-view #terminal-view { display: flex; flex: 1 1 50%; }
+    @media (max-width: 900px) {
+      .workspace.is-split-view .workspace-panes { flex-direction: column; }
+      .workspace.is-split-view .chat-pane { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+    .gpu-proc-list { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+    .gpu-proc-row {
+      align-items: center;
+      background: var(--rail-control);
+      border-radius: 7px;
+      display: flex;
+      font-size: 11.5px;
+      gap: 6px;
+      justify-content: space-between;
+      padding: 4px 8px;
+    }
+    .gpu-proc-name { color: var(--text); font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .gpu-proc-mem { color: var(--muted); font-family: var(--mono); flex: none; }
+    .detected-ports { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+    .detected-port-chip {
+      background: rgba(127, 212, 156, 0.16);
+      border: 1px solid rgba(127, 212, 156, 0.35);
+      border-radius: 999px;
+      color: var(--ok);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 3px 9px;
+    }
+    .detected-port-chip:hover { background: rgba(127, 212, 156, 0.28); }
+    .files-gallery-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      padding: 4px;
+    }
+    .gallery-tile {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    .gallery-tile.is-active { border-color: var(--indigo-2); }
+    .gallery-thumb {
+      align-items: center;
+      background: var(--pill);
+      display: flex;
+      height: 92px;
+      justify-content: center;
+      overflow: hidden;
+      width: 100%;
+    }
+    .gallery-thumb img, .gallery-thumb video { height: 100%; object-fit: cover; width: 100%; }
+    .gallery-caption {
+      font-size: 11px;
+      overflow: hidden;
+      padding: 5px 7px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .gallery-check { left: 6px; position: absolute; top: 6px; z-index: 2; }
+    .files-preview-video {
+      background: #000;
+      border-radius: 10px;
+      max-height: 360px;
+      width: 100%;
+    }
+    .code-head-actions { display: inline-flex; gap: 6px; align-items: center; }
+    .code-run {
+      background: rgba(106, 90, 224, 0.22);
+      border: 0;
+      border-radius: 5px;
+      color: #d7d2ff;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 7px;
+    }
+    .code-run:hover { background: rgba(106, 90, 224, 0.38); }
+    :root[data-theme="light"] .code-run { color: var(--indigo); background: rgba(91, 78, 214, 0.14); }
+    .runner-body {
+      display: grid;
+      flex: 1 1 0;
+      grid-template-columns: 210px minmax(0, 1fr);
+      min-height: 0;
+      overflow: hidden;
+    }
+    .runner-sidebar {
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    .runner-main {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 14px 18px;
+    }
+    .runner-params-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .runner-media-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    .env-var-list { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+    .env-var-row {
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: flex;
+      font-family: var(--mono);
+      font-size: 12px;
+      gap: 8px;
+      justify-content: space-between;
+      padding: 6px 10px;
+    }
+    dialog.palette-modal {
+      background: var(--popover);
+      border: 1px solid var(--line-strong);
+      border-radius: 14px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.65);
+      color: var(--text);
+      margin-top: 12vh;
+      max-width: 560px;
+      overflow: hidden;
+      padding: 0;
+      width: calc(100% - 32px);
+    }
+    dialog.palette-modal::backdrop { background: rgba(8, 7, 13, 0.55); backdrop-filter: blur(3px); }
+    .palette-input {
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      outline: none;
+      padding: 13px 16px;
+      width: 100%;
+    }
+    .palette-list { max-height: 340px; overflow-y: auto; padding: 6px; }
+    .palette-item {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      font: inherit;
+      font-size: 13px;
+      justify-content: space-between;
+      padding: 8px 11px;
+      text-align: left;
+      width: 100%;
+    }
+    .palette-item.is-active, .palette-item:hover { background: var(--sidebar-active); }
+    .palette-kbd { color: var(--faint); font-family: var(--mono); font-size: 11px; }
     .term-bar {
       align-items: center;
       background: var(--sidebar);
@@ -2657,11 +2845,13 @@
           <div class="workspace-head-actions">
             <div id="view-switch" class="view-switch" role="tablist" aria-label="视图切换" hidden>
               <button id="view-chat-btn" class="view-switch-btn is-active" type="button" role="tab" aria-selected="true" data-i18n="ws.viewChat">对话</button>
+              <button id="view-split-btn" class="view-switch-btn" type="button" role="tab" aria-selected="false" data-i18n="ws.viewSplit">分屏</button>
               <button id="view-term-btn" class="view-switch-btn" type="button" role="tab" aria-selected="false" data-i18n-title="ws.viewTerminalTitle" title="切换交互式命令行终端 (⌘J)">
                 <span class="term-live-dot" id="term-live-dot" hidden></span>
                 <span data-i18n="ws.viewTerminal">终端</span>
               </button>
             </div>
+            <button id="open-runner-btn" class="ghost" type="button" data-i18n="ws.runner" title="参数化直连脚本运行器（不经过 Agent）">脚本</button>
             <button id="open-templates-btn" class="ghost" type="button" data-i18n="ws.templates">模板</button>
             <button id="reset-chat" class="ghost" type="button" data-i18n="ws.newChat" data-i18n-title="ws.newChatTitle" title="开启新对话（不影响云端 VM）">新对话</button>
             <button id="refresh" class="ghost" type="button" data-i18n="ws.refresh">刷新</button>
@@ -2687,7 +2877,9 @@
           </div>
         </div>
 
-        <section id="transcript" data-region="transcript" aria-label="transcript">
+        <div class="workspace-panes">
+          <div class="chat-pane">
+            <section id="transcript" data-region="transcript" aria-label="transcript">
           <div class="welcome-empty" id="transcript-empty">
             <div class="welcome-head">
               <h3 data-i18n="welcome.title">用自然语言指挥 Colab</h3>
@@ -2783,12 +2975,14 @@
             <button id="send-btn" class="send" type="submit" aria-label="Submit" title="发送 (⌘Enter)">↑</button>
           </div>
         </form>
+          </div>
 
         <!-- Interactive PTY Terminal View (connected Colab VM SSH only) -->
         <section id="terminal-view" data-region="terminal" aria-label="interactive terminal">
           <div class="term-bar">
             <div id="term-tabs" class="term-tabs"></div>
             <div class="term-actions">
+              <button id="term-send-agent" class="rail-chip" type="button" data-i18n="term.sendAgent">发给 Agent 排查</button>
               <button id="term-new-colab" class="rail-chip" type="button" data-i18n="term.newColab">+ 新建终端</button>
               <button id="term-reconnect" class="rail-chip" type="button" data-i18n="term.reconnect">重连</button>
               <button id="term-clear" class="rail-chip" type="button" data-i18n="term.clear">清屏</button>
@@ -2804,6 +2998,7 @@
             <div id="term-canvas" hidden></div>
           </div>
         </section>
+        </div>
       </div>
 
       <!-- Right Inspector Panel -->
@@ -2965,13 +3160,20 @@
           <div id="gpu-telemetry-body" class="meter-list">
             <span id="gpu-empty-note" class="kv-value is-muted" style="text-align:left;" data-i18n="rail.gpuNone">非 GPU 实例或未连接</span>
           </div>
+          <div id="gpu-procs-body" class="gpu-proc-list"></div>
         </div>
 
         <div class="inspector-section" id="tunnels-section">
           <div class="rail-mini-head">
             <span class="rail-mini-title" data-i18n="rail.tunnelsTitle">端口转发</span>
+            <div style="display:flex;gap:8px;">
+              <button id="inspector-sync-btn" class="meter-refresh" type="button" disabled data-i18n="ws.sync">同步</button>
+              <button id="inspector-bootstrap-btn" class="meter-refresh" type="button" disabled>初始化</button>
+            </div>
           </div>
+          <div id="detected-ports-box" class="detected-ports" hidden></div>
           <div class="rail-chip-row" id="tunnel-presets">
+            <button class="rail-chip" type="button" data-tunnel-port="8188" data-tunnel-label="ComfyUI" disabled>ComfyUI :8188</button>
             <button class="rail-chip" type="button" data-tunnel-port="7860" data-tunnel-label="Gradio" disabled>Gradio :7860</button>
             <button class="rail-chip" type="button" data-tunnel-port="8888" data-tunnel-label="Jupyter" disabled>Jupyter :8888</button>
             <button class="rail-chip" type="button" data-tunnel-port="11434" data-tunnel-label="Ollama" disabled>Ollama :11434</button>
@@ -3243,6 +3445,13 @@
                   </div>
                   <button id="setting-reset-sidebar" class="s-btn" type="button" data-i18n="settings.general.resetBtn">恢复默认</button>
                 </div>
+                <div class="s-row" data-search="gpu 监控 显存 轮询 telemetry poll">
+                  <div class="s-copy">
+                    <span class="s-title">GPU 显存与端口自动轮询</span>
+                    <span class="s-desc">连接 GPU 会话时每 15 秒自动刷新显存占用、GPU 进程与新启动的 Web 端口。</span>
+                  </div>
+                  <label class="s-toggle"><input id="setting-gpu-poll" type="checkbox" checked /><span class="s-toggle-track"></span></label>
+                </div>
               </div>
             </div>
           </section>
@@ -3465,6 +3674,92 @@
                 </div>
               </div>
             </div>
+
+            <div class="s-group">
+              <h4 class="s-group-title" data-i18n="settings.colab.envVaultGroup">环境变量保险箱（本地 0600 加密保存）</h4>
+              <div class="s-card">
+                <div class="s-row is-column" data-search="环境变量 env vault hf_token wandb civitai 密钥 token">
+                  <div class="s-copy">
+                    <span class="s-title">云端 VM 环境变量与 Token</span>
+                    <span class="s-desc">安全保存在本机 0600 状态文件中，新开会话或点击「注入当前 VM」时自动写入 /etc/profile.d 与脚本运行器。</span>
+                  </div>
+                  <div class="s-presets">
+                    <button class="s-preset" type="button" data-env-preset="HF_TOKEN">HF_TOKEN</button>
+                    <button class="s-preset" type="button" data-env-preset="HF_HUB_ENABLE_HF_TRANSFER" data-env-val="1">HF_TRANSFER=1</button>
+                    <button class="s-preset" type="button" data-env-preset="WANDB_API_KEY">WANDB_API_KEY</button>
+                    <button class="s-preset" type="button" data-env-preset="CIVITAI_API_KEY">CIVITAI_API_KEY</button>
+                    <button class="s-preset" type="button" data-env-preset="GITHUB_TOKEN">GITHUB_TOKEN</button>
+                  </div>
+                  <div id="env-vars-list" class="env-var-list"></div>
+                  <div class="s-form-grid">
+                    <div class="s-field">
+                      <label for="env-key-input">变量名</label>
+                      <input id="env-key-input" class="s-input" type="text" placeholder="HF_TOKEN" />
+                    </div>
+                    <div class="s-field">
+                      <label for="env-val-input">变量值</label>
+                      <input id="env-val-input" class="s-input" type="password" placeholder="hf_..." autocomplete="off" />
+                    </div>
+                  </div>
+                  <div class="s-actions">
+                    <button id="env-var-add-btn" class="s-btn is-primary" type="button">保存变量</button>
+                    <button id="env-inject-now-btn" class="s-btn" type="button">立即注入当前 VM</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="s-group">
+              <h4 class="s-group-title" data-i18n="settings.colab.bootstrapGroup">开卡自动初始化 &amp; 缓存加速</h4>
+              <div class="s-card">
+                <div class="s-row" data-search="自动 挂载 google drive bootstrap">
+                  <div class="s-copy">
+                    <span class="s-title">开卡后自动挂载 Google Drive</span>
+                    <span class="s-desc">新建会话成功后自动运行 colab drivemount。</span>
+                  </div>
+                  <label class="s-toggle"><input id="boot-mount-drive" type="checkbox" /><span class="s-toggle-track"></span></label>
+                </div>
+                <div class="s-row" data-search="hf_transfer 高速 下载 权重 huggingface">
+                  <div class="s-copy">
+                    <span class="s-title">启用 HuggingFace 高速下载 (hf_transfer)</span>
+                    <span class="s-desc">自动安装 hf_transfer 并开启 HF_HUB_ENABLE_HF_TRANSFER=1，大幅加速生图/生视频大模型权重拉取。</span>
+                  </div>
+                  <label class="s-toggle"><input id="boot-hf-transfer" type="checkbox" checked /><span class="s-toggle-track"></span></label>
+                </div>
+                <div class="s-row" data-search="缓存 持久化 drive hf_home huggingface cache">
+                  <div class="s-copy">
+                    <span class="s-title">HuggingFace 缓存持久化到 Google Drive</span>
+                    <span class="s-desc">自动将 HF_HOME 指向 /content/drive/MyDrive/.cache/huggingface，重开 VM 无需重复下大模型。</span>
+                  </div>
+                  <label class="s-toggle"><input id="boot-hf-drive-cache" type="checkbox" /><span class="s-toggle-track"></span></label>
+                </div>
+                <div class="s-row" data-search="自动 安装 uv 包管理">
+                  <div class="s-copy">
+                    <span class="s-title">自动安装 uv 加速包管理</span>
+                    <span class="s-desc">确保远程 VM 已安装 uv，加快后续依赖安装速度。</span>
+                  </div>
+                  <label class="s-toggle"><input id="boot-install-uv" type="checkbox" /><span class="s-toggle-track"></span></label>
+                </div>
+                <div class="s-row" data-search="自动 注入 环境变量">
+                  <div class="s-copy">
+                    <span class="s-title">开卡后自动注入环境变量保险箱</span>
+                    <span class="s-desc">将上方配置的环境变量自动写入新 VM 的 shell 配置。</span>
+                  </div>
+                  <label class="s-toggle"><input id="boot-inject-env" type="checkbox" checked /><span class="s-toggle-track"></span></label>
+                </div>
+                <div class="s-row is-column" data-search="自定义 启动 脚本 bootstrap custom script">
+                  <div class="s-copy">
+                    <span class="s-title">自定义启动脚本（Bash，可选）</span>
+                    <span class="s-desc">每次初始化 VM 时在云端执行的额外命令（例如拉取仓库或启动后台服务）。</span>
+                  </div>
+                  <textarea id="boot-custom-script" class="tpl-textarea" style="min-height:76px;width:100%;font-family:var(--mono);font-size:12px;" placeholder="# 可选，例如：\n# pip install -q diffusers accelerate"></textarea>
+                  <div class="s-actions">
+                    <button id="boot-run-now-btn" class="s-btn is-primary" type="button">对当前 VM 立即执行初始化</button>
+                  </div>
+                  <pre id="boot-run-log" class="s-log" hidden></pre>
+                </div>
+              </div>
+            </div>
           </section>
 
           <!-- Tab: Maintenance -->
@@ -3507,6 +3802,13 @@
                     <span class="s-desc" data-i18n="settings.about.storeDesc">~/.config/colab-desk/state.json（仅当前用户可读 0600）</span>
                   </div>
                 </div>
+                <div class="s-row" data-search="更新 版本 update release github">
+                  <div class="s-copy">
+                    <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
+                    <span id="update-status-desc" class="s-desc">当前版本 v0.1.0（GitHub: CalicoX/colab-desk）</span>
+                  </div>
+                  <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
+                </div>
               </div>
             </div>
           </section>
@@ -3534,7 +3836,13 @@
       </div>
       <div class="files-toolbar">
         <span id="files-current-path" class="files-path">/content</span>
-        <span id="files-status-note" class="s-desc"></span>
+        <div class="s-actions">
+          <button id="files-mode-list" class="s-btn is-primary" type="button" data-i18n="files.listView">列表</button>
+          <button id="files-mode-gallery" class="s-btn" type="button" data-i18n="files.galleryView">媒体画廊</button>
+          <button id="files-batch-dl" class="s-btn" type="button" hidden data-i18n="files.batchDownload">批量下载</button>
+          <button id="files-copy-drive" class="s-btn" type="button" hidden data-i18n="files.copyDrive">存到 Drive</button>
+          <span id="files-status-note" class="s-desc"></span>
+        </div>
       </div>
       <div class="files-body">
         <div id="files-list" class="files-list"></div>
@@ -3566,6 +3874,83 @@
     </div>
   </dialog>
 
+  <!-- Direct Parameterized Script Runner Modal (Zero Agent, direct colab exec/ssh) -->
+  <dialog id="runner-modal" class="wide-modal" aria-labelledby="runner-modal-title">
+    <div class="wide-modal-shell">
+      <div class="wide-modal-head">
+        <h3 id="runner-modal-title" data-i18n="runner.title">参数化直连运行器（不经过 Agent）</h3>
+        <div class="s-actions">
+          <button id="runner-new-btn" class="s-btn" type="button">+ 新建脚本</button>
+          <button id="close-runner-modal" class="icon-btn" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="runner-body">
+        <div id="runner-sidebar" class="runner-sidebar"></div>
+        <div class="runner-main">
+          <div class="s-form-grid">
+            <div class="s-field">
+              <label for="runner-name">脚本名称</label>
+              <input id="runner-name" class="s-input" type="text" placeholder="例如：MiniMax / Diffusers 生图脚本" />
+            </div>
+            <div class="s-field">
+              <label for="runner-runtime">执行环境</label>
+              <select id="runner-runtime" class="s-select" style="width:100%;">
+                <option value="python">Python (colab exec)</option>
+                <option value="bash">Bash (colab ssh)</option>
+              </select>
+            </div>
+          </div>
+          <div id="runner-params-wrap" class="runner-params-grid"></div>
+          <div class="s-field">
+            <label for="runner-code">脚本内容（支持 {{prompt}}、{{seed}} 等占位符，自动生成上方参数表单）</label>
+            <textarea id="runner-code" class="tpl-textarea" style="min-height:150px;font-family:var(--mono);font-size:12px;" placeholder="import os&#10;prompt = os.environ.get('COLAB_PARAM_PROMPT', '''{{prompt}}''')&#10;print('Running:', prompt)"></textarea>
+          </div>
+          <div class="s-actions">
+            <button id="runner-exec-btn" class="s-btn is-primary" type="button" data-i18n="runner.run">▶ 直接在 VM 运行</button>
+            <button id="runner-save-btn" class="s-btn" type="button" data-i18n="runner.save">保存脚本</button>
+            <button id="runner-delete-btn" class="s-btn is-danger" type="button" hidden>删除</button>
+            <span id="runner-status" class="s-desc"></span>
+          </div>
+          <div id="runner-media" class="runner-media-grid"></div>
+          <pre id="runner-output" class="s-log" style="max-height:200px;" hidden></pre>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Local <-> Colab Folder Sync Modal -->
+  <dialog id="sync-modal" class="modal" aria-labelledby="sync-modal-title">
+    <div class="modal-form">
+      <div class="modal-head">
+        <h3 id="sync-modal-title" data-i18n="sync.title">本地 ↔ 云端目录同步</h3>
+        <button id="close-sync-modal" class="icon-btn" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="s-field">
+        <label for="sync-local-input">本机目录绝对路径（自动排除 .git / node_modules / __pycache__）</label>
+        <input id="sync-local-input" class="s-input" type="text" placeholder="~/Projects/my-model" />
+      </div>
+      <div class="s-field">
+        <label for="sync-remote-input">Colab 云端目录路径</label>
+        <input id="sync-remote-input" class="s-input" type="text" placeholder="/content/my-model" />
+      </div>
+      <pre id="sync-log" class="s-log" hidden></pre>
+      <div class="modal-foot">
+        <button id="sync-pull-btn" class="btn-secondary" type="button" data-i18n="sync.pull">从云端拉回 ↓</button>
+        <button id="sync-push-btn" class="btn-primary" type="button" data-i18n="sync.push">推送到云端 ↑</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Command Palette Modal (⌘K) -->
+  <dialog id="cmd-palette-modal" class="palette-modal" aria-label="Command Palette">
+    <input id="cmd-palette-input" class="palette-input" type="text" data-i18n-placeholder="palette.placeholder" placeholder="输入命令、切换会话或打开面板… (⌘K)" autocomplete="off" />
+    <div id="cmd-palette-list" class="palette-list"></div>
+  </dialog>
+
   <script type="module">
     import { applyNewResult, composeAction, createDeskState, record, showSession } from "/desk.mjs";
     import { resolveLanguage, t } from "/i18n.mjs";
@@ -3579,12 +3964,14 @@
     const workspaceEl = document.querySelector(".workspace");
     const viewSwitchEl = document.querySelector("#view-switch");
     const viewChatBtn = document.querySelector("#view-chat-btn");
+    const viewSplitBtn = document.querySelector("#view-split-btn");
     const viewTermBtn = document.querySelector("#view-term-btn");
     const termLiveDot = document.querySelector("#term-live-dot");
     const termTabsEl = document.querySelector("#term-tabs");
     const termCanvasEl = document.querySelector("#term-canvas");
     const termEmptyEl = document.querySelector("#term-empty");
     const termNewColabBtn = document.querySelector("#term-new-colab");
+    const termSendAgentBtn = document.querySelector("#term-send-agent");
     const termReconnectBtn = document.querySelector("#term-reconnect");
     const termClearBtn = document.querySelector("#term-clear");
     const sessionItems = document.querySelector("#session-items");
@@ -3704,6 +4091,43 @@
     // GPU, Tunnels, Export, Files, Templates refs
     const gpuRefreshBtn = document.querySelector("#gpu-refresh-btn");
     const gpuTelemetryBody = document.querySelector("#gpu-telemetry-body");
+    const gpuProcsBody = document.querySelector("#gpu-procs-body");
+    const detectedPortsBox = document.querySelector("#detected-ports-box");
+    const inspectorSyncBtn = document.querySelector("#inspector-sync-btn");
+    const inspectorBootstrapBtn = document.querySelector("#inspector-bootstrap-btn");
+    const settingGpuPoll = document.querySelector("#setting-gpu-poll");
+    const envVarsListEl = document.querySelector("#env-vars-list");
+    const envKeyInput = document.querySelector("#env-key-input");
+    const envValInput = document.querySelector("#env-val-input");
+    const bootMountDrive = document.querySelector("#boot-mount-drive");
+    const bootHfTransfer = document.querySelector("#boot-hf-transfer");
+    const bootHfDriveCache = document.querySelector("#boot-hf-drive-cache");
+    const bootInstallUv = document.querySelector("#boot-install-uv");
+    const bootInjectEnv = document.querySelector("#boot-inject-env");
+    const bootCustomScript = document.querySelector("#boot-custom-script");
+    const bootRunLog = document.querySelector("#boot-run-log");
+    const updateStatusDesc = document.querySelector("#update-status-desc");
+    const runnerModal = document.querySelector("#runner-modal");
+    const runnerSidebarEl = document.querySelector("#runner-sidebar");
+    const runnerNameInput = document.querySelector("#runner-name");
+    const runnerRuntimeSelect = document.querySelector("#runner-runtime");
+    const runnerParamsWrap = document.querySelector("#runner-params-wrap");
+    const runnerCodeInput = document.querySelector("#runner-code");
+    const runnerStatusEl = document.querySelector("#runner-status");
+    const runnerMediaEl = document.querySelector("#runner-media");
+    const runnerOutputEl = document.querySelector("#runner-output");
+    const runnerDeleteBtn = document.querySelector("#runner-delete-btn");
+    const syncModal = document.querySelector("#sync-modal");
+    const syncLocalInput = document.querySelector("#sync-local-input");
+    const syncRemoteInput = document.querySelector("#sync-remote-input");
+    const syncLogEl = document.querySelector("#sync-log");
+    const cmdPaletteModal = document.querySelector("#cmd-palette-modal");
+    const cmdPaletteInput = document.querySelector("#cmd-palette-input");
+    const cmdPaletteListEl = document.querySelector("#cmd-palette-list");
+    const filesModeListBtn = document.querySelector("#files-mode-list");
+    const filesModeGalleryBtn = document.querySelector("#files-mode-gallery");
+    const filesBatchDlBtn = document.querySelector("#files-batch-dl");
+    const filesCopyDriveBtn = document.querySelector("#files-copy-drive");
     const tunnelPresetsWrap = document.querySelector("#tunnel-presets");
     const tunnelPortInput = document.querySelector("#tunnel-port-input");
     const tunnelOpenBtn = document.querySelector("#tunnel-open-btn");
@@ -3755,6 +4179,23 @@
     let apiProfiles = [];
     let editingApiProfileId = null;
     let promptTemplates = [];
+    let envVars = [];
+    let bootstrapConfig = {
+      autoMountDrive: false,
+      enableHfTransfer: true,
+      hfCacheToDrive: false,
+      autoInstallUv: false,
+      autoInjectEnv: true,
+      customScript: "",
+    };
+    let directScripts = [];
+    let activeRunnerScriptId = null;
+    let runnerParamValues = {};
+    let syncConfig = { localDir: "", remoteDir: "/content/project" };
+    let gpuAutoPoll = true;
+    let filesViewMode = "list"; // "list" | "gallery"
+    let selectedRemotePaths = new Set();
+    let lastListedEntries = [];
     let currentRemoteDir = "/content";
     let activeTunnels = [];
     let latestGpuInfo = null;
@@ -4513,6 +4954,14 @@
       if (settingNotifyComplete) settingNotifyComplete.checked = notifyOnComplete;
       if (settingCuAlert) settingCuAlert.value = String(cuAlertThreshold);
       if (settingIdleAlert) settingIdleAlert.value = String(idleAlertMinutes);
+      if (settingGpuPoll) settingGpuPoll.checked = gpuAutoPoll;
+      if (bootMountDrive) bootMountDrive.checked = !!bootstrapConfig.autoMountDrive;
+      if (bootHfTransfer) bootHfTransfer.checked = bootstrapConfig.enableHfTransfer !== false;
+      if (bootHfDriveCache) bootHfDriveCache.checked = !!bootstrapConfig.hfCacheToDrive;
+      if (bootInstallUv) bootInstallUv.checked = !!bootstrapConfig.autoInstallUv;
+      if (bootInjectEnv) bootInjectEnv.checked = bootstrapConfig.autoInjectEnv !== false;
+      if (bootCustomScript) bootCustomScript.value = bootstrapConfig.customScript || "";
+      renderEnvVarsList();
       renderApiProfilesList();
       if (!editingApiProfileId && apiProfiles.length === 0) {
         apiLabelInput.value = apiConfig.label || "";
@@ -4580,6 +5029,11 @@
         apiConfig,
         apiProfiles,
         promptTemplates,
+        envVars,
+        bootstrapConfig,
+        directScripts,
+        syncConfig,
+        gpuAutoPoll,
         provider: agentProviderSelect.value || "agy",
         modelsByProvider: savedModelsByProvider,
         thoughtByProvider: savedThoughtByProvider,
@@ -4659,6 +5113,15 @@
           if (Array.isArray(settings.promptTemplates)) {
             promptTemplates = settings.promptTemplates;
           }
+          if (Array.isArray(settings.envVars)) envVars = settings.envVars;
+          if (settings.bootstrapConfig && typeof settings.bootstrapConfig === "object") {
+            bootstrapConfig = { ...bootstrapConfig, ...settings.bootstrapConfig };
+          }
+          if (Array.isArray(settings.directScripts)) directScripts = settings.directScripts;
+          if (settings.syncConfig && typeof settings.syncConfig === "object") {
+            syncConfig = { ...syncConfig, ...settings.syncConfig };
+          }
+          if (typeof settings.gpuAutoPoll === "boolean") gpuAutoPoll = settings.gpuAutoPoll;
           if (settings.modelsByProvider && typeof settings.modelsByProvider === "object") {
             Object.assign(savedModelsByProvider, settings.modelsByProvider);
           }
@@ -4901,8 +5364,9 @@
           const lines = blocks[i].split("\n");
           const lang = (lines[0] || "").trim().slice(0, 24);
           const body = (lang ? lines.slice(1) : lines).join("\n").replace(/\n$/, "");
+          const safeLang = escapeHtml(lang || "code");
           htmlParts.push(
-            `<div class="code-wrap"><div class="code-head"><span>${escapeHtml(lang || "code")}</span><button type="button" class="code-copy">复制</button></div><pre><code>${escapeHtml(body)}</code></pre></div>`
+            `<div class="code-wrap"><div class="code-head"><span>${safeLang}</span><div class="code-head-actions"><button type="button" class="code-run" data-lang="${safeLang}">▶ 运行</button><button type="button" class="code-copy">复制</button></div></div><pre><code>${escapeHtml(body)}</code></pre></div>`
           );
           continue;
         }
@@ -4957,6 +5421,31 @@
           } catch {}
         });
       });
+      container.querySelectorAll(".code-run").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          if (!selected) {
+            showToast(activeLang === "en" ? "Connect to a Colab VM first" : "请先连接一台 Colab 虚拟机");
+            return;
+          }
+          const codeEl = btn.closest(".code-wrap")?.querySelector("code");
+          if (!codeEl) return;
+          const src = codeEl.textContent || "";
+          const lang = String(btn.dataset.lang || "").toLowerCase();
+          const isShell = ["bash", "sh", "shell", "zsh"].includes(lang);
+          btn.disabled = true;
+          btn.textContent = "运行中…";
+          try {
+            if (isShell) {
+              await callAction({ type: "ssh", session: selected, command: src }, `ssh ${selected}`, selected);
+            } else {
+              await callAction({ type: "exec", session: selected, code: src }, `exec ${selected}`, selected);
+            }
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "▶ 运行";
+          }
+        });
+      });
     }
 
     function renderInspector() {
@@ -4965,7 +5454,7 @@
 
       inspectorHost.textContent = hasSession ? session.name : tr("rail.disconnected");
       if (viewSwitchEl) viewSwitchEl.hidden = !hasSession;
-      if (!hasSession && activeWorkspaceView === "terminal") {
+      if (!hasSession && (activeWorkspaceView === "terminal" || activeWorkspaceView === "split")) {
         setWorkspaceView("chat");
       }
       inspectorLs.disabled = !hasSession;
@@ -4973,6 +5462,8 @@
       inspectorStop.disabled = !hasSession;
       inspectorLog.disabled = !hasSession;
       if (gpuRefreshBtn) gpuRefreshBtn.disabled = !hasSession;
+      if (inspectorSyncBtn) inspectorSyncBtn.disabled = !hasSession;
+      if (inspectorBootstrapBtn) inspectorBootstrapBtn.disabled = !hasSession;
       if (tunnelOpenBtn) tunnelOpenBtn.disabled = !hasSession;
       if (tunnelPresetsWrap) {
         tunnelPresetsWrap.querySelectorAll("button").forEach((b) => { b.disabled = !hasSession; });
@@ -6285,6 +6776,9 @@
           sessionNameInput.value = "";
           closeNewSessionModal();
           refreshUsageSilently();
+          if (bootstrapConfig.autoMountDrive || bootstrapConfig.enableHfTransfer || bootstrapConfig.hfCacheToDrive || bootstrapConfig.autoInstallUv || (bootstrapConfig.autoInjectEnv && envVars.length > 0) || (bootstrapConfig.customScript || "").trim()) {
+            runBootstrapOnSession(name, true);
+          }
         } else {
           const rawErr = result.error || "创建会话失败";
           const hint = /503|Service Unavailable/i.test(rawErr)
@@ -6787,9 +7281,181 @@
       return `${(bytes / (1024 ** 3)).toFixed(2)} GB`;
     }
 
+    function updateFilesBatchBar() {
+      const n = selectedRemotePaths.size;
+      if (filesBatchDlBtn) {
+        filesBatchDlBtn.hidden = n === 0;
+        filesBatchDlBtn.textContent = `${tr("files.batchDownload")} (${n})`;
+      }
+      if (filesCopyDriveBtn) {
+        filesCopyDriveBtn.hidden = n === 0;
+        filesCopyDriveBtn.textContent = `${tr("files.copyDrive")} (${n})`;
+      }
+    }
+
+    function renderRemoteEntries(entries, parentPath) {
+      filesListEl.replaceChildren();
+      if (filesModeListBtn) filesModeListBtn.classList.toggle("is-primary", filesViewMode === "list");
+      if (filesModeGalleryBtn) filesModeGalleryBtn.classList.toggle("is-primary", filesViewMode === "gallery");
+      updateFilesBatchBar();
+
+      if (parentPath && parentPath !== currentRemoteDir) {
+        const up = document.createElement("div");
+        up.className = "file-row";
+        up.innerHTML = `<span>↩</span><span class="file-row-name">..</span>`;
+        up.addEventListener("click", () => loadRemoteDir(parentPath));
+        filesListEl.append(up);
+      }
+
+      if (!entries.length) {
+        const emptyP = document.createElement("p");
+        emptyP.className = "s-desc";
+        emptyP.textContent = tr("files.empty");
+        filesListEl.append(emptyP);
+        return;
+      }
+
+      const isMedia = (name) => /\.(png|jpe?g|webp|gif|mp4|webm|mov|m4v)$/i.test(name);
+      const isVideo = (name) => /\.(mp4|webm|mov|m4v)$/i.test(name);
+
+      if (filesViewMode === "gallery") {
+        const grid = document.createElement("div");
+        grid.className = "files-gallery-grid";
+        const dirs = entries.filter((e) => e.isDir);
+        const media = entries.filter((e) => !e.isDir && isMedia(e.name));
+        for (const d of dirs) {
+          const tile = document.createElement("div");
+          tile.className = "gallery-tile";
+          tile.innerHTML = `<div class="gallery-thumb" style="font-size:28px;">📁</div><div class="gallery-caption">${escapeHtml(d.name)}</div>`;
+          tile.addEventListener("click", () => loadRemoteDir(d.path));
+          grid.append(tile);
+        }
+        for (const item of media) {
+          const tile = document.createElement("div");
+          tile.className = "gallery-tile";
+          const chk = document.createElement("input");
+          chk.type = "checkbox";
+          chk.className = "gallery-check";
+          chk.checked = selectedRemotePaths.has(item.path);
+          chk.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (chk.checked) selectedRemotePaths.add(item.path);
+            else selectedRemotePaths.delete(item.path);
+            updateFilesBatchBar();
+          });
+          const thumb = document.createElement("div");
+          thumb.className = "gallery-thumb";
+          const mediaUrl = `/api/files/media?session=${encodeURIComponent(selected)}&path=${encodeURIComponent(item.path)}`;
+          if (isVideo(item.name)) {
+            thumb.innerHTML = `<span style="font-size:28px;">🎬</span>`;
+          } else {
+            const img = document.createElement("img");
+            img.src = mediaUrl;
+            img.loading = "lazy";
+            img.alt = item.name;
+            thumb.append(img);
+          }
+          const cap = document.createElement("div");
+          cap.className = "gallery-caption";
+          cap.textContent = item.name;
+          cap.title = item.name;
+          tile.append(chk, thumb, cap);
+          tile.addEventListener("click", () => {
+            grid.querySelectorAll(".gallery-tile.is-active").forEach((n) => n.classList.remove("is-active"));
+            tile.classList.add("is-active");
+            previewRemote(item);
+          });
+          grid.append(tile);
+        }
+        if (dirs.length === 0 && media.length === 0) {
+          const emptyP = document.createElement("p");
+          emptyP.className = "s-desc";
+          emptyP.textContent = activeLang === "en" ? "No images or videos in this folder." : "当前目录暂无图片或视频，可切换回「列表」视图查看全部文件。";
+          filesListEl.append(emptyP);
+        } else {
+          filesListEl.append(grid);
+        }
+        return;
+      }
+
+      for (const item of entries) {
+        const row = document.createElement("div");
+        row.className = "file-row";
+        if (!item.isDir) {
+          const chk = document.createElement("input");
+          chk.type = "checkbox";
+          chk.checked = selectedRemotePaths.has(item.path);
+          chk.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (chk.checked) selectedRemotePaths.add(item.path);
+            else selectedRemotePaths.delete(item.path);
+            updateFilesBatchBar();
+          });
+          row.append(chk);
+        }
+        const icon = document.createElement("span");
+        icon.textContent = item.isDir ? "📁" : isVideo(item.name) ? "🎬" : /\.(png|jpe?g|webp|gif)$/i.test(item.name) ? "🖼" : /\.(py|ipynb|js|ts|sh|json|yaml|yml|md|csv)$/i.test(item.name) ? "📄" : "📦";
+        const nameEl = document.createElement("span");
+        nameEl.className = "file-row-name";
+        nameEl.textContent = item.name;
+        nameEl.title = item.path;
+        const sizeEl = document.createElement("span");
+        sizeEl.className = "file-row-size";
+        sizeEl.textContent = item.isDir ? "" : formatFileSize(item.size);
+        row.append(icon, nameEl, sizeEl);
+
+        if (!item.isDir) {
+          const acts = document.createElement("div");
+          acts.className = "file-row-actions";
+          const dlBtn = document.createElement("button");
+          dlBtn.type = "button";
+          dlBtn.className = "s-btn";
+          dlBtn.style.padding = "2px 6px";
+          dlBtn.textContent = "↓";
+          dlBtn.title = tr("files.download");
+          dlBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const a = document.createElement("a");
+            a.href = `/api/files/download?session=${encodeURIComponent(selected)}&path=${encodeURIComponent(item.path)}`;
+            a.download = item.name;
+            a.click();
+          });
+          const rmBtn = document.createElement("button");
+          rmBtn.type = "button";
+          rmBtn.className = "s-btn is-danger";
+          rmBtn.style.padding = "2px 6px";
+          rmBtn.textContent = "×";
+          rmBtn.title = tr("files.delete");
+          rmBtn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            filesStatusNote.textContent = activeLang === "en" ? "Deleting…" : "正在删除…";
+            const r = await fetch(`/api/files?session=${encodeURIComponent(selected)}&path=${encodeURIComponent(item.path)}`, { method: "DELETE" });
+            const j = await r.json();
+            if (j.ok) loadRemoteDir(currentRemoteDir);
+            else filesStatusNote.textContent = j.error || "Delete failed";
+          });
+          acts.append(dlBtn, rmBtn);
+          row.append(acts);
+        }
+
+        row.addEventListener("click", () => {
+          if (item.isDir) {
+            loadRemoteDir(item.path);
+          } else {
+            filesListEl.querySelectorAll(".file-row.is-active").forEach((n) => n.classList.remove("is-active"));
+            row.classList.add("is-active");
+            previewRemote(item);
+          }
+        });
+        filesListEl.append(row);
+      }
+    }
+
+    let lastParentPath = null;
     async function loadRemoteDir(dir = "/content") {
       if (!selected) return;
       currentRemoteDir = dir || "/content";
+      selectedRemotePaths.clear();
       filesCurrentPathEl.textContent = currentRemoteDir;
       filesStatusNote.textContent = activeLang === "en" ? "Loading…" : "正在加载目录…";
       filesListEl.replaceChildren();
@@ -6809,82 +7475,9 @@
         }
         currentRemoteDir = data.path || currentRemoteDir;
         filesCurrentPathEl.textContent = currentRemoteDir;
-
-        if (data.parent && data.parent !== currentRemoteDir) {
-          const up = document.createElement("div");
-          up.className = "file-row";
-          up.innerHTML = `<span>↩</span><span class="file-row-name">..</span>`;
-          up.addEventListener("click", () => loadRemoteDir(data.parent));
-          filesListEl.append(up);
-        }
-
-        if (!data.entries.length) {
-          const emptyP = document.createElement("p");
-          emptyP.className = "s-desc";
-          emptyP.textContent = tr("files.empty");
-          filesListEl.append(emptyP);
-          return;
-        }
-
-        for (const item of data.entries) {
-          const row = document.createElement("div");
-          row.className = "file-row";
-          const icon = document.createElement("span");
-          icon.textContent = item.isDir ? "📁" : /\.(png|jpe?g|webp|gif)$/i.test(item.name) ? "🖼" : /\.(py|ipynb|js|ts|sh|json|yaml|yml|md|csv)$/i.test(item.name) ? "📄" : "📦";
-          const nameEl = document.createElement("span");
-          nameEl.className = "file-row-name";
-          nameEl.textContent = item.name;
-          nameEl.title = item.path;
-          const sizeEl = document.createElement("span");
-          sizeEl.className = "file-row-size";
-          sizeEl.textContent = item.isDir ? "" : formatFileSize(item.size);
-          row.append(icon, nameEl, sizeEl);
-
-          if (!item.isDir) {
-            const acts = document.createElement("div");
-            acts.className = "file-row-actions";
-            const dlBtn = document.createElement("button");
-            dlBtn.type = "button";
-            dlBtn.className = "s-btn";
-            dlBtn.style.padding = "2px 6px";
-            dlBtn.textContent = "↓";
-            dlBtn.title = tr("files.download");
-            dlBtn.addEventListener("click", (e) => {
-              e.stopPropagation();
-              const a = document.createElement("a");
-              a.href = `/api/files/download?session=${encodeURIComponent(selected)}&path=${encodeURIComponent(item.path)}`;
-              a.download = item.name;
-              a.click();
-            });
-            const rmBtn = document.createElement("button");
-            rmBtn.type = "button";
-            rmBtn.className = "s-btn is-danger";
-            rmBtn.style.padding = "2px 6px";
-            rmBtn.textContent = "×";
-            rmBtn.title = tr("files.delete");
-            rmBtn.addEventListener("click", async (e) => {
-              e.stopPropagation();
-              filesStatusNote.textContent = activeLang === "en" ? "Deleting…" : "正在删除…";
-              const r = await fetch(`/api/files?session=${encodeURIComponent(selected)}&path=${encodeURIComponent(item.path)}`, { method: "DELETE" });
-              const j = await r.json();
-              if (j.ok) loadRemoteDir(currentRemoteDir);
-              else filesStatusNote.textContent = j.error || "Delete failed";
-            });
-            acts.append(dlBtn, rmBtn);
-            row.append(acts);
-          }
-
-          row.addEventListener("click", () => {
-            if (item.isDir) {
-              loadRemoteDir(item.path);
-            } else {
-              filesListEl.querySelectorAll(".file-row.is-active").forEach((n) => n.classList.remove("is-active"));
-              row.classList.add("is-active");
-              previewRemote(item);
-            }
-          });
-          filesListEl.append(row);
-        }
+        lastListedEntries = data.entries || [];
+        lastParentPath = data.parent || null;
+        renderRemoteEntries(lastListedEntries, lastParentPath);
       } catch (err) {
         filesStatusNote.textContent = err.message;
       }
@@ -6945,6 +7538,13 @@
           img.src = data.url;
           img.alt = item.name;
           filesPreviewEl.append(img);
+        } else if (data.kind === "video" && data.url) {
+          const vid = document.createElement("video");
+          vid.className = "files-preview-video";
+          vid.src = data.url;
+          vid.controls = true;
+          vid.playsInline = true;
+          filesPreviewEl.append(vid);
         } else if (data.kind === "text") {
           const pre = document.createElement("pre");
           pre.className = "files-preview-pre";
@@ -6990,6 +7590,35 @@
     document.querySelector("#files-go-content").addEventListener("click", () => loadRemoteDir("/content"));
     document.querySelector("#files-go-drive").addEventListener("click", () => loadRemoteDir("/content/drive/MyDrive"));
     document.querySelector("#files-refresh-btn").addEventListener("click", () => loadRemoteDir(currentRemoteDir));
+    filesModeListBtn.addEventListener("click", () => {
+      filesViewMode = "list";
+      renderRemoteEntries(lastListedEntries, lastParentPath);
+    });
+    filesModeGalleryBtn.addEventListener("click", () => {
+      filesViewMode = "gallery";
+      renderRemoteEntries(lastListedEntries, lastParentPath);
+    });
+    filesBatchDlBtn.addEventListener("click", () => {
+      for (const p of selectedRemotePaths) {
+        const a = document.createElement("a");
+        a.href = `/api/files/download?session=${encodeURIComponent(selected)}&path=${encodeURIComponent(p)}`;
+        a.download = p.split("/").pop() || "file";
+        a.click();
+      }
+      showToast(activeLang === "en" ? `Downloading ${selectedRemotePaths.size} files…` : `正在批量下载 ${selectedRemotePaths.size} 个文件…`);
+    });
+    filesCopyDriveBtn.addEventListener("click", async () => {
+      if (!selected || selectedRemotePaths.size === 0) return;
+      filesStatusNote.textContent = activeLang === "en" ? "Copying to Google Drive…" : "正在复制到 Google Drive…";
+      const res = await fetch("/api/files/copy-to-drive", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ session: selected, paths: Array.from(selectedRemotePaths) }),
+      }).then((r) => r.json());
+      filesStatusNote.textContent = res.ok
+        ? (activeLang === "en" ? "Saved to Drive/ColabDesk_Exports" : "已保存到 Drive/ColabDesk_Exports")
+        : (res.error || "Copy failed");
+    });
     document.querySelector("#files-upload-btn").addEventListener("click", () => filesUploadInput.click());
     filesUploadInput.addEventListener("change", () => {
       if (filesUploadInput.files?.length) {
@@ -7013,11 +7642,35 @@
       loadRemoteDir("/content/drive/MyDrive");
     });
 
-    /* ── 2. Live GPU Telemetry & SSH Port Forwarding Tunnels ── */
+    /* ── 2. Live GPU Telemetry, Process Kill & Auto-Detected Web Ports ── */
     function renderGpuTelemetry(info) {
       latestGpuInfo = info;
       if (!gpuTelemetryBody) return;
       gpuTelemetryBody.replaceChildren();
+      if (gpuProcsBody) gpuProcsBody.replaceChildren();
+      if (detectedPortsBox) {
+        detectedPortsBox.replaceChildren();
+        detectedPortsBox.hidden = true;
+      }
+
+      if (selected && info && Array.isArray(info.listeningPorts) && info.listeningPorts.length > 0 && detectedPortsBox) {
+        const knownNames = { 8188: "ComfyUI", 7860: "Gradio", 8888: "Jupyter", 11434: "Ollama", 8000: "vLLM", 6006: "TB" };
+        for (const port of info.listeningPorts) {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "detected-port-chip";
+          const lbl = knownNames[port] ? `${knownNames[port]} :${port}` : `:${port}`;
+          chip.textContent = `● ${lbl} ↗`;
+          chip.title = activeLang === "en" ? `Auto-detected port ${port} — click to forward & open` : `检测到已监听端口 ${port}，点击一键转发并打开`;
+          chip.addEventListener("click", async () => {
+            await openTunnel(port, knownNames[port] || `:${port}`);
+            openExternalUrl(`http://127.0.0.1:${port}`);
+          });
+          detectedPortsBox.append(chip);
+        }
+        detectedPortsBox.hidden = false;
+      }
+
       if (!selected || !info || !info.available || !Array.isArray(info.gpus) || !info.gpus.length) {
         const span = document.createElement("span");
         span.className = "kv-value is-muted";
@@ -7040,6 +7693,37 @@
         utilRow.className = "meter-row";
         utilRow.innerHTML = `<span class="meter-label">GPU</span><div class="meter-track"><div class="meter-fill is-accent" style="width:${Math.min(100, g.utilPct)}%"></div></div><span class="meter-value">${g.utilPct}%</span>`;
         gpuTelemetryBody.append(nameRow, vramRow, utilRow);
+      }
+
+      if (gpuProcsBody && Array.isArray(info.processes) && info.processes.length > 0) {
+        for (const proc of info.processes) {
+          const row = document.createElement("div");
+          row.className = "gpu-proc-row";
+          const nameEl = document.createElement("span");
+          nameEl.className = "gpu-proc-name";
+          nameEl.textContent = `${proc.name} (${proc.pid})`;
+          const memEl = document.createElement("span");
+          memEl.className = "gpu-proc-mem";
+          memEl.textContent = `${proc.memMb}M`;
+          const killBtn = document.createElement("button");
+          killBtn.type = "button";
+          killBtn.className = "s-btn is-danger";
+          killBtn.style.padding = "1px 6px";
+          killBtn.style.fontSize = "11px";
+          killBtn.textContent = "Kill";
+          killBtn.addEventListener("click", async () => {
+            killBtn.disabled = true;
+            await fetch("/api/gpu/kill", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ session: selected, pid: proc.pid }),
+            });
+            showToast(`Killed PID ${proc.pid}`);
+            setTimeout(() => refreshGpuTelemetry(false), 800);
+          });
+          row.append(nameEl, memEl, killBtn);
+          gpuProcsBody.append(row);
+        }
       }
     }
 
@@ -7350,8 +8034,8 @@
         xtermInst.loadAddon(xtermFit);
       }
       xtermInst.attachCustomKeyEventHandler((ev) => {
-        if ((ev.metaKey || ev.ctrlKey) && ["j", "b", ".", "n"].includes(ev.key.toLowerCase())) {
-          return false; // Let app-level shortcuts handle view/panel toggles
+        if ((ev.metaKey || ev.ctrlKey) && ["j", "k", "b", ".", "n"].includes(ev.key.toLowerCase())) {
+          return false; // Let app-level shortcuts handle view/panel/palette toggles
         }
         return true;
       });
@@ -7373,7 +8057,7 @@
     }
 
     function fitActiveTerminal() {
-      if (!xtermInst || !xtermFit || activeWorkspaceView !== "terminal" || termCanvasEl.hidden) return;
+      if (!xtermInst || !xtermFit || (activeWorkspaceView !== "terminal" && activeWorkspaceView !== "split") || termCanvasEl.hidden) return;
       try {
         xtermFit.fit();
         if (termWs && termWs.readyState === WebSocket.OPEN) {
@@ -7505,29 +8189,32 @@
 
     function setWorkspaceView(nextView) {
       const hasSession = Boolean(currentSessionObject());
-      if (nextView === "terminal" && !hasSession) {
+      const wantsTerm = nextView === "terminal" || nextView === "split";
+      if (wantsTerm && !hasSession) {
         activeWorkspaceView = "chat";
-        workspaceEl.classList.remove("is-terminal-view");
-        viewChatBtn.classList.add("is-active");
-        viewChatBtn.setAttribute("aria-selected", "true");
-        viewTermBtn.classList.remove("is-active");
-        viewTermBtn.setAttribute("aria-selected", "false");
-        return;
+      } else {
+        activeWorkspaceView = nextView === "terminal" ? "terminal" : nextView === "split" ? "split" : "chat";
       }
-      activeWorkspaceView = nextView === "terminal" ? "terminal" : "chat";
       const isTerm = activeWorkspaceView === "terminal";
+      const isSplit = activeWorkspaceView === "split";
+      const isChat = activeWorkspaceView === "chat";
       workspaceEl.classList.toggle("is-terminal-view", isTerm);
-      viewChatBtn.classList.toggle("is-active", !isTerm);
-      viewChatBtn.setAttribute("aria-selected", !isTerm ? "true" : "false");
+      workspaceEl.classList.toggle("is-split-view", isSplit);
+      viewChatBtn.classList.toggle("is-active", isChat);
+      viewChatBtn.setAttribute("aria-selected", isChat ? "true" : "false");
+      if (viewSplitBtn) {
+        viewSplitBtn.classList.toggle("is-active", isSplit);
+        viewSplitBtn.setAttribute("aria-selected", isSplit ? "true" : "false");
+      }
       viewTermBtn.classList.toggle("is-active", isTerm);
       viewTermBtn.setAttribute("aria-selected", isTerm ? "true" : "false");
-      if (isTerm) {
+      if (isTerm || isSplit) {
         const forCurrent = termList.find((tItem) => tItem.session === selected && tItem.alive);
         if (forCurrent) {
           if (activeTermId !== forCurrent.id) attachTerminalTab(forCurrent.id);
           requestAnimationFrame(() => {
             fitActiveTerminal();
-            xtermInst?.focus();
+            if (isTerm) xtermInst?.focus();
           });
         } else {
           createTerminalTab();
@@ -7539,14 +8226,44 @@
 
     function toggleTerminalView() {
       if (!currentSessionObject()) {
-        if (activeWorkspaceView === "terminal") setWorkspaceView("chat");
+        if (activeWorkspaceView !== "chat") setWorkspaceView("chat");
         return;
       }
-      setWorkspaceView(activeWorkspaceView === "terminal" ? "chat" : "terminal");
+      setWorkspaceView(activeWorkspaceView === "chat" ? "terminal" : "chat");
+    }
+
+    function grabTerminalTail(maxLines = 50) {
+      if (!xtermInst || !xtermInst.buffer?.active) return "";
+      const buf = xtermInst.buffer.active;
+      const total = buf.length;
+      const start = Math.max(0, total - maxLines);
+      const lines = [];
+      for (let i = start; i < total; i += 1) {
+        const line = buf.getLine(i);
+        if (line) lines.push(line.translateToString(true));
+      }
+      while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+      return lines.join("\n").trim();
     }
 
     viewChatBtn.addEventListener("click", () => setWorkspaceView("chat"));
+    if (viewSplitBtn) viewSplitBtn.addEventListener("click", () => setWorkspaceView("split"));
     viewTermBtn.addEventListener("click", () => setWorkspaceView("terminal"));
+    if (termSendAgentBtn) {
+      termSendAgentBtn.addEventListener("click", () => {
+        const tail = grabTerminalTail(50);
+        if (!tail) {
+          showToast(activeLang === "en" ? "Terminal output is empty" : "终端当前没有可发送的输出");
+          return;
+        }
+        if (activeWorkspaceView === "terminal") setWorkspaceView("split");
+        setComposerMode("agent");
+        const prompt = activeLang === "en"
+          ? `Please inspect this terminal output from Colab VM \`${selected || ""}\` and help diagnose or fix any error:\n\n\`\`\`text\n${tail}\n\`\`\``
+          : `帮我排查当前 Colab 终端（\`${selected || ""}\`）的这段输出/报错，并给出修复方案：\n\n\`\`\`text\n${tail}\n\`\`\``;
+        sendAgentMessage(prompt);
+      });
+    }
     termNewColabBtn.addEventListener("click", () => createTerminalTab());
     document.querySelector("#term-empty-colab").addEventListener("click", () => createTerminalTab());
     termClearBtn.addEventListener("click", () => { if (xtermInst) xtermInst.clear(); });
@@ -7554,6 +8271,405 @@
       const current = termList.find((x) => x.id === activeTermId);
       if (current) await closeTerminalTab(current.id);
       if (currentSessionObject()) createTerminalTab();
+    });
+
+    /* ── 6. Env Vault, Auto-Bootstrap, Direct Runner, Code Sync, Command Palette & Updates ── */
+    function renderEnvVarsList() {
+      if (!envVarsListEl) return;
+      envVarsListEl.replaceChildren();
+      for (const item of envVars) {
+        const row = document.createElement("div");
+        row.className = "env-var-row";
+        const masked = item.value ? `${String(item.value).slice(0, 4)}••••` : "(empty)";
+        const left = document.createElement("span");
+        left.textContent = `${item.key} = ${masked}`;
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "s-btn is-danger";
+        del.style.padding = "2px 7px";
+        del.textContent = "×";
+        del.addEventListener("click", () => {
+          envVars = envVars.filter((x) => x.key !== item.key);
+          flushStoreToDisk();
+          renderEnvVarsList();
+        });
+        row.append(left, del);
+        envVarsListEl.append(row);
+      }
+    }
+
+    settingsModal.querySelectorAll("[data-env-preset]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        envKeyInput.value = btn.dataset.envPreset || "";
+        envValInput.value = btn.dataset.envVal || "";
+        envValInput.focus();
+      });
+    });
+    document.querySelector("#env-var-add-btn").addEventListener("click", () => {
+      const key = envKeyInput.value.trim();
+      const value = envValInput.value;
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+        showToast("变量名仅支持字母、数字与下划线");
+        return;
+      }
+      const idx = envVars.findIndex((x) => x.key === key);
+      if (idx >= 0) envVars[idx] = { key, value };
+      else envVars.push({ key, value });
+      envKeyInput.value = "";
+      envValInput.value = "";
+      flushStoreToDisk();
+      renderEnvVarsList();
+      showToast(`已保存环境变量 ${key}`);
+    });
+
+    async function runBootstrapOnSession(targetSession, silent = false) {
+      const sess = targetSession || selected;
+      if (!sess) {
+        if (!silent) showToast("请先连接一台 Colab 虚拟机");
+        return;
+      }
+      if (!silent) showToast(`正在初始化 ${sess}…`);
+      if (bootRunLog && !silent) {
+        bootRunLog.hidden = false;
+        bootRunLog.textContent = `正在初始化 ${sess}（挂载 / 注入环境变量 / 安装加速工具）…`;
+      }
+      try {
+        const res = await fetch("/api/bootstrap", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ session: sess, envVars, config: bootstrapConfig }),
+        }).then((r) => r.json());
+        if (bootRunLog && !silent) {
+          bootRunLog.textContent = res.ok ? `初始化完成：\n${res.log || "ok"}` : `初始化失败：${res.error}\n${res.log || ""}`;
+        }
+        showToast(res.ok ? `VM ${sess} 初始化完成` : `初始化失败：${res.error}`);
+      } catch (err) {
+        if (bootRunLog && !silent) bootRunLog.textContent = err.message;
+      }
+    }
+
+    document.querySelector("#env-inject-now-btn").addEventListener("click", () => runBootstrapOnSession(selected, false));
+    document.querySelector("#boot-run-now-btn").addEventListener("click", () => runBootstrapOnSession(selected, false));
+    inspectorBootstrapBtn.addEventListener("click", () => runBootstrapOnSession(selected, false));
+
+    const syncBootstrapSettings = () => {
+      bootstrapConfig = {
+        autoMountDrive: !!bootMountDrive.checked,
+        enableHfTransfer: !!bootHfTransfer.checked,
+        hfCacheToDrive: !!bootHfDriveCache.checked,
+        autoInstallUv: !!bootInstallUv.checked,
+        autoInjectEnv: !!bootInjectEnv.checked,
+        customScript: bootCustomScript.value || "",
+      };
+      scheduleStoreSync();
+    };
+    [bootMountDrive, bootHfTransfer, bootHfDriveCache, bootInstallUv, bootInjectEnv].forEach((el) => el.addEventListener("change", syncBootstrapSettings));
+    bootCustomScript.addEventListener("input", syncBootstrapSettings);
+    settingGpuPoll.addEventListener("change", () => {
+      gpuAutoPoll = settingGpuPoll.checked;
+      scheduleStoreSync();
+    });
+
+    // Direct Parameterized Script Runner (Zero Agent)
+    function defaultDirectScripts() {
+      return [
+        {
+          id: "builtin-hf-dl",
+          builtin: true,
+          name: "HF 高速下载模型 (hf_transfer)",
+          runtime: "bash",
+          code: "export HF_HUB_ENABLE_HF_TRANSFER=1\npip install -q huggingface_hub hf_transfer\nhuggingface-cli download {{repo_id}} --local-dir {{local_dir}}",
+        },
+        {
+          id: "builtin-comfyui",
+          builtin: true,
+          name: "启动 ComfyUI (:8188)",
+          runtime: "bash",
+          code: "if [ ! -d /content/ComfyUI ]; then git clone --depth 1 https://github.com/comfyanonymous/ComfyUI /content/ComfyUI && pip install -q -r /content/ComfyUI/requirements.txt; fi\nnohup python3 /content/ComfyUI/main.py --listen 127.0.0.1 --port 8188 > /content/comfyui.log 2>&1 &\nsleep 2 && tail -n 15 /content/comfyui.log",
+        },
+        {
+          id: "builtin-diffusers",
+          builtin: true,
+          name: "直连 Python 生成模板（参数化）",
+          runtime: "python",
+          code: "import os\nprompt = '''{{prompt}}'''\nsteps = int('{{steps}}' or '25')\nout = '{{output_path}}' or '/content/output.png'\nprint('Prompt:', prompt, 'Steps:', steps, 'Target:', out)\n# 在此处调用你的本地推理管道（如 MiniMax / Flux / Wan / Diffusers）\n# 保存到 /content/*.png 或 /content/*.mp4 并 print(out)，下方会自动预览",
+        },
+      ];
+    }
+
+    function parseScriptParams(src) {
+      const names = [];
+      const seen = new Set();
+      const re = /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g;
+      let m;
+      while ((m = re.exec(String(src || ""))) !== null) {
+        if (!seen.has(m[1])) { seen.add(m[1]); names.push(m[1]); }
+      }
+      return names;
+    }
+
+    function renderRunnerParams() {
+      const names = parseScriptParams(runnerCodeInput.value);
+      runnerParamsWrap.replaceChildren();
+      for (const name of names) {
+        const field = document.createElement("div");
+        field.className = "s-field";
+        if (/prompt/i.test(name)) field.classList.add("is-full");
+        const lbl = document.createElement("label");
+        lbl.textContent = name;
+        const inp = document.createElement("input");
+        inp.className = "s-input";
+        inp.type = "text";
+        inp.dataset.paramName = name;
+        inp.value = runnerParamValues[name] || "";
+        inp.placeholder = `{{${name}}}`;
+        inp.addEventListener("input", () => { runnerParamValues[name] = inp.value; });
+        field.append(lbl, inp);
+        runnerParamsWrap.append(field);
+      }
+    }
+
+    function selectRunnerScript(scr) {
+      activeRunnerScriptId = scr ? scr.id : null;
+      runnerNameInput.value = scr ? scr.name : "";
+      runnerRuntimeSelect.value = scr ? (scr.runtime || "python") : "python";
+      runnerCodeInput.value = scr ? scr.code : "";
+      runnerDeleteBtn.hidden = !scr || !!scr.builtin;
+      runnerMediaEl.replaceChildren();
+      runnerOutputEl.hidden = true;
+      runnerStatusEl.textContent = "";
+      renderRunnerParams();
+      renderRunnerSidebar();
+    }
+
+    function renderRunnerSidebar() {
+      runnerSidebarEl.replaceChildren();
+      const all = [...directScripts, ...defaultDirectScripts()];
+      for (const scr of all) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "settings-nav-btn" + (scr.id === activeRunnerScriptId ? " is-active" : "");
+        btn.textContent = scr.name;
+        btn.addEventListener("click", () => selectRunnerScript(scr));
+        runnerSidebarEl.append(btn);
+      }
+    }
+
+    function openRunnerModal() {
+      const all = [...directScripts, ...defaultDirectScripts()];
+      if (!activeRunnerScriptId && all.length) selectRunnerScript(all[0]);
+      else renderRunnerSidebar();
+      openDialog(runnerModal);
+    }
+
+    document.querySelector("#open-runner-btn").addEventListener("click", openRunnerModal);
+    document.querySelector("#close-runner-modal").addEventListener("click", () => closeDialog(runnerModal));
+    runnerModal.addEventListener("click", (e) => { if (e.target === runnerModal) closeDialog(runnerModal); });
+    runnerCodeInput.addEventListener("input", renderRunnerParams);
+    document.querySelector("#runner-new-btn").addEventListener("click", () => selectRunnerScript(null));
+    document.querySelector("#runner-save-btn").addEventListener("click", () => {
+      const name = runnerNameInput.value.trim() || "未命名脚本";
+      const runtime = runnerRuntimeSelect.value === "bash" ? "bash" : "python";
+      const codeVal = runnerCodeInput.value;
+      const isCustomExisting = directScripts.some((x) => x.id === activeRunnerScriptId);
+      const id = isCustomExisting ? activeRunnerScriptId : `scr-${Date.now().toString(36)}`;
+      const obj = { id, name, runtime, code: codeVal };
+      if (isCustomExisting) {
+        directScripts = directScripts.map((x) => (x.id === id ? obj : x));
+      } else {
+        directScripts.unshift(obj);
+      }
+      activeRunnerScriptId = id;
+      flushStoreToDisk();
+      renderRunnerSidebar();
+      runnerDeleteBtn.hidden = false;
+      runnerStatusEl.textContent = "已保存到本地";
+    });
+    runnerDeleteBtn.addEventListener("click", () => {
+      directScripts = directScripts.filter((x) => x.id !== activeRunnerScriptId);
+      flushStoreToDisk();
+      selectRunnerScript(directScripts[0] || defaultDirectScripts()[0]);
+    });
+    document.querySelector("#runner-exec-btn").addEventListener("click", async () => {
+      if (!selected) {
+        runnerStatusEl.textContent = "请先连接一台 Colab 虚拟机";
+        return;
+      }
+      const btn = document.querySelector("#runner-exec-btn");
+      btn.disabled = true;
+      runnerStatusEl.textContent = `正在直连 ${selected} 执行（不经过 Agent）…`;
+      runnerOutputEl.hidden = false;
+      runnerOutputEl.textContent = "Running…";
+      runnerMediaEl.replaceChildren();
+      try {
+        const res = await fetch("/api/runner/exec", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            session: selected,
+            runtime: runnerRuntimeSelect.value,
+            script: runnerCodeInput.value,
+            params: runnerParamValues,
+            envVars,
+          }),
+        }).then((r) => r.json());
+        runnerStatusEl.textContent = res.ok ? "执行完成" : `执行失败：${res.error || ""}`;
+        runnerOutputEl.textContent = [res.stdout, res.stderr, res.error].filter(Boolean).join("\n").trim() || "(无输出)";
+        if (Array.isArray(res.media)) {
+          for (const m of res.media) {
+            if (m.kind === "video") {
+              const v = document.createElement("video");
+              v.className = "files-preview-video";
+              v.src = m.url;
+              v.controls = true;
+              v.playsInline = true;
+              runnerMediaEl.append(v);
+            } else {
+              const img = document.createElement("img");
+              img.className = "files-preview-img";
+              img.src = m.url;
+              img.alt = m.name;
+              runnerMediaEl.append(img);
+            }
+          }
+        }
+        refreshGpuTelemetry(true);
+      } catch (err) {
+        runnerStatusEl.textContent = err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // Local <-> Cloud Folder Sync
+    function openSyncModal() {
+      syncLocalInput.value = syncConfig.localDir || "";
+      syncRemoteInput.value = syncConfig.remoteDir || "/content/project";
+      syncLogEl.hidden = true;
+      openDialog(syncModal);
+    }
+    inspectorSyncBtn.addEventListener("click", openSyncModal);
+    document.querySelector("#close-sync-modal").addEventListener("click", () => closeDialog(syncModal));
+    syncModal.addEventListener("click", (e) => { if (e.target === syncModal) closeDialog(syncModal); });
+    async function triggerFolderSync(direction) {
+      if (!selected) { showToast("请先连接 Colab 虚拟机"); return; }
+      syncConfig = { localDir: syncLocalInput.value.trim(), remoteDir: syncRemoteInput.value.trim() || "/content/project" };
+      flushStoreToDisk();
+      syncLogEl.hidden = false;
+      syncLogEl.textContent = direction === "push" ? "正在打包并推送到云端…" : "正在从云端打包拉回本地…";
+      try {
+        const res = await fetch(`/api/sync/${direction}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ session: selected, ...syncConfig }),
+        }).then((r) => r.json());
+        syncLogEl.textContent = res.ok
+          ? `${direction === "push" ? "推送" : "拉回"}成功（${formatFileSize(res.bytes)}）：${res.localDir} ↔ ${res.remoteDir}`
+          : `同步失败：${res.error}`;
+      } catch (err) {
+        syncLogEl.textContent = err.message;
+      }
+    }
+    document.querySelector("#sync-push-btn").addEventListener("click", () => triggerFolderSync("push"));
+    document.querySelector("#sync-pull-btn").addEventListener("click", () => triggerFolderSync("pull"));
+
+    // Command Palette (⌘K)
+    let paletteItems = [];
+    let paletteIdx = 0;
+    function buildPaletteCommands() {
+      const cmds = [
+        { label: "新建 Colab 会话 / New Session", kbd: "⌘N", run: openNewSessionModal },
+        { label: "参数化直连脚本运行器 / Direct Runner (No Agent)", kbd: "", run: openRunnerModal },
+        { label: "云端文件与媒体画廊 / Cloud Files & Gallery", kbd: "", run: () => selected && openFilesModal("/content") },
+        { label: "本地 ↔ 云端目录同步 / Folder Sync", kbd: "", run: openSyncModal },
+        { label: "常用任务模板 / Prompt Templates", kbd: "", run: () => { renderTemplatesModal(); openDialog(templatesModal); } },
+        { label: "切换视图：对话 / View: Chat", kbd: "", run: () => setWorkspaceView("chat") },
+        { label: "切换视图：对话 + 终端分屏 / View: Split", kbd: "", run: () => setWorkspaceView("split") },
+        { label: "切换视图：全屏终端 / View: Terminal", kbd: "⌘J", run: () => setWorkspaceView("terminal") },
+        { label: "对当前 VM 执行初始化 / Bootstrap Current VM", kbd: "", run: () => runBootstrapOnSession(selected, false) },
+        { label: "导出 Jupyter Notebook (.ipynb)", kbd: "", run: () => exportCurrentSession("ipynb") },
+        { label: "导出 Markdown (.md)", kbd: "", run: () => exportCurrentSession("md") },
+        { label: "收起/展开左侧栏 / Toggle Sidebar", kbd: "⌘B", run: toggleSidebar },
+        { label: "收起/展开右侧面板 / Toggle Inspector", kbd: "⌘.", run: toggleRail },
+        { label: "外观：深色主题 / Theme: Dark", kbd: "", run: () => applyTheme("dark", true) },
+        { label: "外观：浅色主题 / Theme: Light", kbd: "", run: () => applyTheme("light", true) },
+        { label: "外观：跟随系统 / Theme: System", kbd: "", run: () => applyTheme("system", true) },
+        { label: "语言：简体中文 / Language: Chinese", kbd: "", run: () => applyLanguage("zh-CN", true) },
+        { label: "语言：English", kbd: "", run: () => applyLanguage("en", true) },
+        { label: "打开设置 / Settings", kbd: "", run: () => openSettings("general") },
+        { label: "打开环境变量保险箱 / Env Vault & Bootstrap", kbd: "", run: () => openSettings("colab") },
+      ];
+      for (const s of sessions) {
+        cmds.unshift({ label: `切换会话：${s.name} (${s.hardware})`, kbd: "VM", run: () => selectSession(s.name) });
+      }
+      return cmds;
+    }
+
+    function renderPaletteList() {
+      const q = cmdPaletteInput.value.trim().toLowerCase();
+      paletteItems = buildPaletteCommands().filter((c) => !q || c.label.toLowerCase().includes(q));
+      if (paletteIdx >= paletteItems.length) paletteIdx = 0;
+      cmdPaletteListEl.replaceChildren();
+      paletteItems.forEach((item, i) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "palette-item" + (i === paletteIdx ? " is-active" : "");
+        btn.innerHTML = `<span>${escapeHtml(item.label)}</span><span class="palette-kbd">${escapeHtml(item.kbd)}</span>`;
+        btn.addEventListener("click", () => {
+          closeDialog(cmdPaletteModal);
+          item.run();
+        });
+        cmdPaletteListEl.append(btn);
+      });
+    }
+
+    function openCommandPalette() {
+      cmdPaletteInput.value = "";
+      paletteIdx = 0;
+      renderPaletteList();
+      openDialog(cmdPaletteModal);
+      cmdPaletteInput.focus();
+    }
+
+    cmdPaletteModal.addEventListener("click", (e) => { if (e.target === cmdPaletteModal) closeDialog(cmdPaletteModal); });
+    cmdPaletteInput.addEventListener("input", () => { paletteIdx = 0; renderPaletteList(); });
+    cmdPaletteInput.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        paletteIdx = (paletteIdx + 1) % Math.max(1, paletteItems.length);
+        renderPaletteList();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        paletteIdx = (paletteIdx - 1 + Math.max(1, paletteItems.length)) % Math.max(1, paletteItems.length);
+        renderPaletteList();
+      } else if (e.key === "Enter" && paletteItems[paletteIdx]) {
+        e.preventDefault();
+        const chosen = paletteItems[paletteIdx];
+        closeDialog(cmdPaletteModal);
+        chosen.run();
+      }
+    });
+
+    // In-app Check for Updates
+    document.querySelector("#check-updates-btn").addEventListener("click", async () => {
+      const btn = document.querySelector("#check-updates-btn");
+      btn.disabled = true;
+      updateStatusDesc.textContent = "正在连接 GitHub 检查最新版本…";
+      try {
+        const res = await fetch("/api/updates/check").then((r) => r.json());
+        if (!res.ok) {
+          updateStatusDesc.textContent = `检查失败：${res.error}`;
+        } else if (res.hasUpdate) {
+          updateStatusDesc.innerHTML = `发现新版本 <strong>v${escapeHtml(res.latestVersion)}</strong>（当前 v${escapeHtml(res.currentVersion)}）`;
+          openExternalUrl(res.releaseUrl);
+        } else {
+          updateStatusDesc.textContent = `已是最新版本 v${res.currentVersion}`;
+        }
+      } catch (err) {
+        updateStatusDesc.textContent = err.message;
+      } finally {
+        btn.disabled = false;
+      }
     });
 
     /* ── 4. Cost & Idle VM Guardrails ── */
@@ -7649,6 +8765,10 @@
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
         event.preventDefault();
         toggleTerminalView();
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openCommandPalette();
       }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
         event.preventDefault();
@@ -7773,7 +8893,7 @@
       if (currentSessionObject()) renderInspector();
     }, 1000);
     setInterval(() => {
-      if (document.visibilityState === "visible" && currentSessionObject()) refreshGpuTelemetry(true);
+      if (gpuAutoPoll && document.visibilityState === "visible" && currentSessionObject()) refreshGpuTelemetry(true);
     }, 15_000);
     setInterval(() => {
       checkCostAndIdleGuards();

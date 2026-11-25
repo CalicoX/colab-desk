@@ -11,16 +11,20 @@ Colab Desk lets you drive Google Colab GPU/TPU runtimes through **AI Agents**, *
   - **Grok (`grok`)**: Streaming NDJSON chat with live thinking display and real-time weekly quota tracking.
   - **OpenCode (`opencode acp`)**: ACP protocol support with 30-day & lifetime token/cost stats.
   - **Custom OpenAI-Compatible API Profiles**: Works even with **no local Agent CLI installed** — save multiple profiles (OpenAI, DeepSeek, OpenRouter, Gemini, local Ollama) with built-in Colab tool calling.
-- **Interactive PTY Terminal (`⌘J`)**
-  - Appears automatically once connected to an active Colab VM to switch between **Chat** and **Terminal**.
-  - Full `xterm.js` + POSIX PTY over WebSocket (`colab ssh -s <session>`), supporting multiple tabs, resize (`SIGWINCH`), scrollback replay, and full TUI agents (`claude`, `agy`, `opencode`, `vim`, `htop`, `nvidia-smi`).
-- **Cloud File Explorer**
-  - Visual browser for `/content` and Google Drive (`/content/drive/MyDrive`) with one-click `drivemount`, drag-and-drop upload, download, delete, inline image/text preview, and one-click "Analyze with Agent".
-- **Live GPU / VRAM Monitor & SSH Port Forwarding**
-  - Real-time `nvidia-smi` VRAM, utilization, and temperature meters in the collapsible right inspector (`⌘.`).
-  - One-click SSH tunnels via `colab ssh --proxy-mode` for Gradio (`:7860`), Jupyter (`:8888`), Ollama (`:11434`), vLLM (`:8000`), TensorBoard (`:6006`), or any custom port.
-- **Notebook Export, Templates & Cost Guardrails**
-  - Export sessions to `.ipynb` or `.md`, manage reusable prompt templates, and get native macOS notifications on long task completion, low Compute Units, or idle GPU VMs.
+- **Interactive PTY Terminal & Split View (`⌘J`)**
+  - Appears automatically once connected to an active Colab VM to switch between **Chat**, **Split (Chat + Terminal)**, and **Terminal**.
+  - Full `xterm.js` + POSIX PTY over WebSocket (`colab ssh -s <session>`), supporting multiple tabs, resize (`SIGWINCH`), scrollback replay, one-click **"Send to Agent"** error debugging, and full TUI agents (`claude`, `agy`, `opencode`, `vim`, `htop`, `nvidia-smi`).
+- **Direct Parameterized Script Runner (Zero Agent)**
+  - Run Python (`colab exec`) or Bash (`colab ssh`) inference/deployment workflows directly on the Colab VM with auto-generated `{{param}}` forms, Env Vault injection, and automatic inline preview for generated images and videos — completely bypassing cloud LLMs.
+- **Cloud File Explorer & Media Gallery**
+  - Visual browser for `/content` and Google Drive (`/content/drive/MyDrive`) with **List / Media Gallery** views, inline **MP4/WebM video playback**, image/text preview, multi-select batch download, one-click Save to Drive, drag-and-drop upload, and one-click "Analyze with Agent".
+- **Live GPU / VRAM Monitor, Process Killer & Auto Port Forwarding**
+  - Real-time `nvidia-smi` VRAM, utilization, temperature, and GPU process list with **1-click Kill** in the collapsible right inspector (`⌘.`).
+  - Automatically detects active listening Web ports on the VM alongside presets for **ComfyUI (`:8188`)**, Gradio (`:7860`), Jupyter (`:8888`), Ollama (`:11434`), vLLM (`:8000`), and TensorBoard (`:6006`) via `colab ssh --proxy-mode`.
+- **Env Vault, Auto-Bootstrap & Local ↔ Cloud Folder Sync**
+  - Store `HF_TOKEN`, `WANDB_API_KEY`, `CIVITAI_API_KEY`, etc. locally (`0600`), auto-inject on VM creation, enable `hf_transfer` & Google Drive `HF_HOME` caching, and push/pull local project folders to `/content`.
+- **Command Palette (`⌘K`), Inline Code Execution, Export & Updates**
+  - Press `⌘K` for instant navigation, click **▶ Run** on any code block in chat, export `.ipynb` / `.md`, manage prompt templates, and check GitHub Releases for updates in Settings → About.
 - **Native macOS Experience**
   - Categorized Settings modal with search (`/`), **Dark / Light / System** theme sync, **System / 中文 / English** language switching, local disk persistence (`~/.config/colab-desk/state.json`), and built-in `colab` CLI health check + one-click install/OAuth login.
 
