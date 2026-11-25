@@ -481,10 +481,11 @@
       width: 8px;
     }
 
-    /* Sidebar Footer (CU + Agent Usage Stats + Settings) */
+    /* Sidebar Footer (CU + Agent Usage Stats + Skin + Settings) */
     .sidebar-foot {
       align-items: center;
       border-top: 1px solid var(--line);
+      container-type: inline-size;
       display: flex;
       flex: none;
       gap: 4px;
@@ -494,11 +495,23 @@
     .sidebar-foot-left {
       align-items: center;
       display: flex;
+      flex: 1 1 auto;
       gap: 4px;
       min-width: 0;
+      overflow: hidden;
+    }
+    .sidebar-foot-right {
+      align-items: center;
+      display: inline-flex;
+      flex: none;
+      gap: 2px;
+    }
+    @container (max-width: 268px) {
+      .sidebar-foot-label { display: none; }
     }
     .app.is-sidebar-collapsed .sidebar-foot,
-    .app.is-sidebar-collapsed .sidebar-foot-left {
+    .app.is-sidebar-collapsed .sidebar-foot-left,
+    .app.is-sidebar-collapsed .sidebar-foot-right {
       flex-direction: column;
       gap: 6px;
       justify-content: center;
@@ -3883,6 +3896,55 @@
       opacity: 1;
       transform: translateY(0);
     }
+    .undo-toast {
+      align-items: center;
+      background: var(--popover);
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      bottom: 24px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.48);
+      color: var(--text);
+      display: flex;
+      font-size: 12.5px;
+      gap: 10px;
+      left: 50%;
+      max-width: min(440px, calc(100vw - 32px));
+      padding: 9px 12px 9px 14px;
+      position: fixed;
+      transform: translateX(-50%);
+      z-index: 9998;
+    }
+    .undo-toast[hidden] { display: none; }
+    .undo-toast-msg {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .undo-toast-btn {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      border-radius: 7px;
+      color: var(--accent-text);
+      cursor: pointer;
+      flex: none;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+    }
+    .undo-toast-btn:hover { background: var(--accent-soft-hover); color: var(--text); }
+    .undo-toast-close {
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      flex: none;
+      font-size: 14px;
+      line-height: 1;
+      padding: 3px 5px;
+    }
+    .undo-toast-close:hover { background: var(--chip); color: var(--text); }
     .runner-body {
       display: grid;
       flex: 1 1 0;
@@ -4177,7 +4239,7 @@
               <span id="sidebar-usage-badge" class="sidebar-foot-meta">—</span>
             </button>
           </div>
-          <div style="display:inline-flex;align-items:center;gap:2px;">
+          <div class="sidebar-foot-right">
             <button id="quick-skin-btn" class="sidebar-foot-btn" type="button" data-i18n-title="sidebar.skinTitle" title="切换配色皮肤" aria-label="切换配色皮肤">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
@@ -5278,7 +5340,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.4.5</span>
+                    <span class="s-title">Colab Desk 0.4.6</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5291,7 +5353,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.5（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.6（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -6973,10 +7035,95 @@
       scheduleStoreSync();
     }
 
+    let deletedThreadStack = [];
+    let undoToastTimer = null;
+    let undoToastEl = null;
+
+    function ensureUndoToast() {
+      if (undoToastEl) return undoToastEl;
+      const box = document.createElement("div");
+      box.id = "undo-toast";
+      box.className = "undo-toast";
+      box.setAttribute("role", "status");
+      box.hidden = true;
+      const msg = document.createElement("span");
+      msg.className = "undo-toast-msg";
+      const undoBtn = document.createElement("button");
+      undoBtn.type = "button";
+      undoBtn.className = "undo-toast-btn";
+      undoBtn.addEventListener("click", () => undoLastDeletedThread());
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "undo-toast-close";
+      closeBtn.setAttribute("aria-label", "Dismiss");
+      closeBtn.textContent = "×";
+      closeBtn.addEventListener("click", () => hideUndoToast());
+      box.append(msg, undoBtn, closeBtn);
+      document.body.append(box);
+      undoToastEl = box;
+      return box;
+    }
+
+    function hideUndoToast() {
+      clearTimeout(undoToastTimer);
+      undoToastTimer = null;
+      if (undoToastEl) undoToastEl.hidden = true;
+    }
+
+    function showUndoDeleteToast(title) {
+      const box = ensureUndoToast();
+      box.querySelector(".undo-toast-msg").textContent = L(
+        `已删除对话「${title}」`,
+        `Deleted "${title}"`,
+      );
+      box.querySelector(".undo-toast-btn").textContent = L("撤销 (⌘Z)", "Undo (⌘Z)");
+      box.hidden = false;
+      clearTimeout(undoToastTimer);
+      undoToastTimer = setTimeout(() => {
+        hideUndoToast();
+      }, 9000);
+    }
+
+    function undoLastDeletedThread() {
+      const snap = deletedThreadStack.pop();
+      if (!snap) return false;
+      const insertAt = Math.min(Math.max(0, snap.index), chatThreads.length);
+      chatThreads.splice(insertAt, 0, snap.thread);
+      desk.bySession[snap.thread.id] = snap.entries;
+      if (snap.queue && snap.queue.length > 0) {
+        messageQueues.set(snap.thread.id, snap.queue);
+      }
+      activeThreadId = snap.thread.id;
+      renderChatThreads();
+      renderTranscript(activeThreadId);
+      renderInspector();
+      renderComposerQueue();
+      persistDeskHistory();
+      flushStoreToDisk();
+      if (deletedThreadStack.length > 0) {
+        showUndoDeleteToast(deletedThreadStack[deletedThreadStack.length - 1].thread.title || L("新对话", "New Chat"));
+      } else {
+        hideUndoToast();
+      }
+      showToast(L(`已恢复对话「${snap.thread.title || "新对话"}」`, `Restored "${snap.thread.title || "Chat"}"`));
+      return true;
+    }
+
     function deleteChatThread(threadId) {
       const idx = chatThreads.findIndex((tItem) => tItem.id === threadId);
       if (idx < 0) return;
-      chatThreads.splice(idx, 1);
+      const [removed] = chatThreads.splice(idx, 1);
+      const savedEntries = Array.isArray(desk.bySession[threadId]) ? [...desk.bySession[threadId]] : [];
+      const savedQueue = messageQueues.has(threadId) ? [...messageQueues.get(threadId)] : [];
+      deletedThreadStack.push({
+        thread: { ...removed },
+        index: idx,
+        entries: savedEntries,
+        queue: savedQueue,
+        wasActive: activeThreadId === threadId,
+      });
+      if (deletedThreadStack.length > 20) deletedThreadStack.shift();
+
       delete desk.bySession[threadId];
       messageQueues.delete(threadId);
       if (activeThreadId === threadId) {
@@ -6988,6 +7135,7 @@
       renderComposerQueue();
       persistDeskHistory();
       flushStoreToDisk();
+      showUndoDeleteToast(removed.title || L("新对话", "New Chat"));
     }
 
     function renderChatThreads() {
@@ -12875,6 +13023,17 @@
           positionTip(target);
         }, 160);
       }
+
+      document.addEventListener("keydown", (ev) => {
+        if ((ev.metaKey || ev.ctrlKey) && !ev.shiftKey && ev.key.toLowerCase() === "z") {
+          const tag = (document.activeElement?.tagName || "").toLowerCase();
+          if (tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable) return;
+          if (undoToastEl && !undoToastEl.hidden && deletedThreadStack.length > 0) {
+            ev.preventDefault();
+            undoLastDeletedThread();
+          }
+        }
+      });
 
       document.addEventListener("pointerover", (ev) => {
         const btn = ev.target?.closest?.(ICON_BTN_SEL);

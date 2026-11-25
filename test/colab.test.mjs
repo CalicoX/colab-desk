@@ -606,6 +606,8 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /#templates-modal,\s*#sync-modal\s*\{\s*height:\s*auto;\s*max-height:/);
     assert.match(page, /chat-thread-dot/);
     assert.match(page, /chat-thread-status/);
+    assert.match(page, /undoLastDeletedThread/);
+    assert.match(page, /@container\s*\(max-width:\s*268px\)/);
     assert.match(page, /id="new-chat-thread-btn"/);
     assert.match(page, /function currentTranscriptKey\(\)\s*\{\s*return activeThreadId \|\| "";\s*\}/);
     assert.doesNotMatch(page, /id="reset-chat"/);
