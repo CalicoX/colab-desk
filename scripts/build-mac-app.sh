@@ -6,28 +6,14 @@ cd "$(dirname "$0")/.."
 root="$(pwd)"
 arch="$(uname -m)"
 app="$root/dist/Colab Desk.app"
-server="$app/Contents/Resources/server"
+stage="$root/dist/.Colab Desk.app.staging"
+server="$stage/Contents/Resources/server"
 icon_src="$root/macos/AppIcon.png"
 icon_cache="$root/macos/AppIcon.icns"
-icon_out="$app/Contents/Resources/AppIcon.icns"
+icon_out="$stage/Contents/Resources/AppIcon.icns"
 
-# Gracefully quit any running Colab Desk instance before replacing the bundle.
-if pgrep -x ColabDesk >/dev/null 2>&1; then
-  pkill -TERM -x ColabDesk || true
-  for _ in $(seq 1 25); do
-    if ! pgrep -x ColabDesk >/dev/null 2>&1; then
-      break
-    fi
-    sleep 0.1
-  done
-  if pgrep -x ColabDesk >/dev/null 2>&1; then
-    pkill -KILL -x ColabDesk || true
-    sleep 0.1
-  fi
-fi
-
-rm -rf "$app"
-mkdir -p "$app/Contents/MacOS" "$server"
+rm -rf "$stage"
+mkdir -p "$stage/Contents/MacOS" "$server"
 
 swiftc -O -parse-as-library \
   -file-prefix-map "$root=." \
@@ -35,8 +21,8 @@ swiftc -O -parse-as-library \
   -framework Cocoa \
   -framework WebKit \
   "$root/macos/ColabDesk.swift" \
-  -o "$app/Contents/MacOS/ColabDesk"
-strip -x "$app/Contents/MacOS/ColabDesk" || true
+  -o "$stage/Contents/MacOS/ColabDesk"
+strip -x "$stage/Contents/MacOS/ColabDesk" || true
 
 if [[ -f "$icon_src" ]]; then
   if [[ ! -f "$icon_cache" || "$icon_src" -nt "$icon_cache" ]]; then
@@ -124,12 +110,30 @@ SWIFT
   cp "$icon_cache" "$icon_out"
 fi
 
-cp "$root/macos/Info.plist" "$app/Contents/Info.plist"
+cp "$root/macos/Info.plist" "$stage/Contents/Info.plist"
 cp -R "$root/src" "$root/public" "$server/"
 cp "$root/package.json" "$server/package.json"
 
-chmod +x "$app/Contents/MacOS/ColabDesk"
+chmod +x "$stage/Contents/MacOS/ColabDesk"
 chmod +x "$0"
+
+# Gracefully quit any running Colab Desk instance right before atomic bundle swap.
+if pgrep -x ColabDesk >/dev/null 2>&1; then
+  pkill -TERM -x ColabDesk || true
+  for _ in $(seq 1 25); do
+    if ! pgrep -x ColabDesk >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+  done
+  if pgrep -x ColabDesk >/dev/null 2>&1; then
+    pkill -KILL -x ColabDesk || true
+    sleep 0.1
+  fi
+fi
+
+rm -rf "$app"
+mv "$stage" "$app"
 codesign --force --sign - "$app"
 touch "$app"
 
