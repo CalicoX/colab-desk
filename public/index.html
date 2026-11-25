@@ -207,6 +207,7 @@
       --control: #ede7da;
       --control-hover: #e4dccb;
       --mode-active: #ffffff;
+      --accent-text: #a54321;
       --bar-track: rgba(45, 36, 24, 0.12);
       --bar-fill: #4e4437;
       --danger: #cc3a3a;
@@ -266,6 +267,7 @@
       --control: #ecebf4;
       --control-hover: #e2e0ee;
       --mode-active: #ffffff;
+      --accent-text: var(--indigo);
       --bar-track: rgba(20, 18, 40, 0.12);
       --bar-fill: #3e3a56;
       --danger: #d93848;
@@ -804,7 +806,7 @@
       min-width: 0;
     }
     .chat-thread-pin-ico {
-      color: #c2b2ff;
+      color: var(--accent-text);
       flex: none;
       font-size: 10.5px;
       line-height: 1;
@@ -850,8 +852,8 @@
       transition: background 120ms ease, color 120ms ease;
     }
     .chat-thread-act:hover { background: rgba(255, 255, 255, 0.09); color: var(--text); }
-    .chat-thread-act.is-pinned { color: #c2b2ff; }
-    .chat-thread-act.is-danger:hover { background: rgba(217, 56, 72, 0.16); color: #f08a94; }
+    .chat-thread-act.is-pinned { color: var(--accent-text); }
+    .chat-thread-act.is-danger:hover { background: rgba(217, 56, 72, 0.16); color: var(--danger); }
     .chat-thread-act svg {
       height: 12.5px;
       stroke: currentColor;
@@ -995,7 +997,7 @@
       background: var(--pill);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 999px;
-      color: #c9c7db;
+      color: var(--text);
       display: inline-flex;
       flex: none;
       font-family: var(--mono);
@@ -1207,7 +1209,7 @@
       align-items: center;
       background: var(--accent-soft);
       border-radius: 12px;
-      color: #dad5ff;
+      color: var(--text);
       display: flex;
       font-size: 13px;
       gap: 10px;
@@ -1456,13 +1458,13 @@
       white-space: nowrap;
       transition: color 120ms ease;
     }
-    .tool-title.is-fail { color: #f08a94; }
+    .tool-title.is-fail { color: var(--danger); }
     .tool-step-status {
       color: var(--faint);
       flex: none;
       font-size: 11px;
     }
-    .tool-step-status.is-fail { color: #f08a94; }
+    .tool-step-status.is-fail { color: var(--danger); }
     .tool-body {
       display: flex;
       flex-direction: column;
@@ -1495,7 +1497,7 @@
       gap: 8px;
       padding: 10px 12px;
     }
-    .perm-head { color: #f6cf8a; font-size: 12.5px; font-weight: 600; }
+    .perm-head { color: var(--warn); font-size: 12.5px; font-weight: 600; }
     .perm-detail {
       background: var(--pill);
       border-radius: 8px;
@@ -1621,7 +1623,7 @@
       align-items: center;
       background: var(--control);
       border-radius: 999px;
-      color: #d7d4ea;
+      color: var(--text);
       display: inline-flex;
       font-size: 12px;
       gap: 6px;
@@ -2009,8 +2011,8 @@
       white-space: nowrap;
     }
     .pill-toggle:hover { background: var(--control-hover); color: var(--text); }
-    .pill-toggle.is-ask { color: #f6cf8a; }
-    .pill-toggle.is-steer { color: #c7b8ff; }
+    .pill-toggle.is-ask { color: var(--warn); }
+    .pill-toggle.is-steer { color: var(--accent-text); }
 
     /* ── Composer Queue & Steer Controls ── */
     .composer-queue {
@@ -2084,8 +2086,8 @@
       transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
     }
     .queue-mini-btn:hover { background: rgba(255, 255, 255, 0.07); color: var(--text); }
-    .queue-mini-btn.is-steer { color: #c7b8ff; }
-    .queue-mini-btn.is-steer:hover { background: rgba(139, 108, 255, 0.18); color: #efeaff; }
+    .queue-mini-btn.is-steer { color: var(--accent-text); }
+    .queue-mini-btn.is-steer:hover { background: rgba(139, 108, 255, 0.18); color: var(--accent-text); }
     .busy-send-actions {
       align-items: center;
       display: inline-flex;
@@ -2114,7 +2116,7 @@
     .busy-pill-btn.is-steer {
       background: rgba(139, 108, 255, 0.2);
       border-color: rgba(139, 108, 255, 0.48);
-      color: #e4ddff;
+      color: var(--accent-text);
     }
     .busy-pill-btn.is-steer:hover { background: rgba(139, 108, 255, 0.34); }
     :root[data-theme="light"] .queue-item:hover { background: rgba(20, 18, 40, 0.04); }
@@ -2229,7 +2231,7 @@
     .host-row { align-items: center; display: flex; gap: 8px; justify-content: space-between; min-width: 0; }
     .host-identity { align-items: center; color: var(--muted); display: inline-flex; font-size: 13.5px; gap: 9px; min-width: 0; }
     .host-identity svg { color: var(--muted); flex: none; height: 16px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; width: 16px; fill: none; }
-    .host-name { color: #c8c5d9; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .host-name { color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .split-action-wrap { position: relative; }
     .split-action {
       background: var(--rail-control);
@@ -2318,13 +2320,13 @@
     .kv-label { align-items: center; color: var(--muted); display: inline-flex; flex: none; font-size: 12.5px; gap: 7px; }
     .kv-label svg { color: var(--faint); height: 14px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.75; width: 14px; fill: none; }
     .kv-value { color: var(--text); font-size: 12.5px; font-weight: 500; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-    .kv-value.is-mono { color: #c9c7db; font-family: var(--mono); font-size: 11.5px; }
+    .kv-value.is-mono { color: var(--text); font-family: var(--mono); font-size: 11.5px; }
     .kv-value.is-muted { color: var(--faint); font-weight: 400; }
     .kv-copy {
       background: transparent;
       border: 0;
       border-radius: 5px;
-      color: #c9c7db;
+      color: var(--text);
       cursor: pointer;
       font-family: var(--mono);
       font-size: 11.5px;
@@ -2381,7 +2383,7 @@
       background: rgba(127, 212, 156, 0.14);
       border: 1px solid rgba(127, 212, 156, 0.3);
       border-radius: 8px;
-      color: #b7f0ca;
+      color: var(--ok);
       font-size: 12px;
       padding: 6px 10px;
     }
@@ -2445,7 +2447,7 @@
     .high-mem-note { color: var(--faint); font-size: 11.5px; margin: 4px 0 0; }
     .modal-cmd { background: var(--control); border: 1px solid var(--line); border-radius: 8px; color: var(--muted); font-family: var(--mono); font-size: 11.5px; overflow-x: auto; padding: 7px 10px; white-space: nowrap; }
     .modal-status { background: rgba(130, 115, 245, 0.1); border: 1px solid var(--accent-soft); border-radius: 9px; color: var(--accent-text); font-size: 12px; line-height: 1.5; padding: 8px 11px; }
-    .modal-status.is-warn { background: rgba(240, 184, 96, 0.1); border-color: rgba(240, 184, 96, 0.3); color: #f6cf8a; }
+    .modal-status.is-warn { background: rgba(240, 184, 96, 0.1); border-color: rgba(240, 184, 96, 0.3); color: var(--warn); }
     .modal-status[hidden] { display: none; }
     .modal-error { color: var(--danger); font-size: 12px; line-height: 1.5; margin: -4px 0 0; }
     .modal-error[hidden] { display: none; }
@@ -2498,7 +2500,7 @@
       align-items: center;
       background: rgba(240, 184, 96, 0.12);
       border-bottom: 1px solid rgba(240, 184, 96, 0.28);
-      color: #f6cf8a;
+      color: var(--warn);
       display: flex;
       font-size: 12.5px;
       gap: 10px;
@@ -2513,7 +2515,7 @@
       background: rgba(240, 184, 96, 0.22);
       border: 0;
       border-radius: 999px;
-      color: #ffe2ad;
+      color: var(--warn);
       cursor: pointer;
       flex: none;
       font-size: 12px;
@@ -2829,9 +2831,9 @@
       padding: 3px 10px;
       white-space: nowrap;
     }
-    .s-badge.is-ok { background: rgba(127, 212, 156, 0.14); color: #9ee5b7; }
-    .s-badge.is-warn { background: rgba(240, 184, 96, 0.16); color: #f6cf8a; }
-    .s-badge.is-no { background: rgba(255, 99, 112, 0.14); color: #ff8a94; }
+    .s-badge.is-ok { background: rgba(127, 212, 156, 0.14); color: var(--ok); }
+    .s-badge.is-warn { background: rgba(240, 184, 96, 0.16); color: var(--warn); }
+    .s-badge.is-no { background: rgba(255, 99, 112, 0.14); color: var(--danger); }
     .s-code-row {
       align-items: center;
       background: var(--control);
@@ -3608,7 +3610,7 @@
       width: 26px;
     }
     .nb-run-btn:hover { background: var(--accent-soft-hover); color: var(--text); }
-    .nb-run-btn.is-running { animation: pulse 1.1s ease-in-out infinite; background: rgba(240, 184, 96, 0.24); color: #f2c374; }
+    .nb-run-btn.is-running { animation: pulse 1.1s ease-in-out infinite; background: rgba(240, 184, 96, 0.24); color: var(--warn); }
     .nb-exec-count {
       color: var(--faint);
       font-family: var(--mono);
@@ -5229,7 +5231,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.4.2</span>
+                    <span class="s-title">Colab Desk 0.4.3</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5242,7 +5244,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.2（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.3（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
