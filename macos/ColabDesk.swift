@@ -495,6 +495,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private var webView: WKWebView?
     private var server: ServerSession?
     private var quitSignals: [DispatchSourceSignal] = []
+    private var savedUnmaximizedFrame: NSRect?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installQuitSignals()
@@ -763,6 +764,30 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         syncMacChromeMetrics()
     }
 
+    func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame newFrame: NSRect) -> NSRect {
+        return (window.screen ?? NSScreen.main)?.visibleFrame ?? newFrame
+    }
+
+    /// Maximize window to fill the visible screen (below menu bar / above Dock), NOT macOS fullscreen.
+    private func toggleFillScreen() {
+        guard let window else { return }
+        if window.styleMask.contains(.fullScreen) { return }
+        guard let visible = (window.screen ?? NSScreen.main)?.visibleFrame else { return }
+        let cur = window.frame
+        let isFilled =
+            abs(cur.origin.x - visible.origin.x) <= 6 &&
+            abs(cur.origin.y - visible.origin.y) <= 6 &&
+            abs(cur.size.width - visible.size.width) <= 6 &&
+            abs(cur.size.height - visible.size.height) <= 6
+        if isFilled, let prev = savedUnmaximizedFrame {
+            savedUnmaximizedFrame = nil
+            window.setFrame(prev, display: true, animate: true)
+        } else {
+            savedUnmaximizedFrame = cur
+            window.setFrame(visible, display: true, animate: true)
+        }
+    }
+
     private func showMessage(_ message: String) {
         guard let window else { return }
         let container = NSView()
@@ -804,6 +829,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         )
         contentController.addUserScript(bootScript)
         contentController.add(self, name: "windowDrag")
+        contentController.add(self, name: "windowZoom")
         contentController.add(self, name: "notify")
         contentController.add(self, name: "setTheme")
         contentController.add(self, name: "openExternal")
@@ -896,7 +922,15 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == "windowZoom" {
+            toggleFillScreen()
+            return
+        }
         if message.name == "windowDrag", let window, let event = NSApp.currentEvent {
+            if event.clickCount >= 2 {
+                toggleFillScreen()
+                return
+            }
             window.performDrag(with: event)
             return
         }
@@ -949,6 +983,10 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
 
     @objc private func openCommandPaletteFromMenu(_ sender: Any?) {
         webView?.evaluateJavaScript("window.dispatchEvent(new CustomEvent('colab-open-palette'));", completionHandler: nil)
+    }
+
+    @objc private func toggleFillScreenFromMenu(_ sender: Any?) {
+        toggleFillScreen()
     }
 
     private func activate() {
@@ -1011,6 +1049,14 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             action: #selector(openCommandPaletteFromMenu(_:)),
             keyEquivalent: "k"
         )
+        viewMenu.addItem(.separator())
+        let fillItem = NSMenuItem(
+            title: "Fill Screen",
+            action: #selector(toggleFillScreenFromMenu(_:)),
+            keyEquivalent: "m"
+        )
+        fillItem.keyEquivalentModifierMask = [.command, .option]
+        viewMenu.addItem(fillItem)
         viewItem.submenu = viewMenu
 
         NSApp.mainMenu = main

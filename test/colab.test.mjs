@@ -1108,6 +1108,9 @@ test("mac app does not start a login shell", () => {
   assert.match(swift, /WKUIDelegate/);
   assert.match(swift, /runOpenPanelWith/);
   assert.match(swift, /WKDownloadDelegate/);
+  assert.match(swift, /windowZoom/);
+  assert.match(swift, /toggleFillScreen/);
+  assert.match(swift, /visibleFrame/);
   assert.match(plist, /com\.calicox\.colab-desk/);
   assert.match(plist, /ColabDesk/);
   assert.match(plist, /CFBundleIconFile/);
