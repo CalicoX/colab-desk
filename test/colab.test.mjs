@@ -629,6 +629,8 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /\/api\/store/);
     assert.match(page, /isComposing/);
     assert.match(page, /\.workspace\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;[\s\S]*?min-width:\s*0;[\s\S]*?overflow:\s*hidden;/);
+    assert.match(page, /\.entry\.fail\s+\.error\s*\{[\s\S]*?overflow-wrap:\s*anywhere;/);
+    assert.match(page, /\.meter-row\s*\{[^}]*grid-template-columns:\s*minmax\(78px,\s*1fr\)\s+82px\s+74px;/);
     assert.match(page, /#transcript\s*\{[^}]*flex:\s*1\s+1\s+0;/);
     assert.match(page, /resize:\s*none;/);
     assert.doesNotMatch(page, /resize:\s*vertical;/);

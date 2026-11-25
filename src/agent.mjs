@@ -1614,7 +1614,23 @@ export class AgentManager {
           }
 
           const errBody = await res.text().catch(() => "");
-          lastError = `API 请求失败 (${endpoint} · HTTP ${res.status}): ${errBody.slice(0, 400) || res.statusText}`;
+          let errDetail = errBody.slice(0, 400) || res.statusText;
+          let errType = "";
+          if (errBody.trim().startsWith("{")) {
+            try {
+              const parsedErr = JSON.parse(errBody);
+              const e = parsedErr?.error;
+              if (e && typeof e === "object") {
+                errType = e.type || e.code || "";
+                if (e.message || e.msg) errDetail = String(e.message || e.msg);
+              } else if (typeof e === "string" && e) {
+                errDetail = e;
+              } else if (parsedErr?.message || parsedErr?.msg) {
+                errDetail = String(parsedErr.message || parsedErr.msg);
+              }
+            } catch {}
+          }
+          lastError = `API 请求失败 (${endpoint} · HTTP ${res.status}${errType ? ` · ${errType}` : ""}): ${errDetail}`;
 
           if ((res.status === 404 || res.status === 405) && hasNextEndpoint) {
             break;

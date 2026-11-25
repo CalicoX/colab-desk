@@ -1081,12 +1081,17 @@
     .entry.fail .error {
       background: rgba(255, 99, 112, 0.09);
       border-radius: 10px;
+      box-sizing: border-box;
       color: var(--danger);
       font-family: var(--mono);
       font-size: 12px;
+      line-height: 1.5;
       margin: 0 0 8px;
+      max-width: 100%;
+      overflow-wrap: anywhere;
       padding: 9px 12px;
       white-space: pre-wrap;
+      word-break: break-word;
     }
 
     /* Agent Assistant Block */
@@ -1095,6 +1100,7 @@
       flex-direction: column;
       gap: 8px;
       max-width: 100%;
+      min-width: 0;
     }
     .agent-meta {
       align-items: center;
@@ -1894,8 +1900,8 @@
     .status-dot.is-offline { background: var(--faint); }
 
     .meter-list { display: flex; flex-direction: column; gap: 13px; }
-    .meter-row { align-items: center; display: grid; gap: 10px; grid-template-columns: minmax(72px, 1fr) 82px minmax(52px, auto); }
-    .meter-label { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .meter-row { align-items: center; display: grid; gap: 10px; grid-template-columns: minmax(78px, 1fr) 82px 74px; }
+    .meter-label { color: var(--muted); font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .meter-track {
       background: var(--bar-track);
       border-radius: 2px;
@@ -1924,7 +1930,7 @@
     .meter-fill.is-warn { background: #f2c374; }
     .meter-fill.is-low { background: #e8727c; }
     .meter-tick { display: none; }
-    .meter-value { color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+    .meter-value { color: var(--text); font-size: 12.5px; font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
     .meter-value.is-muted { color: var(--muted); }
     .meter-foot { align-items: center; color: var(--faint); display: flex; font-size: 11.5px; justify-content: space-between; margin-top: -2px; }
     .meter-refresh { background: transparent; border: 0; color: var(--muted); cursor: pointer; font-size: 11.5px; padding: 0; }
