@@ -872,6 +872,9 @@ test("mac app does not start a login shell", () => {
   assert.doesNotMatch(swift, /zsh -lic|\/bin\/zsh/);
   assert.match(swift, /SIGTERM/);
   assert.match(swift, /WKWebView/);
+  assert.match(swift, /WKUIDelegate/);
+  assert.match(swift, /runOpenPanelWith/);
+  assert.match(swift, /WKDownloadDelegate/);
   assert.match(plist, /com\.calicox\.colab-desk/);
   assert.match(plist, /ColabDesk/);
   assert.match(plist, /CFBundleIconFile/);
