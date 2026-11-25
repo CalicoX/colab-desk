@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
+  AgentManager,
   buildColabSystemRules,
   extractAcpModels,
   formatTurnPrompt,
@@ -12,6 +14,8 @@ import {
   parseAgyQuotaJson,
   parseGrokBillingPayload,
   parseGrokEvent,
+  parseOpenAiJsonCompletion,
+  resolveOpenAiChatEndpoints,
 } from "../src/agent.mjs";
 import { parseWhoami } from "../src/colab-env.mjs";
 import {
@@ -919,6 +923,98 @@ test("agent parsers handle ACP updates, model catalogs, and Grok NDJSON events",
   assert.match(handoff, /Model Context Handoff \(Grok -> AGY\)/);
   assert.match(handoff, /A100 40GB ready/);
   assert.match(handoff, /Now install ComfyUI/);
+});
+
+test("custom OpenAI-compatible gateway resolves /v1, handles non-SSE JSON, retries without stream_options, and surfaces errors", async () => {
+  assert.deepEqual(resolveOpenAiChatEndpoints("http://127.0.0.1:18765"), [
+    "http://127.0.0.1:18765/v1/chat/completions",
+    "http://127.0.0.1:18765/chat/completions",
+  ]);
+  assert.deepEqual(resolveOpenAiChatEndpoints("http://127.0.0.1:18765/v1/"), [
+    "http://127.0.0.1:18765/v1/chat/completions",
+  ]);
+  assert.deepEqual(resolveOpenAiChatEndpoints("http://127.0.0.1:18765/v1/chat/completions"), [
+    "http://127.0.0.1:18765/v1/chat/completions",
+  ]);
+
+  const parsedJson = parseOpenAiJsonCompletion({
+    choices: [{ message: { content: "hello", reasoning_content: "thinking" } }],
+    usage: { prompt_tokens: 10, completion_tokens: 5 },
+  });
+  assert.equal(parsedJson.text, "hello");
+  assert.equal(parsedJson.thought, "thinking");
+  assert.equal(parsedJson.usage.inputTokens, 10);
+
+  let receivedPaths = [];
+  let sawNoStreamOptions = false;
+  const mockGw = http.createServer((req, res) => {
+    const chunks = [];
+    req.on("data", (c) => chunks.push(c));
+    req.on("end", () => {
+      receivedPaths.push(req.url);
+      const body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+      if (req.url === "/v1/chat/completions") {
+        if (body.stream_options) {
+          res.writeHead(400, { "content-type": "application/json" });
+          res.end(JSON.stringify({ error: { message: "stream_options not supported" } }));
+          return;
+        }
+        sawNoStreamOptions = true;
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({
+          choices: [{ message: { content: "Gateway OK!", reasoning_content: "checked" } }],
+          usage: { prompt_tokens: 12, completion_tokens: 4 },
+        }));
+        return;
+      }
+      res.writeHead(404, { "content-type": "text/plain" });
+      res.end("not found");
+    });
+  });
+
+  await new Promise((resolve) => mockGw.listen(0, "127.0.0.1", resolve));
+  const { port } = mockGw.address();
+  const prevStateDir = process.env.COLAB_DESK_STATE_DIR;
+  const tmpStateDir = fs.mkdtempSync(path.join(os.tmpdir(), "colab-gw-test-"));
+  process.env.COLAB_DESK_STATE_DIR = tmpStateDir;
+  fs.writeFileSync(
+    path.join(tmpStateDir, "state.json"),
+    JSON.stringify({
+      settings: {
+        apiProfiles: [{
+          id: "gw1",
+          label: "LocalGW",
+          baseUrl: `http://127.0.0.1:${port}`,
+          apiKey: "",
+          model: "glm-5.3-flash",
+        }],
+      },
+    }),
+  );
+
+  try {
+    const mgr = new AgentManager(tmpStateDir);
+    const testRes = await mgr.testApiConfig({ baseUrl: `http://127.0.0.1:${port}`, model: "glm-5.3-flash" });
+    assert.equal(testRes.ok, true);
+    assert.equal(testRes.endpoint, `http://127.0.0.1:${port}/v1/chat/completions`);
+
+    const events = [];
+    await mgr.runChat(
+      { provider: "api:gw1", model: "glm-5.3-flash", prompt: "test", chatThreadId: "t-gw" },
+      (ev) => events.push(ev),
+    );
+    assert.equal(sawNoStreamOptions, true);
+    assert.ok(receivedPaths.includes("/v1/chat/completions"));
+    assert.equal(events.find((e) => e.type === "error"), undefined);
+    assert.equal(events.filter((e) => e.type === "thought").map((e) => e.text).join(""), "checked");
+    assert.equal(events.filter((e) => e.type === "text").map((e) => e.text).join(""), "Gateway OK!");
+    assert.ok(events.some((e) => e.type === "done" && e.stopReason === "end_turn"));
+  } finally {
+    mockGw.close();
+    if (prevStateDir === undefined) delete process.env.COLAB_DESK_STATE_DIR;
+    else process.env.COLAB_DESK_STATE_DIR = prevStateDir;
+    fs.rmSync(tmpStateDir, { recursive: true, force: true });
+  }
 });
 
 test("mac app does not start a login shell", () => {

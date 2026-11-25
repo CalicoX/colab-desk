@@ -778,6 +778,104 @@ class AcpClient {
   }
 }
 
+export function resolveOpenAiChatEndpoints(baseUrl) {
+  const clean = String(baseUrl || "").trim().replace(/\/+$/, "");
+  if (!clean) return [];
+  if (/\/chat\/completions$/i.test(clean)) return [clean];
+  try {
+    const parsed = new URL(clean);
+    const pathname = parsed.pathname.replace(/\/+$/, "");
+    if (!pathname) {
+      return [`${clean}/v1/chat/completions`, `${clean}/chat/completions`];
+    }
+    if (/\/v\d+(?:beta|alpha)?$/i.test(pathname)) {
+      return [`${clean}/chat/completions`];
+    }
+    return [`${clean}/chat/completions`, `${clean}/v1/chat/completions`];
+  } catch {
+    return [`${clean}/v1/chat/completions`, `${clean}/chat/completions`];
+  }
+}
+
+export function extractOpenAiContentText(val) {
+  if (typeof val === "string") return val;
+  if (Array.isArray(val)) {
+    return val
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (part && typeof part === "object") {
+          return String(part.text ?? part.content ?? part.value ?? "");
+        }
+        return "";
+      })
+      .join("");
+  }
+  return "";
+}
+
+export function parseOpenAiJsonCompletion(data) {
+  if (!data || typeof data !== "object") return null;
+  if (data.error) {
+    const msg =
+      typeof data.error === "string"
+        ? data.error
+        : data.error.message || data.error.msg || JSON.stringify(data.error);
+    return { error: String(msg) };
+  }
+  const usage = data.usage
+    ? {
+        inputTokens: data.usage.prompt_tokens || data.usage.input_tokens || 0,
+        outputTokens: data.usage.completion_tokens || data.usage.output_tokens || 0,
+        thoughtTokens: data.usage.completion_tokens_details?.reasoning_tokens || 0,
+      }
+    : null;
+  const choice = Array.isArray(data.choices) ? data.choices[0] : null;
+  if (choice && typeof choice === "object") {
+    const msg = choice.message || choice.delta || {};
+    const text = extractOpenAiContentText(msg.content);
+    const thought = extractOpenAiContentText(msg.reasoning_content ?? msg.reasoning ?? msg.thinking);
+    const rawToolCalls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
+    const toolCalls = rawToolCalls
+      .map((tc) => ({
+        id: String(tc?.id || ""),
+        name: String(tc?.function?.name || tc?.name || ""),
+        arguments:
+          typeof tc?.function?.arguments === "string"
+            ? tc.function.arguments
+            : tc?.function?.arguments != null
+              ? JSON.stringify(tc.function.arguments)
+              : typeof tc?.arguments === "string"
+                ? tc.arguments
+                : tc?.arguments != null
+                  ? JSON.stringify(tc.arguments)
+                  : "{}",
+      }))
+      .filter((tc) => tc.name);
+    return { text, thought, toolCalls, usage };
+  }
+  if (typeof data.output_text === "string" && data.output_text) {
+    return { text: data.output_text, thought: "", toolCalls: [], usage };
+  }
+  if (Array.isArray(data.output)) {
+    const parts = [];
+    for (const item of data.output) {
+      if (item && Array.isArray(item.content)) {
+        for (const c of item.content) {
+          if (typeof c?.text === "string") parts.push(c.text);
+        }
+      }
+    }
+    if (parts.length > 0) return { text: parts.join(""), thought: "", toolCalls: [], usage };
+  }
+  if (typeof data.message === "string" && data.message) {
+    return { error: data.message };
+  }
+  if (typeof data.msg === "string" && data.msg) {
+    return { error: data.msg };
+  }
+  return null;
+}
+
 export class AgentManager {
   constructor(cwd = process.cwd()) {
     this.cwd = cwd;
@@ -1284,30 +1382,55 @@ export class AgentManager {
     if (!api.baseUrl || !api.model) {
       return { ok: false, error: "请先填写 Base URL 和模型名称" };
     }
-    const endpoint = api.baseUrl.endsWith("/chat/completions")
-      ? api.baseUrl
-      : `${api.baseUrl}/chat/completions`;
+    const endpoints = resolveOpenAiChatEndpoints(api.baseUrl);
+    if (endpoints.length === 0) {
+      return { ok: false, error: "无效的 Base URL" };
+    }
     const headers = { "content-type": "application/json" };
     if (api.apiKey) headers.authorization = `Bearer ${api.apiKey}`;
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model: api.model,
-          messages: [{ role: "user", content: "hi" }],
-          max_tokens: 8,
-        }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        return { ok: false, error: `HTTP ${res.status}: ${errText.slice(0, 240)}` };
+    let lastError = "无法连接到接口";
+    for (let i = 0; i < endpoints.length; i += 1) {
+      const endpoint = endpoints[i];
+      const hasMore = i < endpoints.length - 1;
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            model: api.model,
+            messages: [{ role: "user", content: "hi" }],
+            max_tokens: 8,
+            stream: false,
+          }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        const contentType = String(res.headers.get("content-type") || "").toLowerCase();
+        const bodyText = await res.text().catch(() => "");
+        if (!res.ok) {
+          lastError = `${endpoint} → HTTP ${res.status}: ${bodyText.slice(0, 240)}`;
+          if ((res.status === 404 || res.status === 405) && hasMore) continue;
+          return { ok: false, error: lastError };
+        }
+        if (contentType.includes("text/html") || /^\s*<(?:!doctype|html)/i.test(bodyText)) {
+          lastError = `${endpoint} 返回了 HTML 页面而非 OpenAI JSON 接口`;
+          if (hasMore) continue;
+          return { ok: false, error: lastError };
+        }
+        if (bodyText.trim().startsWith("{")) {
+          try {
+            const parsed = parseOpenAiJsonCompletion(JSON.parse(bodyText));
+            if (parsed?.error) {
+              return { ok: false, error: `${endpoint} → ${parsed.error}` };
+            }
+          } catch {}
+        }
+        return { ok: true, model: api.model, endpoint };
+      } catch (err) {
+        lastError = `${endpoint} → ${err.message || String(err)}`;
+        if (hasMore) continue;
       }
-      return { ok: true, model: api.model };
-    } catch (err) {
-      return { ok: false, error: err.message || String(err) };
     }
+    return { ok: false, error: lastError };
   }
 
   async runChat(input, emit, signal) {
@@ -1411,9 +1534,11 @@ export class AgentManager {
       return;
     }
     const activeModel = model || api.model;
-    const endpoint = api.baseUrl.endsWith("/chat/completions")
-      ? api.baseUrl
-      : `${api.baseUrl}/chat/completions`;
+    let candidateEndpoints = resolveOpenAiChatEndpoints(api.baseUrl);
+    if (candidateEndpoints.length === 0) {
+      emit({ type: "error", error: "自定义 API 的 Base URL 格式无效" });
+      return;
+    }
     const headers = { "content-type": "application/json" };
     if (api.apiKey) headers.authorization = `Bearer ${api.apiKey}`;
 
@@ -1436,6 +1561,206 @@ export class AgentManager {
     });
 
     const totalUsage = { inputTokens: 0, outputTokens: 0, thoughtTokens: 0 };
+    let includeStreamOptions = true;
+    let includeTools = true;
+    let preferStream = true;
+
+    const addUsage = (u) => {
+      if (!u) return;
+      totalUsage.inputTokens += u.inputTokens ?? u.prompt_tokens ?? u.input_tokens ?? 0;
+      totalUsage.outputTokens += u.outputTokens ?? u.completion_tokens ?? u.output_tokens ?? 0;
+      totalUsage.thoughtTokens += u.thoughtTokens ?? u.completion_tokens_details?.reasoning_tokens ?? 0;
+    };
+
+    const requestRound = async (messages, forceNonStream = false) => {
+      let lastError = null;
+      for (let i = 0; i < candidateEndpoints.length; i += 1) {
+        const endpoint = candidateEndpoints[i];
+        const hasNextEndpoint = i < candidateEndpoints.length - 1;
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          const useStream = !forceNonStream && preferStream;
+          const payload = {
+            model: activeModel,
+            messages,
+            stream: useStream,
+          };
+          if (includeTools) payload.tools = COLAB_OPENAI_TOOLS;
+          if (useStream && includeStreamOptions) payload.stream_options = { include_usage: true };
+
+          let res;
+          try {
+            res = await fetch(endpoint, {
+              method: "POST",
+              headers,
+              body: JSON.stringify(payload),
+              signal,
+            });
+          } catch (err) {
+            if (signal && signal.aborted) throw err;
+            lastError = `无法连接 ${endpoint}: ${err.message || String(err)}`;
+            break;
+          }
+
+          const contentType = String(res.headers.get("content-type") || "").toLowerCase();
+          if (res.ok) {
+            if (contentType.includes("text/html")) {
+              try { await res.body?.cancel(); } catch {}
+              lastError = `${endpoint} 返回了 HTML 页面（请检查 Base URL 是否需要 /v1 路径）`;
+              if (hasNextEndpoint) break;
+              return { error: lastError, endpoint };
+            }
+            candidateEndpoints = [endpoint];
+            return { res, endpoint, contentType };
+          }
+
+          const errBody = await res.text().catch(() => "");
+          lastError = `API 请求失败 (${endpoint} · HTTP ${res.status}): ${errBody.slice(0, 400) || res.statusText}`;
+
+          if ((res.status === 404 || res.status === 405) && hasNextEndpoint) {
+            break;
+          }
+          if (res.status === 400 || res.status === 422) {
+            if (useStream && includeStreamOptions) {
+              includeStreamOptions = false;
+              continue;
+            }
+            if (includeTools && /tool|function/i.test(errBody)) {
+              includeTools = false;
+              continue;
+            }
+            if (useStream && /stream/i.test(errBody)) {
+              preferStream = false;
+              continue;
+            }
+            if (includeTools) {
+              includeTools = false;
+              continue;
+            }
+          }
+          return { error: lastError, endpoint };
+        }
+      }
+      return { error: lastError || "API 请求失败" };
+    };
+
+    const readRoundResponse = async (res, contentType) => {
+      let assistantText = "";
+      let thoughtText = "";
+      let sseDataCount = 0;
+      let streamError = null;
+      const toolCallsMap = new Map();
+
+      const processSseLine = (rawLine) => {
+        const line = rawLine.trim();
+        if (!line.startsWith("data:")) return;
+        const dataStr = line.slice(5).trim();
+        if (!dataStr || dataStr === "[DONE]") return;
+        sseDataCount += 1;
+        let chunk;
+        try { chunk = JSON.parse(dataStr); } catch { return; }
+        if (chunk?.error) {
+          streamError =
+            typeof chunk.error === "string"
+              ? chunk.error
+              : chunk.error.message || chunk.error.msg || JSON.stringify(chunk.error);
+          return;
+        }
+        if (chunk.usage) addUsage(chunk.usage);
+        const choice = chunk.choices?.[0];
+        const delta = choice?.delta || choice?.message;
+        if (!delta) return;
+        const reasoningPart = extractOpenAiContentText(delta.reasoning_content ?? delta.reasoning ?? delta.thinking);
+        if (reasoningPart) {
+          thoughtText += reasoningPart;
+          emit({ type: "thought", text: reasoningPart });
+        }
+        const textPart = extractOpenAiContentText(delta.content);
+        if (textPart) {
+          assistantText += textPart;
+          emit({ type: "text", text: textPart });
+        }
+        if (Array.isArray(delta.tool_calls)) {
+          for (const tc of delta.tool_calls) {
+            const idx = tc.index ?? 0;
+            const prev = toolCallsMap.get(idx) || { id: "", name: "", arguments: "" };
+            if (tc.id) prev.id = tc.id;
+            if (tc.function?.name) prev.name += tc.function.name;
+            if (typeof tc.function?.arguments === "string") {
+              prev.arguments += tc.function.arguments;
+            } else if (tc.function?.arguments != null) {
+              prev.arguments += JSON.stringify(tc.function.arguments);
+            }
+            toolCallsMap.set(idx, prev);
+          }
+        }
+      };
+
+      const applyJsonBody = (rawText) => {
+        let parsedJson;
+        try { parsedJson = JSON.parse(rawText); } catch { return false; }
+        const completion = parseOpenAiJsonCompletion(parsedJson);
+        if (!completion) return false;
+        if (completion.error) {
+          streamError = completion.error;
+          return true;
+        }
+        if (completion.usage) addUsage(completion.usage);
+        if (completion.thought) {
+          thoughtText += completion.thought;
+          emit({ type: "thought", text: completion.thought });
+        }
+        if (completion.text) {
+          assistantText += completion.text;
+          emit({ type: "text", text: completion.text });
+        }
+        if (Array.isArray(completion.toolCalls)) {
+          completion.toolCalls.forEach((tc, idx) => {
+            toolCallsMap.set(idx, tc);
+          });
+        }
+        return true;
+      };
+
+      let rawBody = "";
+      if (contentType.includes("application/json") || !res.body) {
+        rawBody = await res.text().catch(() => "");
+        if (!applyJsonBody(rawBody) && rawBody.includes("data:")) {
+          for (const line of rawBody.split(/\r?\n/)) processSseLine(line);
+        }
+      } else {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let sseBuf = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const decoded = decoder.decode(value, { stream: true });
+          if (sseDataCount === 0 && rawBody.length < 65_536) {
+            rawBody += decoded.slice(0, 65_536 - rawBody.length);
+          }
+          sseBuf += decoded;
+          const lines = sseBuf.split(/\r?\n/);
+          sseBuf = lines.pop() || "";
+          for (const rawLine of lines) processSseLine(rawLine);
+        }
+        const tail = decoder.decode();
+        if (tail) {
+          if (sseDataCount === 0 && rawBody.length < 65_536) {
+            rawBody += tail.slice(0, 65_536 - rawBody.length);
+          }
+          sseBuf += tail;
+        }
+        if (sseBuf.trim()) {
+          for (const rawLine of sseBuf.split(/\r?\n/)) processSseLine(rawLine);
+        }
+        if (sseDataCount === 0 && rawBody.trim()) {
+          applyJsonBody(rawBody.trim());
+        }
+      }
+
+      const toolCalls = Array.from(toolCallsMap.values()).filter((tc) => tc.name);
+      return { assistantText, thoughtText, toolCalls, streamError, rawBody };
+    };
 
     try {
       for (let round = 0; round < 12; round += 1) {
@@ -1447,74 +1772,38 @@ export class AgentManager {
           { role: "system", content: buildColabSystemRules(context) },
           ...thread.messages,
         ];
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            model: activeModel,
-            messages,
-            tools: COLAB_OPENAI_TOOLS,
-            stream: true,
-            stream_options: { include_usage: true },
-          }),
-          signal,
-        });
-        if (!res.ok || !res.body) {
-          const errBody = await res.text().catch(() => "");
-          emit({ type: "error", error: `API 请求失败 (HTTP ${res.status}): ${errBody.slice(0, 400)}` });
+        let reqRes = await requestRound(messages, false);
+        if (reqRes.error) {
+          emit({ type: "error", error: reqRes.error });
           return;
         }
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let sseBuf = "";
-        let assistantText = "";
-        const toolCallsMap = new Map();
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          sseBuf += decoder.decode(value, { stream: true });
-          const lines = sseBuf.split("\n");
-          sseBuf = lines.pop() || "";
-          for (const rawLine of lines) {
-            const line = rawLine.trim();
-            if (!line.startsWith("data:")) continue;
-            const dataStr = line.slice(5).trim();
-            if (!dataStr || dataStr === "[DONE]") continue;
-            let chunk;
-            try { chunk = JSON.parse(dataStr); } catch { continue; }
-            if (chunk.usage) {
-              totalUsage.inputTokens += chunk.usage.prompt_tokens || 0;
-              totalUsage.outputTokens += chunk.usage.completion_tokens || 0;
-              totalUsage.thoughtTokens += chunk.usage.completion_tokens_details?.reasoning_tokens || 0;
-            }
-            const delta = chunk.choices?.[0]?.delta;
-            if (!delta) continue;
-            if (typeof delta.reasoning_content === "string" && delta.reasoning_content) {
-              emit({ type: "thought", text: delta.reasoning_content });
-            } else if (typeof delta.reasoning === "string" && delta.reasoning) {
-              emit({ type: "thought", text: delta.reasoning });
-            }
-            if (typeof delta.content === "string" && delta.content) {
-              assistantText += delta.content;
-              emit({ type: "text", text: delta.content });
-            }
-            if (Array.isArray(delta.tool_calls)) {
-              for (const tc of delta.tool_calls) {
-                const idx = tc.index ?? 0;
-                const prev = toolCallsMap.get(idx) || { id: "", name: "", arguments: "" };
-                if (tc.id) prev.id = tc.id;
-                if (tc.function?.name) prev.name += tc.function.name;
-                if (tc.function?.arguments) prev.arguments += tc.function.arguments;
-                toolCallsMap.set(idx, prev);
-              }
-            }
+        let parsed = await readRoundResponse(reqRes.res, reqRes.contentType);
+        if (!parsed.streamError && !parsed.assistantText && !parsed.thoughtText && parsed.toolCalls.length === 0 && preferStream) {
+          // Some local gateways accept stream:true with HTTP 200 but emit an empty body; retry once non-streaming
+          preferStream = false;
+          const fallbackReq = await requestRound(messages, true);
+          if (!fallbackReq.error && fallbackReq.res) {
+            reqRes = fallbackReq;
+            parsed = await readRoundResponse(fallbackReq.res, fallbackReq.contentType);
           }
         }
 
-        const toolCalls = Array.from(toolCallsMap.values()).filter((tc) => tc.name);
+        if (parsed.streamError) {
+          emit({ type: "error", error: `API 返回错误 (${reqRes.endpoint}): ${parsed.streamError}` });
+          return;
+        }
+
+        const { assistantText, thoughtText, toolCalls, rawBody } = parsed;
         if (toolCalls.length === 0) {
+          if (!assistantText && !thoughtText) {
+            const snippet = rawBody.trim().replace(/\s+/g, " ").slice(0, 220);
+            emit({
+              type: "error",
+              error: `网关未返回任何回复内容 (${reqRes.endpoint} · ${reqRes.contentType || "unknown"})${snippet ? `: ${snippet}` : "。请检查网关地址（是否需要 /v1）、模型名或网关日志。"}`,
+            });
+            return;
+          }
           if (assistantText) thread.messages.push({ role: "assistant", content: assistantText });
           emit({ type: "done", stopReason: "end_turn", usage: totalUsage });
           return;
