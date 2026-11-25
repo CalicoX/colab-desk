@@ -26,7 +26,7 @@ import {
   renderParameterizedScript,
 } from "../src/cloud-ops.mjs";
 import { resolveLanguage, t } from "../src/i18n.mjs";
-import { applyNewResult, composeAction, createDeskState, isRetryableColabError, record, showSession, summarizeColabError } from "../src/desk.mjs";
+import { applyNewResult, composeAction, createDeskState, isRetryableColabError, parseColabNewSpec, record, showSession, summarizeColabError } from "../src/desk.mjs";
 import { parseCommandOutput } from "../src/parse.mjs";
 import { plan } from "../src/plan.mjs";
 import { runAction } from "../src/run.mjs";
@@ -580,6 +580,7 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="check-updates-btn"/);
     assert.match(page, /id="bg-snipe-btn"/);
     assert.match(page, /id="snipe-banner"/);
+    assert.match(page, /id="snipe-takeover-btn"/);
     assert.doesNotMatch(page, /id="term-new-local"/);
     assert.match(page, /\/vendor\/xterm\/xterm\.js/);
     const xtermAsset = await fetch(`http://127.0.0.1:${port}/vendor/xterm/xterm.js`);
@@ -873,6 +874,23 @@ test("agent parsers handle ACP updates, model catalogs, and Grok NDJSON events",
   assert.equal(isRetryableColabError("TooManyAssignmentsError: limit reached"), false);
   const agentSource = fs.readFileSync(path.join(root, "src/agent.mjs"), "utf8");
   assert.match(agentSource, /bypassPermissions/);
+  const spec = parseColabNewSpec('{"command":"colab new -s A100 --gpu A100 --high-mem"}');
+  assert.deepEqual(spec, { name: "A100", hw: { gpu: "A100", tpu: null, highMem: true }, hwLabel: "A100 + high-mem" });
+  const grokTc = parseGrokEvent({
+    type: "tool_call",
+    toolCallId: "c1",
+    toolName: "run_terminal_command",
+    rawInput: { command: "colab new -s A100 --gpu A100" },
+  });
+  assert.equal(grokTc.toolCallId, "c1");
+  assert.match(grokTc.title, /colab new -s A100/);
+  const grokTu = parseGrokEvent({
+    type: "tool_call_update",
+    toolCallId: "c1",
+    status: "completed",
+    rawOutput: { exit_code: 1, output_for_prompt: "503 Service Unavailable" },
+  });
+  assert.equal(grokTu.status, "failed");
 });
 
 test("mac app does not start a login shell", () => {

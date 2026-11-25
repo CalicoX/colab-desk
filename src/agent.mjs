@@ -366,22 +366,47 @@ export function parseGrokEvent(obj) {
     return null;
   }
   if (type === "tool_use" || type === "tool_call") {
-    const name = obj.name || obj.tool || obj.data?.name || "工具调用";
-    const input = obj.input ?? obj.arguments ?? obj.data?.input ?? "";
+    const rawInput = obj.rawInput ?? obj.input ?? obj.arguments ?? obj.data?.input ?? "";
+    const cmdText = typeof rawInput === "object" && rawInput && typeof rawInput.command === "string"
+      ? rawInput.command.trim()
+      : "";
+    const baseName = obj.toolName || obj.name || obj.tool || obj.title || obj.data?.name || "工具调用";
+    const title = cmdText
+      ? (cmdText.length > 72 ? `${cmdText.slice(0, 69)}…` : cmdText)
+      : (obj.title && obj.title !== "run_terminal_command" ? obj.title : baseName);
     return {
       type: "tool_call",
-      toolCallId: obj.id || obj.tool_use_id || obj.call_id || `${name}-${Date.now()}`,
-      title: name,
-      kind: "tool",
-      status: "in_progress",
-      input: formatCompact(input),
+      toolCallId: obj.toolCallId || obj.id || obj.tool_use_id || obj.call_id || `${baseName}-${Date.now()}`,
+      title,
+      kind: obj.kind || "tool",
+      status: obj.status === "completed" ? "completed" : obj.status === "failed" ? "failed" : "in_progress",
+      input: formatCompact(rawInput),
+    };
+  }
+  if (type === "tool_call_update") {
+    const contentText = extractToolContent(obj.content);
+    const rawOut = obj.rawOutput;
+    const rawText = rawOut
+      ? (typeof rawOut.output_for_prompt === "string" ? rawOut.output_for_prompt : formatCompact(rawOut))
+      : "";
+    const exitCode = rawOut && typeof rawOut.exit_code === "number" ? rawOut.exit_code : null;
+    let status = obj.status || undefined;
+    if (status === "completed" && exitCode !== null && exitCode !== 0) {
+      status = "failed";
+    }
+    return {
+      type: "tool_update",
+      toolCallId: obj.toolCallId || obj.id || obj.tool_use_id || obj.call_id || "",
+      title: obj.title || undefined,
+      status,
+      output: contentText || (status === "completed" || status === "failed" ? rawText : ""),
     };
   }
   if (type === "tool_result") {
     const output = obj.output ?? obj.content ?? obj.data ?? "";
     return {
       type: "tool_update",
-      toolCallId: obj.tool_use_id || obj.call_id || obj.id || "",
+      toolCallId: obj.toolCallId || obj.tool_use_id || obj.call_id || obj.id || "",
       status: obj.is_error ? "failed" : "completed",
       output: formatCompact(output),
     };

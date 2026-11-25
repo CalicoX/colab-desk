@@ -115,6 +115,52 @@ export function showSession(state, sessionName) {
   return bucket ? bucket.slice() : [];
 }
 
+export function parseColabNewSpec(rawInput) {
+  if (!rawInput) return null;
+  let text = "";
+  if (typeof rawInput === "object") {
+    if (typeof rawInput.command === "string") {
+      text = rawInput.command;
+    } else if (rawInput.name || rawInput.gpu || rawInput.tpu) {
+      const name = String(rawInput.name || "").trim();
+      const gpu = rawInput.gpu ? String(rawInput.gpu).trim() : null;
+      const tpu = rawInput.tpu ? String(rawInput.tpu).trim() : null;
+      const highMem = Boolean(rawInput.highMem || rawInput.high_mem);
+      const hwLabel = (gpu || tpu || "CPU") + (highMem ? " + high-mem" : "");
+      return { name: name || (gpu || tpu || "colab"), hw: { gpu, tpu, highMem }, hwLabel };
+    } else {
+      try { text = JSON.stringify(rawInput); } catch { return null; }
+    }
+  } else {
+    text = String(rawInput);
+  }
+
+  // Also unwrap JSON-encoded input strings like {"command":"colab new ..."}
+  if (text.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === "object") {
+        if (typeof parsed.command === "string") text = parsed.command;
+        else if (parsed.name || parsed.gpu || parsed.tpu) return parseColabNewSpec(parsed);
+      }
+    } catch {}
+  }
+
+  const m = text.match(/\bcolab\s+new\b([^\n;&|]*)/);
+  if (!m) return null;
+  const tail = m[1] || "";
+  const nameMatch = tail.match(/(?:^|\s)(?:-s|--session)\s+['"]?([a-zA-Z0-9._-]+)['"]?/);
+  const gpuMatch = tail.match(/(?:^|\s)--gpu\s+['"]?([a-zA-Z0-9._-]+)['"]?/i);
+  const tpuMatch = tail.match(/(?:^|\s)--tpu\s+['"]?([a-zA-Z0-9._-]+)['"]?/i);
+  const highMem = /(?:^|\s)--high-mem(?:\s|$)/.test(tail);
+
+  const gpu = gpuMatch ? gpuMatch[1].toUpperCase() : null;
+  const tpu = tpuMatch ? tpuMatch[1].toLowerCase() : null;
+  const name = (nameMatch && nameMatch[1]) || gpu || tpu || "colab";
+  const hwLabel = (gpu || tpu || "CPU") + (highMem ? " + high-mem" : "");
+  return { name, hw: { gpu, tpu, highMem }, hwLabel };
+}
+
 export function isRetryableColabError(rawErr) {
   const text = String(rawErr || "");
   if (/TooManyAssignmentsError|too many assignments/i.test(text)) return false;

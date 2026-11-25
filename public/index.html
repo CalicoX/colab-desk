@@ -2986,7 +2986,10 @@
             <span class="snipe-pulse" aria-hidden="true"></span>
             <span id="snipe-banner-text" class="snipe-banner-text"></span>
           </div>
-          <button id="snipe-stop-btn" class="s-btn is-danger" type="button" data-i18n="snipe.stop">停止抢卡</button>
+          <div class="guard-banner-actions">
+            <button id="snipe-takeover-btn" class="s-btn is-primary" type="button" hidden data-i18n="modal.newSession.bgSnipe">转后台抢卡</button>
+            <button id="snipe-stop-btn" class="s-btn is-danger" type="button" data-i18n="snipe.stop">停止抢卡</button>
+          </div>
         </div>
 
         <div class="workspace-panes">
@@ -4065,7 +4068,7 @@
   </dialog>
 
   <script type="module">
-    import { applyNewResult, composeAction, createDeskState, isRetryableColabError, record, showSession, summarizeColabError } from "/desk.mjs";
+    import { applyNewResult, composeAction, createDeskState, isRetryableColabError, parseColabNewSpec, record, showSession, summarizeColabError } from "/desk.mjs";
     import { resolveLanguage, t } from "/i18n.mjs";
 
     const SINGLE_SHAPE = new Set(["L4", "v5e1", "v6e1"]);
@@ -4167,6 +4170,7 @@
     const bgSnipeBtn = document.querySelector("#bg-snipe-btn");
     const snipeBanner = document.querySelector("#snipe-banner");
     const snipeBannerText = document.querySelector("#snipe-banner-text");
+    const snipeTakeoverBtn = document.querySelector("#snipe-takeover-btn");
     const snipeStopBtn = document.querySelector("#snipe-stop-btn");
 
     // CU, Usage & Settings modals
@@ -6544,6 +6548,10 @@
                   output: "",
                 });
               }
+              const newSpec = parseColabNewSpec(ev.input) || parseColabNewSpec(ev.title);
+              if (newSpec && ev.status !== "completed" && ev.status !== "failed") {
+                trackAgentSessionCreate(ev.toolCallId, newSpec);
+              }
             } else if (ev.type === "tool_update") {
               const target =
                 entry.tools.find((t) => t.toolCallId && t.toolCallId === ev.toolCallId) ||
@@ -6552,6 +6560,17 @@
                 if (ev.title) target.title = ev.title;
                 if (ev.status) target.status = ev.status;
                 if (ev.output) target.output = target.output ? `${target.output}\n${ev.output}` : ev.output;
+                if (!agentCreate) {
+                  const lateSpec = parseColabNewSpec(target.input) || parseColabNewSpec(target.title);
+                  if (lateSpec && target.status !== "completed" && target.status !== "failed") {
+                    trackAgentSessionCreate(target.toolCallId, lateSpec);
+                  }
+                }
+                if (agentCreate && (!agentCreate.toolCallId || agentCreate.toolCallId === target.toolCallId)) {
+                  if (target.status === "completed" || target.status === "failed") {
+                    resolveAgentSessionCreate(target.status, target.output || ev.output || "");
+                  }
+                }
               }
             } else if (ev.type === "permission_request") {
               entry.permissions.push(ev);
@@ -6573,7 +6592,11 @@
         }
 
         if (sawTool) {
-          refreshSessions(selected);
+          await refreshSessions(selected);
+          if (agentCreate && !agentCreate.failedRetryable) {
+            const found = sessions.some((s) => s.name === agentCreate.name);
+            await resolveAgentSessionCreate(found ? "completed" : "failed", entry.error || entry.text || "");
+          }
         }
       } catch (err) {
         if (err && err.name === "AbortError") {
@@ -6756,6 +6779,99 @@
 
     let activeCreate = null;
     let bgSnipe = null;
+    let agentCreate = null;
+
+    function clearAgentCreate() {
+      if (!agentCreate) return;
+      clearInterval(agentCreate.tickTimer);
+      clearInterval(agentCreate.pollTimer);
+      agentCreate = null;
+      renderSnipeBanner();
+    }
+
+    function trackAgentSessionCreate(toolCallId, spec) {
+      if (bgSnipe && !bgSnipe.stopped) return;
+      if (agentCreate && agentCreate.toolCallId === toolCallId) return;
+      clearAgentCreate();
+      const state = {
+        toolCallId: toolCallId || "",
+        name: spec.name,
+        hw: spec.hw,
+        hwLabel: spec.hwLabel,
+        startedAt: Date.now(),
+        statusHint: activeLang === "en" ? "provisioning via Agent…" : "Agent 申请节点中…",
+        failedRetryable: false,
+        tickTimer: null,
+        pollTimer: null,
+      };
+      agentCreate = state;
+      state.tickTimer = setInterval(() => renderSnipeBanner(), 1000);
+      state.pollTimer = setInterval(async () => {
+        if (agentCreate !== state || state.failedRetryable) return;
+        try {
+          const data = await fetch("/api/log-tail").then((r) => r.json());
+          if (!data.ok || !Array.isArray(data.lines)) return;
+          const tail = data.lines.slice(-6).join("\n");
+          const retryMatch = [...tail.matchAll(/Assignment request failed; retrying in (\d+)s/g)].pop();
+          if (retryMatch) {
+            state.statusHint = activeLang === "en"
+              ? `503 · retrying in ${retryMatch[1]}s`
+              : `503 繁忙 · ${retryMatch[1]}s 后重试`;
+            renderSnipeBanner();
+          }
+        } catch {}
+      }, 2200);
+      renderSnipeBanner();
+    }
+
+    async function resolveAgentSessionCreate(status, outputText = "") {
+      const state = agentCreate;
+      if (!state) return;
+      const elapsedSec = Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000));
+      const looksFailed = status === "failed" || /ColabRequestError|Traceback|Service Unavailable|503\b|Error:/i.test(outputText);
+      const listed = await fetch("/api/sessions").then((r) => r.json()).catch(() => ({ ok: false }));
+      const nextSessions = listed.ok && listed.state && Array.isArray(listed.state.sessions)
+        ? listed.state.sessions
+        : null;
+      if (nextSessions) {
+        sessions = nextSessions;
+        renderSessions();
+      }
+      const createdSess = nextSessions && nextSessions.find((s) => s.name === state.name);
+
+      if (createdSess || (!looksFailed && status === "completed")) {
+        clearAgentCreate();
+        const targetName = createdSess ? createdSess.name : state.name;
+        if (sessions.some((s) => s.name === targetName)) {
+          selectSession(targetName);
+        }
+        refreshUsageSilently();
+        if (bootstrapConfig.autoMountDrive || bootstrapConfig.enableHfTransfer || bootstrapConfig.hfCacheToDrive || bootstrapConfig.autoInstallUv || (bootstrapConfig.autoInjectEnv && envVars.length > 0) || (bootstrapConfig.customScript || "").trim()) {
+          runBootstrapOnSession(targetName, true);
+        }
+        const isEn = activeLang === "en";
+        const titleText = isEn ? "Colab GPU Ready!" : "🎉 抢到 Colab 节点啦！";
+        const bodyText = isEn
+          ? `${targetName} (${state.hwLabel}) is online after ${elapsedSec}s.`
+          : `${targetName} (${state.hwLabel}) 已就绪，耗时 ${elapsedSec}s，已自动切换。`;
+        sendDesktopNotification(titleText, bodyText, true);
+        showToast(bodyText);
+        return;
+      }
+
+      if (isRetryableColabError(outputText)) {
+        clearInterval(state.tickTimer);
+        clearInterval(state.pollTimer);
+        state.failedRetryable = true;
+        state.statusHint = activeLang === "en"
+          ? "503 unavailable · click to keep sniping in background"
+          : "暂时无空闲节点，可点击「转后台抢卡」持续自动重试";
+        renderSnipeBanner();
+        return;
+      }
+
+      clearAgentCreate();
+    }
 
     function stopCreateWatchers() {
       clearInterval(createPollTimer);
@@ -6777,24 +6893,43 @@
     }
 
     function renderSnipeBanner() {
-      if (!bgSnipe || bgSnipe.stopped) {
-        snipeBanner.hidden = true;
+      const isEn = activeLang === "en";
+      if (bgSnipe && !bgSnipe.stopped) {
+        const elapsed = Math.max(0, Math.floor((Date.now() - bgSnipe.startedAt) / 1000));
+        let detail = "";
+        if (bgSnipe.cooldownSec > 0) {
+          detail = isEn
+            ? `retry #${bgSnipe.attempt + 1} in ${bgSnipe.cooldownSec}s`
+            : `${bgSnipe.cooldownSec}s 后发起第 ${bgSnipe.attempt + 1} 轮`;
+        } else {
+          detail = bgSnipe.statusHint || (isEn ? `attempt #${bgSnipe.attempt}` : `第 ${bgSnipe.attempt} 轮申请中`);
+        }
+        snipeBannerText.textContent = isEn
+          ? `Background Sniping · ${bgSnipe.name} (${bgSnipe.hwLabel}) · ${elapsed}s · ${detail}`
+          : `后台抢卡中 · ${bgSnipe.name} (${bgSnipe.hwLabel}) · 已等待 ${elapsed}s · ${detail}`;
+        if (snipeTakeoverBtn) snipeTakeoverBtn.hidden = true;
+        snipeStopBtn.textContent = t(activeLang, "snipe.stop");
+        snipeBanner.hidden = false;
         return;
       }
-      const elapsed = Math.max(0, Math.floor((Date.now() - bgSnipe.startedAt) / 1000));
-      const isEn = activeLang === "en";
-      let detail = "";
-      if (bgSnipe.cooldownSec > 0) {
-        detail = isEn
-          ? `retry #${bgSnipe.attempt + 1} in ${bgSnipe.cooldownSec}s`
-          : `${bgSnipe.cooldownSec}s 后发起第 ${bgSnipe.attempt + 1} 轮`;
-      } else {
-        detail = bgSnipe.statusHint || (isEn ? `attempt #${bgSnipe.attempt}` : `第 ${bgSnipe.attempt} 轮申请中`);
+      if (agentCreate) {
+        const elapsed = Math.max(0, Math.floor((Date.now() - agentCreate.startedAt) / 1000));
+        if (agentCreate.failedRetryable) {
+          snipeBannerText.textContent = isEn
+            ? `${agentCreate.name} (${agentCreate.hwLabel}) · ${agentCreate.statusHint}`
+            : `申请 ${agentCreate.name} (${agentCreate.hwLabel}) 失败 · ${agentCreate.statusHint}`;
+          snipeStopBtn.textContent = isEn ? "Dismiss" : "关闭";
+        } else {
+          snipeBannerText.textContent = isEn
+            ? `Agent Creating · ${agentCreate.name} (${agentCreate.hwLabel}) · ${elapsed}s · ${agentCreate.statusHint}`
+            : `Agent 创建中 · ${agentCreate.name} (${agentCreate.hwLabel}) · 已等待 ${elapsed}s · ${agentCreate.statusHint}`;
+          snipeStopBtn.textContent = isEn ? "Cancel" : "取消";
+        }
+        if (snipeTakeoverBtn) snipeTakeoverBtn.hidden = false;
+        snipeBanner.hidden = false;
+        return;
       }
-      snipeBannerText.textContent = isEn
-        ? `Background Sniping · ${bgSnipe.name} (${bgSnipe.hwLabel}) · ${elapsed}s · ${detail}`
-        : `后台抢卡中 · ${bgSnipe.name} (${bgSnipe.hwLabel}) · 已等待 ${elapsed}s · ${detail}`;
-      snipeBanner.hidden = false;
+      snipeBanner.hidden = true;
     }
 
     function stopBgSnipe(silent = false) {
@@ -6918,6 +7053,7 @@
     }
 
     function startBgSnipe({ name, hw, hwLabel, existingController = null, existingStartedAt = null }) {
+      clearAgentCreate();
       stopBgSnipe(true);
       const snipe = {
         name,
@@ -7041,7 +7177,29 @@
       showToast(activeLang === "en" ? `Background sniping started for ${name} (${hwLabel})` : `已开始后台抢卡：${name} (${hwLabel})，抢到后将发系统通知`);
     });
 
-    snipeStopBtn.addEventListener("click", () => stopBgSnipe(false));
+    snipeTakeoverBtn.addEventListener("click", () => {
+      if (!agentCreate) return;
+      const { name, hw, hwLabel } = agentCreate;
+      const wasRunning = !agentCreate.failedRetryable;
+      clearAgentCreate();
+      if (wasRunning && activeAgentController) {
+        try { activeAgentController.abort(); } catch {}
+      }
+      startBgSnipe({ name, hw, hwLabel });
+      showToast(activeLang === "en" ? `Moved ${name} (${hwLabel}) to background sniping` : `已转入后台抢卡：${name} (${hwLabel})，抢到后将发系统通知`);
+    });
+
+    snipeStopBtn.addEventListener("click", () => {
+      if (bgSnipe && !bgSnipe.stopped) {
+        stopBgSnipe(false);
+      } else if (agentCreate) {
+        const wasRunning = !agentCreate.failedRetryable;
+        clearAgentCreate();
+        if (wasRunning && activeAgentController) {
+          try { activeAgentController.abort(); } catch {}
+        }
+      }
+    });
 
     modalForm.addEventListener("submit", async (event) => {
       event.preventDefault();
