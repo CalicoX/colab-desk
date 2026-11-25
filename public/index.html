@@ -29,6 +29,9 @@
       --bubble: #5b4ed6;
       --chip: #292636;
       --pill: #15131d;
+      --control: #171521;
+      --control-hover: #1d1a2a;
+      --mode-active: #2b273a;
       --bar-track: rgba(255, 255, 255, 0.12);
       --bar-fill: #e0deec;
       --danger: #ff6370;
@@ -38,7 +41,204 @@
       --mono: "SF Mono", "IBM Plex Mono", ui-monospace, monospace;
       --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", sans-serif;
     }
-    :root[data-theme="light"] {
+
+    /* ── Curated Multi-Color Skins ── */
+    :root[data-skin="obsidian"] {
+      --bg: #0c0c0e;
+      --sidebar: #131316;
+      --sidebar-active: #222227;
+      --rail: #141418;
+      --rail-control: #222228;
+      --rail-control-hover: #2c2c34;
+      --card: #18181c;
+      --popover: #1e1e24;
+      --text: #f4f4f6;
+      --muted: #9898a3;
+      --faint: #676773;
+      --indigo: #7c83ff;
+      --indigo-2: #9399ff;
+      --bubble: #3f3f4e;
+      --chip: #25252c;
+      --pill: #111114;
+      --control: #121216;
+      --control-hover: #1d1d23;
+      --mode-active: #27272f;
+      --send: #e4e4ec;
+    }
+    :root[data-skin="obsidian"] .send { color: #111115; }
+    :root[data-skin="ocean"] {
+      --bg: #0b1320;
+      --sidebar: #101b2d;
+      --sidebar-active: #1b2c47;
+      --rail: #111d30;
+      --rail-control: #1a2a42;
+      --rail-control-hover: #223654;
+      --card: #152236;
+      --popover: #192942;
+      --text: #eaf2ff;
+      --muted: #8ea5c7;
+      --faint: #5e7699;
+      --indigo: #2f9cf4;
+      --indigo-2: #52b0ff;
+      --bubble: #1d6fd6;
+      --chip: #1e314e;
+      --pill: #0d1726;
+      --control: #0f1a2b;
+      --control-hover: #172740;
+      --mode-active: #203454;
+      --send: #2f9cf4;
+    }
+    :root[data-skin="emerald"] {
+      --bg: #0c1613;
+      --sidebar: #11201b;
+      --sidebar-active: #1a322a;
+      --rail: #12221d;
+      --rail-control: #1b312a;
+      --rail-control-hover: #233f36;
+      --card: #152721;
+      --popover: #193028;
+      --text: #e9f7f1;
+      --muted: #8bb0a2;
+      --faint: #5c7f72;
+      --indigo: #10b981;
+      --indigo-2: #34d399;
+      --bubble: #0e9368;
+      --chip: #1e372e;
+      --pill: #0d1915;
+      --control: #0f1d18;
+      --control-hover: #172c24;
+      --mode-active: #203b31;
+      --send: #10b981;
+    }
+    :root[data-skin="rose"] {
+      --bg: #17141f;
+      --sidebar: #201b2b;
+      --sidebar-active: #31283f;
+      --rail: #211c2c;
+      --rail-control: #30283d;
+      --rail-control-hover: #3b314b;
+      --card: #262033;
+      --popover: #2d263d;
+      --text: #f6edf4;
+      --muted: #b39cb0;
+      --faint: #7d697c;
+      --indigo: #e46c92;
+      --indigo-2: #f089aa;
+      --bubble: #c84b76;
+      --chip: #332a42;
+      --pill: #181420;
+      --control: #1c1726;
+      --control-hover: #272034;
+      --mode-active: #372d47;
+      --send: #e46c92;
+    }
+    :root[data-skin="amber"] {
+      --bg: #161310;
+      --sidebar: #1f1a15;
+      --sidebar-active: #312920;
+      --rail: #201b16;
+      --rail-control: #302820;
+      --rail-control-hover: #3b3127;
+      --card: #25201a;
+      --popover: #2d261f;
+      --text: #f7f1e7;
+      --muted: #b0a28f;
+      --faint: #7c6f5e;
+      --indigo: #e09132;
+      --indigo-2: #f2aa4c;
+      --bubble: #c7771e;
+      --chip: #332b22;
+      --pill: #171310;
+      --control: #1c1712;
+      --control-hover: #272019;
+      --mode-active: #382e23;
+      --send: #e09132;
+    }
+    :root[data-skin="nord"] {
+      --bg: #1c222d;
+      --sidebar: #232a38;
+      --sidebar-active: #323c4e;
+      --rail: #242b3a;
+      --rail-control: #313b4d;
+      --rail-control-hover: #3c485e;
+      --card: #293141;
+      --popover: #30394b;
+      --text: #eceff4;
+      --muted: #9eb0c9;
+      --faint: #6f8099;
+      --indigo: #6aa9c9;
+      --indigo-2: #88c0d0;
+      --bubble: #4e80a8;
+      --chip: #343e52;
+      --pill: #1d232f;
+      --control: #202735;
+      --control-hover: #2c3547;
+      --mode-active: #3a465c;
+      --send: #6aa9c9;
+    }
+    :root[data-skin="paper"] {
+      color-scheme: light;
+      --bg: #f6f3ec;
+      --sidebar: #ede8dc;
+      --sidebar-hover: rgba(45, 36, 24, 0.055);
+      --sidebar-active: #e2dac9;
+      --rail: #efeae0;
+      --rail-control: #e4ddce;
+      --rail-control-hover: #dad1be;
+      --card: #fbf9f4;
+      --popover: #fffdf9;
+      --line: rgba(45, 36, 24, 0.11);
+      --line-strong: rgba(45, 36, 24, 0.2);
+      --text: #241f18;
+      --muted: #655b4e;
+      --faint: #8f8474;
+      --indigo: #c75c35;
+      --indigo-2: #da6e46;
+      --bubble: #c75c35;
+      --chip: #e6dfd0;
+      --pill: #f2ede2;
+      --control: #ede7da;
+      --control-hover: #e4dccb;
+      --mode-active: #ffffff;
+      --bar-track: rgba(45, 36, 24, 0.12);
+      --bar-fill: #4e4437;
+      --danger: #cc3a3a;
+      --send: #c75c35;
+      --ok: #267d4f;
+      --warn: #b87314;
+    }
+    :root[data-skin="paper"] .starter-card,
+    :root[data-skin="paper"] .mode-switch,
+    :root[data-skin="paper"] .agent-picker-btn,
+    :root[data-skin="paper"] .thought-picker-btn,
+    :root[data-skin="paper"] .pill-toggle,
+    :root[data-skin="paper"] .attach-btn,
+    :root[data-skin="paper"] .output,
+    :root[data-skin="paper"] .entry pre,
+    :root[data-skin="paper"] .code-wrap,
+    :root[data-skin="paper"] .quota-card,
+    :root[data-skin="paper"] .stat-box,
+    :root[data-skin="paper"] .cu-raw { background-color: #ebe5d8; color: var(--text); }
+    :root[data-skin="paper"] .mode-btn.is-active { background: #ffffff; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    :root[data-skin="paper"] dialog.settings-modal,
+    :root[data-skin="paper"] dialog.wide-modal { background: #f7f4ed; color: var(--text); }
+    :root[data-skin="paper"] .settings-sidebar { background: #ede8dc; }
+    :root[data-skin="paper"] .s-card { background: #fffdf9; }
+    :root[data-skin="paper"] .s-input,
+    :root[data-skin="paper"] .s-select,
+    :root[data-skin="paper"] .s-code-row,
+    :root[data-skin="paper"] .s-log { background-color: #f1ece0; color: var(--text); }
+    :root[data-skin="paper"] .s-btn { background: rgba(45, 36, 24, 0.07); color: var(--text); }
+    :root[data-skin="paper"] .s-btn.is-primary { background: var(--indigo); color: #fff; }
+    :root[data-skin="paper"] .host-name,
+    :root[data-skin="paper"] .kv-copy,
+    :root[data-skin="paper"] .kv-value.is-mono,
+    :root[data-skin="paper"] .agent-prose,
+    :root[data-skin="paper"] .thought-body { color: var(--text); }
+    :root[data-skin="paper"] #composer { box-shadow: 0 2px 12px rgba(45, 36, 24, 0.07); }
+    :root[data-skin="paper"] .nb-output { background: rgba(45, 36, 24, 0.045); }
+
+    :root[data-theme="light"]:not([data-skin="paper"]) {
       color-scheme: light;
       --bg: #f6f6fa;
       --sidebar: #eeedf5;
@@ -54,15 +254,14 @@
       --text: #1b1929;
       --muted: #5b5870;
       --faint: #848199;
-      --indigo: #5b4ed6;
-      --indigo-2: #6a5ae0;
-      --bubble: #5b4ed6;
       --chip: #e8e6f3;
       --pill: #f4f3fa;
+      --control: #ecebf4;
+      --control-hover: #e2e0ee;
+      --mode-active: #ffffff;
       --bar-track: rgba(20, 18, 40, 0.12);
       --bar-fill: #3e3a56;
       --danger: #d93848;
-      --send: #d93848;
       --ok: #1f8f4e;
       --warn: #c47d17;
     }
@@ -1382,6 +1581,8 @@
     }
 
     /* ── Composer (Borderless, Aligned 34px Controls, No Textarea Resize Handle) ── */
+    #composer[hidden],
+    #transcript[hidden] { display: none !important; }
     #composer {
       background: var(--card);
       border: 0;
@@ -1463,7 +1664,7 @@
     }
     .mode-switch {
       align-items: center;
-      background: #171521;
+      background: var(--control);
       border-radius: 999px;
       display: inline-flex;
       flex: none;
@@ -1487,7 +1688,7 @@
       white-space: nowrap;
     }
     .mode-btn.is-active {
-      background: #2b273a;
+      background: var(--mode-active);
       color: var(--text);
     }
 
@@ -1517,7 +1718,7 @@
     .agent-picker-btn,
     .thought-picker-btn {
       align-items: center;
-      background: #171521;
+      background: var(--control);
       border: 0;
       border-radius: 999px;
       color: var(--text);
@@ -1536,7 +1737,7 @@
     .agent-picker-btn:hover,
     .agent-picker-btn[aria-expanded="true"],
     .thought-picker-btn:hover,
-    .thought-picker-btn[aria-expanded="true"] { background: #1d1a2a; color: var(--text); }
+    .thought-picker-btn[aria-expanded="true"] { background: var(--control-hover); color: var(--text); }
     .agent-picker-dot {
       background: #38bdf8;
       border-radius: 50%;
@@ -1786,7 +1987,7 @@
 
     .pill-toggle {
       align-items: center;
-      background: #171521;
+      background: var(--control);
       border: 0;
       border-radius: 999px;
       color: var(--muted);
@@ -3278,8 +3479,8 @@
       display: flex;
       flex: none;
       flex-wrap: wrap;
-      gap: 6px;
-      padding: 8px 18px;
+      gap: 8px;
+      padding: 12px 24px;
     }
     .nb-title-input {
       background: transparent;
@@ -3292,7 +3493,7 @@
       min-width: 110px;
       max-width: 210px;
       outline: none;
-      padding: 4px 8px;
+      padding: 5px 8px;
     }
     .nb-title-input:hover,
     .nb-title-input:focus { background: var(--card); border-color: var(--line-strong); }
@@ -3307,9 +3508,9 @@
       display: inline-flex;
       font: inherit;
       font-size: 11.5px;
-      gap: 4px;
-      height: 27px;
-      padding: 0 9px;
+      gap: 5px;
+      height: 28px;
+      padding: 0 10px;
       transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
       white-space: nowrap;
     }
@@ -3362,17 +3563,24 @@
       display: flex;
       flex: 1 1 0;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
       min-height: 0;
       overflow-y: auto;
-      padding: 16px 22px 48px;
+      padding: 20px 24px 56px;
+    }
+    #nb-cells {
+      display: flex;
+      flex: none;
+      flex-direction: column;
+      gap: 14px;
     }
     .nb-cell {
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 12px;
       display: grid;
-      grid-template-columns: 56px minmax(0, 1fr);
+      flex: none;
+      grid-template-columns: 58px minmax(0, 1fr);
       overflow: hidden;
       transition: border-color 140ms ease;
     }
@@ -3386,7 +3594,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      padding: 10px 4px;
+      padding: 12px 6px;
     }
     .nb-run-btn {
       align-items: center;
@@ -3416,11 +3624,11 @@
     }
     .nb-cell-head {
       align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       display: flex;
-      gap: 6px;
+      gap: 8px;
       justify-content: space-between;
-      padding: 4px 10px;
+      padding: 7px 14px;
     }
     .nb-cell-kind {
       color: var(--faint);
@@ -3444,7 +3652,7 @@
       cursor: pointer;
       font: inherit;
       font-size: 11px;
-      padding: 2px 6px;
+      padding: 3px 6px;
     }
     .nb-mini-btn:hover { background: var(--chip); color: var(--text); }
     .nb-mini-btn.is-ai { color: #b7adff; }
@@ -3455,11 +3663,11 @@
       color: var(--text);
       font-family: var(--mono);
       font-size: 12.5px;
-      line-height: 1.55;
-      min-height: 54px;
+      line-height: 1.6;
+      min-height: 60px;
       outline: none;
       overflow: hidden;
-      padding: 10px 12px;
+      padding: 12px 14px;
       resize: none;
       width: 100%;
     }
@@ -3467,9 +3675,11 @@
       cursor: text;
       font-size: 13.5px;
       line-height: 1.65;
-      min-height: 36px;
-      padding: 10px 14px;
+      min-height: 40px;
+      padding: 14px 16px;
     }
+    .nb-md-preview > :first-child { margin-top: 0; }
+    .nb-md-preview > :last-child { margin-bottom: 0; }
     .nb-md-preview:empty::before { color: var(--faint); content: "双击编辑 Markdown 笔记…"; font-style: italic; }
     .nb-ai-bar {
       align-items: center;
@@ -3561,6 +3771,71 @@
       gap: 8px;
       justify-content: center;
       padding: 6px 0;
+    }
+
+    /* ── Skin Swatch Picker & Universal Icon Button Tooltip ── */
+    .skin-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      padding: 4px 0 2px;
+      width: 100%;
+    }
+    .skin-card {
+      align-items: center;
+      background: var(--control);
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 9px 6px;
+      transition: border-color 120ms ease, transform 120ms ease, background 120ms ease;
+    }
+    .skin-card:hover { background: var(--control-hover); border-color: var(--line-strong); transform: translateY(-1px); }
+    .skin-card.is-active { border-color: var(--indigo-2); box-shadow: 0 0 0 2px rgba(130, 115, 245, 0.24); }
+    .skin-swatches {
+      align-items: center;
+      display: inline-flex;
+      gap: 4px;
+    }
+    .skin-swatch {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 50%;
+      height: 12px;
+      width: 12px;
+    }
+    .skin-name {
+      font-size: 11.5px;
+      font-weight: 540;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ui-tooltip {
+      background: var(--popover);
+      border: 1px solid var(--line-strong);
+      border-radius: 7px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
+      color: var(--text);
+      font-size: 11.5px;
+      font-weight: 500;
+      line-height: 1.3;
+      max-width: 260px;
+      opacity: 0;
+      padding: 5px 9px;
+      pointer-events: none;
+      position: fixed;
+      transform: translateY(3px);
+      transition: opacity 110ms ease, transform 110ms ease;
+      white-space: nowrap;
+      z-index: 9999;
+    }
+    .ui-tooltip.is-visible {
+      opacity: 1;
+      transform: translateY(0);
     }
     .runner-body {
       display: grid;
@@ -3856,12 +4131,23 @@
               <span id="sidebar-usage-badge" class="sidebar-foot-meta">—</span>
             </button>
           </div>
-          <button id="open-settings-modal" class="sidebar-foot-btn" type="button" data-i18n-title="sidebar.settings" title="设置" aria-label="设置">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </button>
+          <div style="display:inline-flex;align-items:center;gap:2px;">
+            <button id="quick-skin-btn" class="sidebar-foot-btn" type="button" data-i18n-title="sidebar.skinTitle" title="切换配色皮肤" aria-label="切换配色皮肤">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+              </svg>
+            </button>
+            <button id="open-settings-modal" class="sidebar-foot-btn" type="button" data-i18n-title="sidebar.settings" title="设置" aria-label="设置">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </aside>
       <div id="sidebar-resizer" class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Resize sidebar" data-i18n-title="sidebar.resizerTitle" title="拖动调整宽度，双击恢复默认"></div>
@@ -4529,6 +4815,13 @@
                     <option value="light" data-i18n="settings.general.themeLight">浅色</option>
                   </select>
                 </div>
+                <div class="s-row is-stack" data-search="皮肤 配色 颜色 skin palette color theme ocean emerald rose amber nord paper obsidian">
+                  <div class="s-copy">
+                    <span class="s-title" data-i18n="settings.general.skinTitle">配色皮肤</span>
+                    <span class="s-desc" data-i18n="settings.general.skinDesc">选择你喜欢的界面配色方案，支持实时切换与自动保存。</span>
+                  </div>
+                  <div id="skin-picker-grid" class="skin-grid"></div>
+                </div>
               </div>
             </div>
 
@@ -4938,7 +5231,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.3.0</span>
+                    <span class="s-title">Colab Desk 0.4.0</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -4951,7 +5244,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.3.0（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.0（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -5250,6 +5543,8 @@
     let latestAgentQuota = null;
     const settingLanguage = document.querySelector("#setting-language");
     const settingTheme = document.querySelector("#setting-theme");
+    const skinPickerGrid = document.querySelector("#skin-picker-grid");
+    const quickSkinBtn = document.querySelector("#quick-skin-btn");
     const optLangAuto = document.querySelector("#opt-lang-auto");
     const settingRailOpen = document.querySelector("#setting-rail-open");
     const settingEnterSend = document.querySelector("#setting-enter-send");
@@ -5399,6 +5694,64 @@
     let latestAcpAuth = null;
     let activeSettingsTab = "general";
 
+    const SKINS = [
+      { id: "amethyst", zh: "紫晶夜", en: "Amethyst", swatches: ["#14121b", "#211e2c", "#8273f5"] },
+      { id: "obsidian", zh: "曜石黑", en: "Obsidian", swatches: ["#0c0c0e", "#18181c", "#e4e4ec"] },
+      { id: "ocean", zh: "深海蓝", en: "Ocean", swatches: ["#0b1320", "#152236", "#2f9cf4"] },
+      { id: "emerald", zh: "极光绿", en: "Emerald", swatches: ["#0c1613", "#152721", "#10b981"] },
+      { id: "rose", zh: "玫瑰暮", en: "Rosé", swatches: ["#17141f", "#262033", "#e46c92"] },
+      { id: "amber", zh: "琥珀暖", en: "Amber", swatches: ["#161310", "#25201a", "#e09132"] },
+      { id: "nord", zh: "北欧冰", en: "Nord", swatches: ["#1c222d", "#293141", "#88c0d0"] },
+      { id: "paper", zh: "暖纸白", en: "Paper", swatches: ["#f6f3ec", "#ede8dc", "#c75c35"] },
+    ];
+    let skinPref = "amethyst";
+
+    function renderSkinGrid() {
+      if (!skinPickerGrid) return;
+      skinPickerGrid.replaceChildren();
+      for (const s of SKINS) {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = `skin-card${skinPref === s.id ? " is-active" : ""}`;
+        card.dataset.skinId = s.id;
+        card.title = activeLang === "en" ? s.en : s.zh;
+        const sw = document.createElement("span");
+        sw.className = "skin-swatches";
+        for (const c of s.swatches) {
+          const dot = document.createElement("span");
+          dot.className = "skin-swatch";
+          dot.style.background = c;
+          sw.append(dot);
+        }
+        const nm = document.createElement("span");
+        nm.className = "skin-name";
+        nm.textContent = activeLang === "en" ? s.en : s.zh;
+        card.append(sw, nm);
+        card.addEventListener("click", () => {
+          applySkin(s.id, true);
+          showToast(activeLang === "en" ? `Skin: ${s.en}` : `已切换皮肤：${s.zh}`);
+        });
+        skinPickerGrid.append(card);
+      }
+    }
+
+    function applySkin(nextSkin = skinPref, persist = false) {
+      const valid = SKINS.some((s) => s.id === nextSkin) ? nextSkin : "amethyst";
+      skinPref = valid;
+      if (valid === "amethyst") delete document.documentElement.dataset.skin;
+      else document.documentElement.dataset.skin = valid;
+      if (valid === "paper" && typeof syncTerminalTheme === "function") {
+        syncTerminalTheme("light");
+      } else if (typeof syncTerminalTheme === "function") {
+        syncTerminalTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
+      }
+      renderSkinGrid();
+      if (persist) {
+        try { localStorage.setItem("colab-desk.skin", skinPref); } catch {}
+        scheduleStoreSync();
+      }
+    }
+
     const systemLightMq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
     function applyTheme(pref = themePref, persist = false) {
       themePref = pref === "light" || pref === "dark" || pref === "system" ? pref : "dark";
@@ -5501,6 +5854,7 @@
       if (typeof renderExtra === "function") renderExtra();
       if (typeof renderSessions === "function") renderSessions();
       if (typeof renderChatThreads === "function") renderChatThreads();
+      if (typeof renderSkinGrid === "function") renderSkinGrid();
       if (typeof renderInspector === "function") renderInspector();
       if (typeof renderTunnels === "function") renderTunnels();
       if (typeof renderTranscript === "function") renderTranscript(currentTranscriptKey());
@@ -6251,6 +6605,7 @@
       return {
         languagePref,
         themePref,
+        skinPref,
         composerMode,
         approvalMode,
         enterToSend,
@@ -6388,6 +6743,9 @@
           }
           if (settings.themePref === "system" || settings.themePref === "dark" || settings.themePref === "light") {
             applyTheme(settings.themePref, false);
+          }
+          if (typeof settings.skinPref === "string" && settings.skinPref) {
+            applySkin(settings.skinPref, false);
           }
           if (settings.languagePref === "auto" || settings.languagePref === "zh-CN" || settings.languagePref === "en") {
             applyLanguage(settings.languagePref, false);
@@ -9199,6 +9557,7 @@
         const aiBtn = document.createElement("button");
         aiBtn.type = "button";
         aiBtn.className = "nb-mini-btn is-ai";
+        aiBtn.title = L("使用 AI 生成或改写此单元格", "Generate or edit cell with AI");
         aiBtn.textContent = tr("nb.aiEdit");
         aiBtn.addEventListener("click", () => {
           nbAiEditingCellId = nbAiEditingCellId === cell.id ? null : cell.id;
@@ -9211,6 +9570,7 @@
         const toggleBtn = document.createElement("button");
         toggleBtn.type = "button";
         toggleBtn.className = "nb-mini-btn";
+        toggleBtn.title = cell.type === "markdown" ? L("转为 Python 代码单元格", "Convert to Code cell") : L("转为 Markdown 笔记单元格", "Convert to Markdown cell");
         toggleBtn.textContent = cell.type === "markdown" ? "→ Code" : "→ MD";
         toggleBtn.addEventListener("click", () => {
           cell.type = cell.type === "markdown" ? "code" : "markdown";
@@ -9222,6 +9582,7 @@
         const upBtn = document.createElement("button");
         upBtn.type = "button";
         upBtn.className = "nb-mini-btn";
+        upBtn.title = L("上移单元格", "Move cell up");
         upBtn.textContent = "↑";
         upBtn.disabled = idx === 0;
         upBtn.addEventListener("click", () => moveNotebookCell(idx, -1));
@@ -9229,6 +9590,7 @@
         const downBtn = document.createElement("button");
         downBtn.type = "button";
         downBtn.className = "nb-mini-btn";
+        downBtn.title = L("下移单元格", "Move cell down");
         downBtn.textContent = "↓";
         downBtn.disabled = idx === notebookState.cells.length - 1;
         downBtn.addEventListener("click", () => moveNotebookCell(idx, 1));
@@ -12343,6 +12705,8 @@
       if (savedLang === "auto" || savedLang === "zh-CN" || savedLang === "en") languagePref = savedLang;
       const savedTheme = localStorage.getItem("colab-desk.theme");
       if (savedTheme === "system" || savedTheme === "dark" || savedTheme === "light") themePref = savedTheme;
+      const savedSkin = localStorage.getItem("colab-desk.skin");
+      if (savedSkin && SKINS.some((s) => s.id === savedSkin)) skinPref = savedSkin;
       const savedMode = localStorage.getItem("colab-desk.composer-mode");
       if (savedMode === "cli" || savedMode === "agent" || savedMode === "notebook") composerMode = savedMode;
       const savedApproval = localStorage.getItem("colab-desk.approval-mode");
@@ -12353,8 +12717,94 @@
       if (savedKeepThought === "1") keepThoughtOpen = true;
     } catch {}
 
+    if (quickSkinBtn) {
+      quickSkinBtn.addEventListener("click", () => {
+        const idx = SKINS.findIndex((s) => s.id === skinPref);
+        const next = SKINS[(idx + 1) % SKINS.length];
+        applySkin(next.id, true);
+        showToast(activeLang === "en" ? `Skin: ${next.en}` : `已切换皮肤：${next.zh}`);
+      });
+    }
+
+    // Universal floating tooltip for every icon button (instant, clamped, no native delay)
+    (function initUniversalIconTooltips() {
+      const tip = document.createElement("div");
+      tip.id = "ui-tooltip";
+      tip.className = "ui-tooltip";
+      tip.setAttribute("role", "tooltip");
+      document.body.append(tip);
+      const ICON_BTN_SEL = "button.icon-btn, button.attach-btn, button.send, button.sidebar-foot-btn, button.split-caret, button.nb-run-btn, button.nb-mini-btn, button.thread-act-btn, button.ap-head-refresh, button.queue-item-btn, button.session-menu-btn, button.skin-card, button[data-tooltip]";
+      let activeBtn = null;
+      let showTimer = null;
+
+      function getTipLabel(el) {
+        if (!el) return "";
+        if (el.hasAttribute("title") && el.getAttribute("title")) {
+          el.dataset.tooltip = el.getAttribute("title");
+          el.removeAttribute("title");
+        }
+        return (el.dataset.tooltip || el.getAttribute("aria-label") || "").trim();
+      }
+
+      function hideTip() {
+        clearTimeout(showTimer);
+        showTimer = null;
+        activeBtn = null;
+        tip.classList.remove("is-visible");
+      }
+
+      function positionTip(target) {
+        const rect = target.getBoundingClientRect();
+        const tipRect = tip.getBoundingClientRect();
+        const margin = 8;
+        let top = rect.top - tipRect.height - 8;
+        if (top < margin) top = rect.bottom + 8;
+        let left = rect.left + (rect.width - tipRect.width) / 2;
+        left = Math.max(margin, Math.min(left, window.innerWidth - tipRect.width - margin));
+        tip.style.top = `${Math.round(top)}px`;
+        tip.style.left = `${Math.round(left)}px`;
+      }
+
+      function showFor(target) {
+        const label = getTipLabel(target);
+        if (!label) return;
+        activeBtn = target;
+        clearTimeout(showTimer);
+        showTimer = setTimeout(() => {
+          if (activeBtn !== target || !document.body.contains(target)) return;
+          tip.textContent = getTipLabel(target) || label;
+          tip.style.left = "-9999px";
+          tip.style.top = "-9999px";
+          tip.classList.add("is-visible");
+          positionTip(target);
+        }, 160);
+      }
+
+      document.addEventListener("pointerover", (ev) => {
+        const btn = ev.target?.closest?.(ICON_BTN_SEL);
+        if (!btn) return;
+        if (btn === activeBtn) return;
+        showFor(btn);
+      });
+      document.addEventListener("pointerout", (ev) => {
+        if (!activeBtn) return;
+        const related = ev.relatedTarget;
+        if (related && activeBtn.contains(related)) return;
+        hideTip();
+      });
+      document.addEventListener("focusin", (ev) => {
+        const btn = ev.target?.closest?.(ICON_BTN_SEL);
+        if (btn) showFor(btn);
+      });
+      document.addEventListener("focusout", hideTip);
+      document.addEventListener("pointerdown", hideTip, true);
+      window.addEventListener("scroll", hideTip, true);
+      window.addEventListener("resize", hideTip);
+    })();
+
     restoreDeskHistory();
     applyTheme(themePref, false);
+    applySkin(skinPref, false);
     applyLanguage(languagePref, false);
     renderUsageBadge();
     syncHardwareChips();

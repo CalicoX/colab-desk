@@ -634,8 +634,15 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="mode-notebook"/);
     assert.match(page, /id="notebook-view"/);
     assert.match(page, /id="nb-cells"/);
+    assert.match(page, /#composer\[hidden\],\s*#transcript\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/);
+    assert.match(page, /#nb-cells\s*\{[\s\S]*?gap:\s*14px;/);
     assert.match(page, /id="nb-vars-toggle"/);
     assert.match(page, /id="api-fetch-models-btn"/);
+    assert.match(page, /id="skin-picker-grid"/);
+    assert.match(page, /id="quick-skin-btn"/);
+    assert.match(page, /data-skin="ocean"/);
+    assert.match(page, /data-skin="paper"/);
+    assert.match(page, /initUniversalIconTooltips/);
     assert.match(page, /id="open-usage-modal"/);
     assert.match(page, /id="colab-cu-modal"/);
     assert.match(page, /id="open-settings-modal"/);
