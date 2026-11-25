@@ -581,6 +581,15 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="bg-snipe-btn"/);
     assert.match(page, /id="snipe-banner"/);
     assert.match(page, /id="snipe-takeover-btn"/);
+    assert.match(page, /id="setting-default-high-mem"[^>]*checked/);
+    assert.match(page, /id="high-mem"[^>]*checked/);
+    assert.match(page, /id="composer-queue"/);
+    assert.match(page, /id="busy-mode-toggle"/);
+    assert.match(page, /id="queue-send-btn"/);
+    assert.match(page, /id="steer-send-btn"/);
+    assert.match(page, /id="setting-busy-send-mode"/);
+    assert.match(page, /createDottedOrb/);
+    assert.match(page, /thought-orb/);
     assert.doesNotMatch(page, /id="term-new-local"/);
     assert.match(page, /\/vendor\/xterm\/xterm\.js/);
     const xtermAsset = await fetch(`http://127.0.0.1:${port}/vendor/xterm/xterm.js`);

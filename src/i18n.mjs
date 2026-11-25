@@ -204,6 +204,8 @@ export const TRANSLATIONS = {
     "settings.general.resetBtn": "恢复默认",
     "settings.general.railTitle": "展开右侧信息面板",
     "settings.general.railDesc": "显示或收起右侧 Colab VM 状态与计算单元配额面板（快捷键 ⌘.）。",
+    "settings.general.highMemTitle": "新建会话默认选中高内存",
+    "settings.general.highMemDesc": "打开新建 Colab 会话弹窗时默认勾选 --high-mem（L4 / TPU 单一内存规格将自动忽略）。",
 
     "settings.chat.group": "显示与思考过程",
     "settings.chat.keepThoughtTitle": "思考过程保持展开",
@@ -211,6 +213,10 @@ export const TRANSLATIONS = {
     "settings.chat.localHistoryTitle": "本地自动保存聊天记录",
     "settings.chat.localHistoryDesc": "所有会话对话与用量统计自动写入 ~/.config/colab-desk/state.json，重启不丢失。",
     "settings.chat.enabled": "已启用",
+    "settings.chat.busySendTitle": "Agent 运行中发送行为",
+    "settings.chat.busySendDesc": "当 Agent 正在回复或执行工具时，按 Enter 发送消息是加入队列等待（Queue），还是立即中断当前回合转向（Steer）。",
+    "settings.chat.busyQueue": "排队等待 (Queue)",
+    "settings.chat.busySteer": "立即转向 (Steer)",
 
     "settings.providers.acpGroup": "Antigravity (AGY) ACP 认证",
     "settings.providers.acpTitle": "Antigravity ACP 协议认证",
@@ -486,6 +492,8 @@ export const TRANSLATIONS = {
     "settings.general.resetBtn": "Reset",
     "settings.general.railTitle": "Show right inspector panel",
     "settings.general.railDesc": "Toggle the right-hand Colab VM status and compute unit panel (shortcut ⌘.).",
+    "settings.general.highMemTitle": "Default High-RAM for new sessions",
+    "settings.general.highMemDesc": "Pre-check --high-mem when opening New Session (ignored on single-shape L4 / TPU tiers).",
 
     "settings.chat.group": "Display & Reasoning",
     "settings.chat.keepThoughtTitle": "Keep thinking expanded",
@@ -493,6 +501,10 @@ export const TRANSLATIONS = {
     "settings.chat.localHistoryTitle": "Auto-save chat history locally",
     "settings.chat.localHistoryDesc": "All transcripts and usage counters are persisted to ~/.config/colab-desk/state.json.",
     "settings.chat.enabled": "Enabled",
+    "settings.chat.busySendTitle": "Send while Agent is running",
+    "settings.chat.busySendDesc": "Choose whether pressing Enter mid-turn queues your message (Queue) or interrupts and redirects the Agent immediately (Steer).",
+    "settings.chat.busyQueue": "Queue (wait for turn)",
+    "settings.chat.busySteer": "Steer (interrupt now)",
 
     "settings.providers.acpGroup": "Antigravity (AGY) ACP Authentication",
     "settings.providers.acpTitle": "Antigravity ACP Auth",
