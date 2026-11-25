@@ -600,6 +600,7 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="tools-dropdown-btn"/);
     assert.match(page, /id="chat-threads-list"/);
     assert.match(page, /id="new-chat-thread-btn"/);
+    assert.match(page, /function currentTranscriptKey\(\)\s*\{\s*return activeThreadId \|\| "";\s*\}/);
     assert.doesNotMatch(page, /id="reset-chat"/);
     assert.doesNotMatch(page, /id="term-new-local"/);
     assert.match(page, /\/vendor\/xterm\/xterm\.js/);

@@ -4569,7 +4569,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.2.0</span>
+                    <span class="s-title">Colab Desk 0.2.1</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -4582,7 +4582,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.2.0（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.2.1（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -5124,7 +5124,7 @@
       if (typeof renderChatThreads === "function") renderChatThreads();
       if (typeof renderInspector === "function") renderInspector();
       if (typeof renderTunnels === "function") renderTunnels();
-      if (typeof renderTranscript === "function") renderTranscript(selected || "");
+      if (typeof renderTranscript === "function") renderTranscript(currentTranscriptKey());
       if (typeof renderSnipeBanner === "function") renderSnipeBanner();
       if (typeof renderRunnerSidebar === "function") renderRunnerSidebar();
       if (usageModal && usageModal.open && typeof renderUsageModal === "function") renderUsageModal();
@@ -5990,9 +5990,8 @@
           if (Array.isArray(settings.chatThreads)) {
             chatThreads = settings.chatThreads.filter((x) => x && typeof x.id === "string");
           }
-          if (typeof settings.activeThreadId === "string" && settings.activeThreadId) {
-            activeThreadId = settings.activeThreadId;
-          }
+          // Always open on a fresh New Chat screen on app startup (no stale old thread pre-selected)
+          activeThreadId = null;
           if (settings.modelsByProvider && typeof settings.modelsByProvider === "object") {
             Object.assign(savedModelsByProvider, settings.modelsByProvider);
           }
@@ -6021,7 +6020,7 @@
     syncBusyModeToggle(false);
           setComposerMode(composerMode, false);
         }
-        renderTranscript(selected || "");
+        renderTranscript(currentTranscriptKey());
         renderInspector();
       } catch {}
     }
@@ -6069,7 +6068,7 @@
     }
 
     function currentTranscriptKey() {
-      return activeThreadId || (selected || "");
+      return activeThreadId || "";
     }
 
     function deriveThreadTitle(entries, fallback = "") {
@@ -6110,8 +6109,8 @@
       }
       // Keep only threads that either have entries or are the active empty thread
       chatThreads = chatThreads.filter((tItem) => tItem.id === activeThreadId || (Array.isArray(desk.bySession[tItem.id]) && desk.bySession[tItem.id].length > 0));
-      if (!activeThreadId || !chatThreads.some((tItem) => tItem.id === activeThreadId)) {
-        activeThreadId = chatThreads[0]?.id || null;
+      if (activeThreadId && !chatThreads.some((tItem) => tItem.id === activeThreadId)) {
+        activeThreadId = null;
       }
     }
 
@@ -6162,20 +6161,11 @@
         stopReasonKind = "stop";
         activeAgentController.abort();
       }
-      const id = `chat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`;
-      const thread = {
-        id,
-        title: L("新对话", "New Chat"),
-        sessionName: selected || "",
-        pinned: false,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-      chatThreads.unshift(thread);
-      desk.bySession[id] = [];
-      activeThreadId = id;
+      // Drop any lingering empty placeholder threads and return cleanly to the New Chat screen
+      chatThreads = chatThreads.filter((tItem) => Array.isArray(desk.bySession[tItem.id]) && desk.bySession[tItem.id].length > 0);
+      activeThreadId = null;
       renderChatThreads();
-      renderTranscript(id);
+      renderTranscript("");
       renderInspector();
       renderComposerQueue();
       persistDeskHistory();
@@ -6205,7 +6195,7 @@
       delete desk.bySession[threadId];
       messageQueues.delete(threadId);
       if (activeThreadId === threadId) {
-        activeThreadId = chatThreads[0]?.id || null;
+        activeThreadId = null;
       }
       renderChatThreads();
       renderTranscript(currentTranscriptKey());
@@ -7468,10 +7458,6 @@
         ? `${session.hardware}${session.status ? " · " + session.status : ""}${session.shape ? " · " + session.shape : ""}`
         : "Selected session";
       renderSessions();
-      if (!activeThreadId) {
-        const matchThread = chatThreads.find((tItem) => tItem.sessionName === name);
-        if (matchThread) activeThreadId = matchThread.id;
-      }
       renderChatThreads();
       renderTranscript(currentTranscriptKey());
       renderInspector();
@@ -7547,7 +7533,8 @@
             ? tr("ws.noSessionMeta")
             : result.error;
           renderSessions();
-          renderTranscript("");
+          renderChatThreads();
+          renderTranscript(currentTranscriptKey());
           renderInspector();
         }
         refreshUsageSilently();
@@ -8387,10 +8374,11 @@
         return;
       }
       selected = null;
-      title.textContent = "还没有会话";
-      crumbName.textContent = "未选择";
+      title.textContent = tr("ws.noSessionTitle");
+      crumbName.textContent = tr("ws.unselected");
       renderSessions();
-      renderTranscript(stay || "");
+      renderChatThreads();
+      renderTranscript(currentTranscriptKey());
       renderInspector();
     }
 
