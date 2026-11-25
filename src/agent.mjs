@@ -294,6 +294,32 @@ export function extractAcpModels(sessionNewResult) {
   return { mode: "none", configId: "model", current: "", models: [], thoughtLevels };
 }
 
+function formatToolActionTitle(rawName, rawInput, rawOutput = null) {
+  const pickFromObj = (obj) => {
+    if (!obj || typeof obj !== "object") return "";
+    const cmd = obj.command || obj.CommandLine || obj.cmd;
+    if (typeof cmd === "string" && cmd.trim()) return cmd.trim();
+    const file = obj.path || obj.Path || obj.file || obj.file_path || obj.TargetFile;
+    if (typeof file === "string" && file.trim()) {
+      const verb = rawName ? `${rawName} ` : "";
+      return `${verb}${file.trim()}`.trim();
+    }
+    const query = obj.query || obj.Query || obj.url || obj.Url;
+    if (typeof query === "string" && query.trim()) return query.trim();
+    const desc = obj.description || obj.toolSummary;
+    if (typeof desc === "string" && desc.trim()) return desc.trim();
+    return "";
+  };
+
+  let extracted = pickFromObj(rawInput) || pickFromObj(rawOutput);
+  if (!extracted && typeof rawInput === "string" && rawInput.trim().startsWith("{")) {
+    try { extracted = pickFromObj(JSON.parse(rawInput)); } catch {}
+  }
+  const clean = (extracted || String(rawName || "").trim()).replace(/\s+/g, " ").trim();
+  if (!clean) return "shell";
+  return clean.length > 92 ? `${clean.slice(0, 89)}…` : clean;
+}
+
 export function parseAcpSessionUpdate(params) {
   const update = params?.update;
   if (!update || typeof update !== "object") return null;
@@ -318,10 +344,12 @@ export function parseAcpSessionUpdate(params) {
     return null;
   }
   if (kind === "tool_call") {
+    const baseName = update.title || update.name || "";
+    const title = formatToolActionTitle(baseName, update.rawInput, null);
     return {
       type: "tool_call",
       toolCallId: update.toolCallId || update.id || String(Date.now()),
-      title: update.title || update.name || "工具调用",
+      title,
       kind: update.kind || "tool",
       status: update.status || "in_progress",
       input: update.rawInput ? formatCompact(update.rawInput) : "",
@@ -329,10 +357,13 @@ export function parseAcpSessionUpdate(params) {
   }
   if (kind === "tool_call_update") {
     const contentText = extractToolContent(update.content) || (update.rawOutput ? formatCompact(update.rawOutput) : "");
+    const title = update.rawInput || update.rawOutput
+      ? formatToolActionTitle(update.title || "", update.rawInput, update.rawOutput)
+      : (update.title || undefined);
     return {
       type: "tool_update",
       toolCallId: update.toolCallId || update.id || "",
-      title: update.title || undefined,
+      title,
       status: update.status || "completed",
       output: contentText,
     };
@@ -367,16 +398,11 @@ export function parseGrokEvent(obj) {
   }
   if (type === "tool_use" || type === "tool_call") {
     const rawInput = obj.rawInput ?? obj.input ?? obj.arguments ?? obj.data?.input ?? "";
-    const cmdText = typeof rawInput === "object" && rawInput && typeof rawInput.command === "string"
-      ? rawInput.command.trim()
-      : "";
-    const baseName = obj.toolName || obj.name || obj.tool || obj.title || obj.data?.name || "工具调用";
-    const title = cmdText
-      ? (cmdText.length > 72 ? `${cmdText.slice(0, 69)}…` : cmdText)
-      : (obj.title && obj.title !== "run_terminal_command" ? obj.title : baseName);
+    const baseName = obj.toolName || obj.name || obj.tool || obj.title || obj.data?.name || "";
+    const title = formatToolActionTitle(baseName, rawInput, null);
     return {
       type: "tool_call",
-      toolCallId: obj.toolCallId || obj.id || obj.tool_use_id || obj.call_id || `${baseName}-${Date.now()}`,
+      toolCallId: obj.toolCallId || obj.id || obj.tool_use_id || obj.call_id || `${baseName || "tool"}-${Date.now()}`,
       title,
       kind: obj.kind || "tool",
       status: obj.status === "completed" ? "completed" : obj.status === "failed" ? "failed" : "in_progress",
@@ -394,10 +420,13 @@ export function parseGrokEvent(obj) {
     if (status === "completed" && exitCode !== null && exitCode !== 0) {
       status = "failed";
     }
+    const derivedTitle = (rawOut && typeof rawOut.command === "string" && rawOut.command.trim())
+      ? formatToolActionTitle("", { command: rawOut.command }, null)
+      : (obj.rawInput ? formatToolActionTitle(obj.title || "", obj.rawInput, null) : (obj.title && obj.title !== "run_terminal_command" ? obj.title : undefined));
     return {
       type: "tool_update",
       toolCallId: obj.toolCallId || obj.id || obj.tool_use_id || obj.call_id || "",
-      title: obj.title || undefined,
+      title: derivedTitle,
       status,
       output: contentText || (status === "completed" || status === "failed" ? rawText : ""),
     };
