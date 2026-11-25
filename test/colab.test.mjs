@@ -871,6 +871,8 @@ test("agent parsers handle ACP updates, model catalogs, and Grok NDJSON events",
   assert.match(summarizeColabError(richTraceback, "zh-CN"), /稍后再试/);
   assert.equal(isRetryableColabError(richTraceback), true);
   assert.equal(isRetryableColabError("TooManyAssignmentsError: limit reached"), false);
+  const agentSource = fs.readFileSync(path.join(root, "src/agent.mjs"), "utf8");
+  assert.match(agentSource, /bypassPermissions/);
 });
 
 test("mac app does not start a login shell", () => {

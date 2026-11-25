@@ -355,7 +355,8 @@
     .is-mac-app .sidebar-top {
       height: calc(var(--mac-tl-center-y, 15px) * 2);
       margin-bottom: 6px;
-      padding-left: calc(var(--mac-tl-right, 68px) + 12px);
+      padding-left: calc(var(--mac-tl-right, 68px) + 8px);
+      padding-right: 8px;
     }
     .is-mac-app.is-mac-fullscreen .sidebar-top {
       height: 44px;
@@ -366,18 +367,18 @@
     .sidebar-top-right {
       align-items: center;
       display: flex;
-      gap: 4px;
+      gap: 2px;
       min-width: 0;
     }
     .brand {
       align-items: center;
       display: inline-flex;
-      font-size: 14px;
-      gap: 4px;
+      font-size: 13px;
+      gap: 3px;
       height: 28px;
       letter-spacing: -0.01em;
       line-height: 1;
-      margin-left: 4px;
+      margin-left: 2px;
       overflow: hidden;
       white-space: nowrap;
     }
@@ -448,6 +449,40 @@
       stroke-width: 1.8;
       width: 15px;
       fill: none;
+    }
+    .search-kbd {
+      align-items: center;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      color: var(--faint);
+      cursor: pointer;
+      display: inline-flex;
+      flex: none;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 550;
+      height: 20px;
+      justify-content: center;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      padding: 0 5px;
+      transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    }
+    .search-kbd:hover {
+      background: rgba(139, 108, 255, 0.2);
+      border-color: rgba(139, 108, 255, 0.45);
+      color: var(--text);
+    }
+    :root[data-theme="light"] .search-kbd {
+      background: rgba(20, 18, 30, 0.05);
+      border-color: rgba(20, 18, 30, 0.14);
+      color: #6b6880;
+    }
+    :root[data-theme="light"] .search-kbd:hover {
+      background: rgba(108, 71, 255, 0.12);
+      border-color: rgba(108, 71, 255, 0.35);
+      color: #4f31cc;
     }
     .search {
       background: transparent;
@@ -2824,6 +2859,7 @@
               <line x1="20" y1="20" x2="16.65" y2="16.65" />
             </svg>
             <input id="session-filter" class="search" type="search" data-i18n-placeholder="sidebar.search" placeholder="搜索" aria-label="搜索会话" />
+            <button id="open-cmd-palette-kbd" class="search-kbd" type="button" title="打开命令面板 (⌘K)" aria-label="打开命令面板">⌘K</button>
           </div>
           <div class="tool-icons">
             <button id="refresh-sidebar" class="icon-btn" type="button" data-i18n-title="sidebar.refresh" title="刷新会话 (colab sessions)" aria-label="刷新会话">
@@ -9077,6 +9113,8 @@
     window.addEventListener("colab-toggle-rail", toggleRail);
     window.addEventListener("colab-toggle-terminal", toggleTerminalView);
     window.addEventListener("colab-new-session", openNewSessionModal);
+    window.addEventListener("colab-open-palette", openCommandPalette);
+    document.querySelector("#open-cmd-palette-kbd").addEventListener("click", openCommandPalette);
 
     document.querySelectorAll("[data-drag-region]").forEach((region) => {
       region.addEventListener("mousedown", (event) => {

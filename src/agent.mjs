@@ -1668,9 +1668,13 @@ export class AgentManager {
         "--include-partial-messages",
         "--no-memory",
         "--permission-mode",
-        approvalMode === "auto" ? "auto" : "default",
+        approvalMode === "auto" ? "bypassPermissions" : "dontAsk",
       ];
-      if (approvalMode === "auto") argv.push("--always-approve");
+      if (approvalMode === "auto") {
+        argv.push("--always-approve");
+      } else {
+        argv.push("--allow", "Bash(colab *)");
+      }
       if (model) argv.push("-m", model);
       argv.push("--rules", buildColabSystemRules(context));
       if (existing && existing.sessionId) {

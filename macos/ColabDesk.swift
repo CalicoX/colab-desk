@@ -947,6 +947,10 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         webView?.evaluateJavaScript("window.dispatchEvent(new CustomEvent('colab-new-session'));", completionHandler: nil)
     }
 
+    @objc private func openCommandPaletteFromMenu(_ sender: Any?) {
+        webView?.evaluateJavaScript("window.dispatchEvent(new CustomEvent('colab-open-palette'));", completionHandler: nil)
+    }
+
     private func activate() {
         if #available(macOS 14.0, *) {
             NSApp.activate()
@@ -1000,6 +1004,12 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             withTitle: "Toggle Terminal",
             action: #selector(toggleTerminalFromMenu(_:)),
             keyEquivalent: "j"
+        )
+        viewMenu.addItem(.separator())
+        viewMenu.addItem(
+            withTitle: "Command Palette…",
+            action: #selector(openCommandPaletteFromMenu(_:)),
+            keyEquivalent: "k"
         )
         viewItem.submenu = viewMenu
 

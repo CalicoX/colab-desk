@@ -82,6 +82,17 @@ export function parseListeningPorts(text) {
 
 export async function fetchGpuTelemetry(session, signal) {
   if (!session) return { ok: true, available: false, gpus: [], processes: [], listeningPorts: [] };
+  const parsePayload = (out) => {
+    const text = String(out || "");
+    const gpuSec = text.split("===GPU===")[1]?.split("===PROCS===")[0] || text;
+    const procSec = text.split("===PROCS===")[1]?.split("===PORTS===")[0] || "";
+    const portSec = text.split("===PORTS===")[1] || "";
+    return {
+      gpus: parseNvidiaSmi(gpuSec),
+      processes: parseGpuProcesses(procSec),
+      listeningPorts: parseListeningPorts(portSec),
+    };
+  };
   const cmd = [
     "echo '===GPU==='",
     "nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu --format=csv,noheader,nounits 2>/dev/null || true",
@@ -91,17 +102,37 @@ export async function fetchGpuTelemetry(session, signal) {
     "python3 -c \"import glob; ps=set(); [ps.add(int(l.split()[1].split(':')[1],16)) for fn in ('/proc/net/tcp','/proc/net/tcp6') for l in (open(fn).read().splitlines()[1:] if glob.glob(fn) else []) if len(l.split())>3 and l.split()[3]=='0A']; print('\\n'.join(str(p) for p in sorted(ps)))\" 2>/dev/null || true",
   ].join("; ");
   const res = await runAction({ type: "ssh", session, command: cmd }, { signal });
-  if (!res.ok) {
-    return { ok: false, available: false, gpus: [], processes: [], listeningPorts: [], error: res.error || "telemetry failed" };
+  if (res.ok) {
+    const parsed = parsePayload(res.stdout);
+    if (parsed.gpus.length > 0 || parsed.listeningPorts.length > 0) {
+      return { ok: true, available: parsed.gpus.length > 0, ...parsed };
+    }
   }
-  const out = String(res.stdout || "");
-  const gpuSec = out.split("===GPU===")[1]?.split("===PROCS===")[0] || out;
-  const procSec = out.split("===PROCS===")[1]?.split("===PORTS===")[0] || "";
-  const portSec = out.split("===PORTS===")[1] || "";
-  const gpus = parseNvidiaSmi(gpuSec);
-  const processes = parseGpuProcesses(procSec);
-  const listeningPorts = parseListeningPorts(portSec);
-  return { ok: true, available: gpus.length > 0, gpus, processes, listeningPorts };
+  // Fallback to `colab exec` when SSH daemon is not ready yet
+  const pyFallback = [
+    "import subprocess, glob",
+    "def sh(a):",
+    "  try: return subprocess.check_output(a, stderr=subprocess.DEVNULL, text=True)",
+    "  except Exception: return ''",
+    "print('===GPU===')",
+    "print(sh(['nvidia-smi','--query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu','--format=csv,noheader,nounits']))",
+    "print('===PROCS===')",
+    "print(sh(['nvidia-smi','--query-compute-apps=pid,process_name,used_memory','--format=csv,noheader,nounits']))",
+    "print('===PORTS===')",
+    "ps=set()",
+    "for fn in ('/proc/net/tcp','/proc/net/tcp6'):",
+    "  if glob.glob(fn):",
+    "    for l in open(fn).read().splitlines()[1:]:",
+    "      p=l.split()",
+    "      if len(p)>3 and p[3]=='0A': ps.add(int(p[1].split(':')[1],16))",
+    "print('\\n'.join(str(x) for x in sorted(ps)))",
+  ].join("\n");
+  const execRes = await runAction({ type: "exec", session, code: pyFallback, timeout: 15 }, { signal });
+  if (!execRes.ok) {
+    return { ok: false, available: false, gpus: [], processes: [], listeningPorts: [], error: res.error || execRes.error || "telemetry failed" };
+  }
+  const parsed = parsePayload(execRes.stdout);
+  return { ok: true, available: parsed.gpus.length > 0, ...parsed };
 }
 
 export async function killRemoteProcess(session, pid, signal) {
