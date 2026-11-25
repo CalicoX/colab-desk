@@ -12,12 +12,16 @@ import {
   deleteRemoteFile,
   downloadRemoteFile,
   ensureRemoteMedia,
+  execNotebookCell,
   exportSession,
   fetchGpuTelemetry,
+  inspectKernelVariables,
   killRemoteProcess,
   listRemoteFiles,
   previewRemoteFile,
+  readCloudNotebook,
   runDirectScript,
+  saveCloudNotebook,
   syncPullFolder,
   syncPushFolder,
   TunnelManager,
@@ -251,6 +255,62 @@ async function handle(req, res) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/agent/fetch-models") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const result = await agents.fetchOpenAiModelsDirect(body);
+    sendJson(res, 200, result);
+    return;
+  }
+
+  // Native Notebook Mode endpoints (powered by official colab CLI)
+  if (req.method === "POST" && url.pathname === "/api/notebook/exec") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const controller = new AbortController();
+    const onClose = () => { if (!res.writableEnded) controller.abort(); };
+    res.on("close", onClose);
+    const result = await execNotebookCell({
+      session: body.session || "",
+      code: body.code || "",
+      timeout: body.timeout || 300,
+      signal: controller.signal,
+    });
+    res.off("close", onClose);
+    if (res.writableEnded || res.destroyed) return;
+    sendJson(res, 200, result);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/notebook/vars") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const result = await inspectKernelVariables(body.session || "");
+    sendJson(res, 200, result);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/notebook/cloud-read") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const result = await readCloudNotebook(body.session || "", body.remotePath || "");
+    sendJson(res, 200, result);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/notebook/cloud-save") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req)); } catch {}
+    const result = await saveCloudNotebook(
+      body.session || "",
+      body.remotePath || "",
+      body.cells || [],
+      body.metadata || {},
+    );
+    sendJson(res, 200, result);
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/agent/acp-auth") {
     const provider = url.searchParams.get("provider") || "agy";
     const status = await agents.getAcpAuthStatus(provider);
@@ -404,7 +464,7 @@ async function handle(req, res) {
 
   // In-app Update Check
   if (req.method === "GET" && url.pathname === "/api/updates/check") {
-    let ver = "0.2.1";
+    let ver = "0.3.0";
     try {
       ver = JSON.parse(fs.readFileSync(path.join(rootDir, "../package.json"), "utf8")).version || ver;
     } catch {}

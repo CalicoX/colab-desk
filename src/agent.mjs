@@ -546,7 +546,7 @@ class AcpClient {
         terminal: false,
         auth: { terminal: true },
       },
-      clientInfo: { name: "colab-desk", version: "0.2.1" },
+      clientInfo: { name: "colab-desk", version: "0.3.0" },
     });
     this.initResult = init || null;
     this.agentInfo = init?.agentInfo || null;
@@ -778,6 +778,86 @@ class AcpClient {
   }
 }
 
+export function resolveOpenAiModelsEndpoints(baseUrl) {
+  let clean = String(baseUrl || "").trim().replace(/\/+$/, "");
+  if (!clean) return [];
+  clean = clean.replace(/\/chat\/completions$/i, "");
+  if (/\/models$/i.test(clean)) return [clean];
+  try {
+    const parsed = new URL(clean);
+    const pathname = parsed.pathname.replace(/\/+$/, "");
+    if (!pathname) {
+      return [`${clean}/v1/models`, `${clean}/models`];
+    }
+    if (/\/v\d+(?:beta|alpha)?$/i.test(pathname)) {
+      return [`${clean}/models`];
+    }
+    return [`${clean}/models`, `${clean}/v1/models`];
+  } catch {
+    return [`${clean}/v1/models`, `${clean}/models`];
+  }
+}
+
+export async function fetchOpenAiModels(apiCfg) {
+  const endpoints = resolveOpenAiModelsEndpoints(apiCfg?.baseUrl);
+  if (endpoints.length === 0) return { ok: false, models: [], error: "Base URL is required" };
+  const headers = {};
+  if (apiCfg?.apiKey) headers.authorization = `Bearer ${apiCfg.apiKey}`;
+  let lastError = "Unable to fetch /v1/models";
+  for (let i = 0; i < endpoints.length; i += 1) {
+    const endpoint = endpoints[i];
+    const hasMore = i < endpoints.length - 1;
+    try {
+      const res = await fetch(endpoint, {
+        method: "GET",
+        headers,
+        signal: AbortSignal.timeout(7_000),
+      });
+      const contentType = String(res.headers.get("content-type") || "").toLowerCase();
+      const text = await res.text().catch(() => "");
+      if (!res.ok) {
+        lastError = `${endpoint} → HTTP ${res.status}: ${text.slice(0, 180)}`;
+        if ((res.status === 404 || res.status === 405) && hasMore) continue;
+        return { ok: false, models: [], error: lastError };
+      }
+      if (contentType.includes("text/html") || /^\s*<(?:!doctype|html)/i.test(text)) {
+        lastError = `${endpoint} returned HTML`;
+        if (hasMore) continue;
+        return { ok: false, models: [], error: lastError };
+      }
+      let json = null;
+      try { json = JSON.parse(text); } catch {
+        lastError = `${endpoint} returned invalid JSON`;
+        if (hasMore) continue;
+        return { ok: false, models: [], error: lastError };
+      }
+      const rawList = Array.isArray(json?.data)
+        ? json.data
+        : Array.isArray(json?.models)
+          ? json.models
+          : Array.isArray(json)
+            ? json
+            : [];
+      const seen = new Set();
+      const models = [];
+      for (const item of rawList) {
+        const id = typeof item === "string"
+          ? item.trim()
+          : String(item?.id || item?.name || item?.model || "").trim();
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        models.push({ value: id, name: id });
+      }
+      models.sort((a, b) => a.value.localeCompare(b.value));
+      return { ok: true, models, endpoint };
+    } catch (err) {
+      lastError = `${endpoint} → ${err.message || String(err)}`;
+      if (hasMore) continue;
+    }
+  }
+  return { ok: false, models: [], error: lastError };
+}
+
 export function resolveOpenAiChatEndpoints(baseUrl) {
   const clean = String(baseUrl || "").trim().replace(/\/+$/, "");
   if (!clean) return [];
@@ -992,16 +1072,43 @@ export class AgentManager {
     return out;
   }
 
+  async fetchOpenAiModelsDirect(cfg) {
+    const apiCfg = this.getApiConfig(cfg, cfg?.profileId || null);
+    if (!apiCfg.baseUrl) {
+      return { ok: false, models: [], error: "请先填写 Base URL" };
+    }
+    return fetchOpenAiModels(apiCfg);
+  }
+
   async fetchModels(providerId) {
     if (providerId === "api" || String(providerId).startsWith("api:")) {
       const profileId = String(providerId).startsWith("api:") ? String(providerId).slice(4) : null;
       const apiCfg = this.getApiConfig(null, profileId);
       const ok = Boolean(apiCfg.baseUrl && apiCfg.model);
+      if (!apiCfg.baseUrl) {
+        return { available: false, current: "", models: [], thoughtLevels: null };
+      }
+      const remote = await fetchOpenAiModels(apiCfg);
+      const list = [];
+      const seen = new Set();
+      if (apiCfg.model) {
+        seen.add(apiCfg.model);
+        list.push({ value: apiCfg.model, name: apiCfg.model });
+      }
+      if (remote.ok && Array.isArray(remote.models)) {
+        for (const m of remote.models) {
+          if (!m?.value || seen.has(m.value)) continue;
+          seen.add(m.value);
+          list.push(m);
+        }
+      }
       return {
-        available: ok,
-        current: apiCfg.model || "",
-        models: ok ? [{ value: apiCfg.model, name: apiCfg.model }] : [],
+        available: ok || list.length > 0,
+        current: apiCfg.model || list[0]?.value || "",
+        models: list,
         thoughtLevels: null,
+        fetchedFromGateway: remote.ok,
+        gatewayError: remote.ok ? null : remote.error,
       };
     }
     if (this.modelCache.has(providerId)) return this.modelCache.get(providerId);

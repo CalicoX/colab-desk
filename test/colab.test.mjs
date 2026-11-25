@@ -9,6 +9,7 @@ import {
   AgentManager,
   buildColabSystemRules,
   extractAcpModels,
+  fetchOpenAiModels,
   formatTurnPrompt,
   parseAcpSessionUpdate,
   parseAgyQuotaJson,
@@ -16,6 +17,7 @@ import {
   parseGrokEvent,
   parseOpenAiJsonCompletion,
   resolveOpenAiChatEndpoints,
+  resolveOpenAiModelsEndpoints,
 } from "../src/agent.mjs";
 import { parseWhoami } from "../src/colab-env.mjs";
 import {
@@ -24,10 +26,12 @@ import {
   compareSemver,
   extractTemplateParams,
   parseGpuProcesses,
+  parseIpynb,
   parseListeningPorts,
   parseNvidiaSmi,
   parseReleaseTagFromUrl,
   renderParameterizedScript,
+  serializeIpynb,
 } from "../src/cloud-ops.mjs";
 import { resolveLanguage, t } from "../src/i18n.mjs";
 import { applyNewResult, buildContextHandoffPrompt, composeAction, createDeskState, isRetryableColabError, parseColabNewSpec, record, showSession, summarizeColabError } from "../src/desk.mjs";
@@ -623,9 +627,15 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="agent-model"/);
     assert.match(page, /id="agent-picker-btn"/);
     assert.match(page, /id="agent-picker-menu"/);
+    assert.match(page, /\.agent-picker-menu\s*\{[\s\S]*?height:\s*296px;/);
     assert.match(page, /id="ap-providers-list"/);
     assert.match(page, /id="ap-models-list"/);
     assert.match(page, /id="thought-picker-btn"/);
+    assert.match(page, /id="mode-notebook"/);
+    assert.match(page, /id="notebook-view"/);
+    assert.match(page, /id="nb-cells"/);
+    assert.match(page, /id="nb-vars-toggle"/);
+    assert.match(page, /id="api-fetch-models-btn"/);
     assert.match(page, /id="open-usage-modal"/);
     assert.match(page, /id="colab-cu-modal"/);
     assert.match(page, /id="open-settings-modal"/);
@@ -1023,6 +1033,58 @@ test("custom OpenAI-compatible gateway resolves /v1, handles non-SSE JSON, retri
     else process.env.COLAB_DESK_STATE_DIR = prevStateDir;
     fs.rmSync(tmpStateDir, { recursive: true, force: true });
   }
+});
+
+test("gateway /v1/models discovery and .ipynb parse/serialize round-trip work cleanly", async () => {
+  assert.deepEqual(resolveOpenAiModelsEndpoints("http://127.0.0.1:18765"), [
+    "http://127.0.0.1:18765/v1/models",
+    "http://127.0.0.1:18765/models",
+  ]);
+  assert.deepEqual(resolveOpenAiModelsEndpoints("http://127.0.0.1:18765/v1/chat/completions"), [
+    "http://127.0.0.1:18765/v1/models",
+  ]);
+
+  const mockModelsSrv = http.createServer((req, res) => {
+    if (req.url === "/v1/models") {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ data: [{ id: "glm-5-flash" }, { id: "deepseek-r1" }, { id: "glm-5-flash" }] }));
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  });
+  await new Promise((resolve) => mockModelsSrv.listen(0, "127.0.0.1", resolve));
+  const { port } = mockModelsSrv.address();
+  try {
+    const res = await fetchOpenAiModels({ baseUrl: `http://127.0.0.1:${port}`, apiKey: "test-key" });
+    assert.equal(res.ok, true);
+    assert.deepEqual(
+      res.models.map((m) => m.value),
+      ["deepseek-r1", "glm-5-flash"],
+    );
+  } finally {
+    mockModelsSrv.close();
+  }
+
+  const rawNb = serializeIpynb([
+    { type: "markdown", source: "# Hello\nWorld" },
+    {
+      type: "code",
+      source: "print(42)",
+      executionCount: 3,
+      stdout: "42\n",
+      stderr: "",
+      images: [{ dataUrl: "data:image/png;base64,iVBORw0KGgo=" }],
+    },
+  ]);
+  const parsed = parseIpynb(rawNb);
+  assert.equal(parsed.cells.length, 2);
+  assert.equal(parsed.cells[0].type, "markdown");
+  assert.equal(parsed.cells[0].source, "# Hello\nWorld");
+  assert.equal(parsed.cells[1].executionCount, 3);
+  assert.equal(parsed.cells[1].stdout, "42\n");
+  assert.equal(parsed.cells[1].images.length, 1);
+  assert.match(parsed.cells[1].images[0].dataUrl, /^data:image\/png;base64,/);
 });
 
 test("mac app does not start a login shell", () => {

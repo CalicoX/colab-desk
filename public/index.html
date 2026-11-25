@@ -1478,13 +1478,13 @@
       color: var(--muted);
       cursor: pointer;
       display: inline-flex;
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 540;
       height: 28px;
       justify-content: center;
-      padding: 0;
+      padding: 0 11px;
       transition: background 120ms ease, color 120ms ease;
-      width: 54px;
+      white-space: nowrap;
     }
     .mode-btn.is-active {
       background: #2b273a;
@@ -1584,6 +1584,7 @@
       bottom: calc(100% + 8px);
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.48);
       display: flex;
+      height: 296px;
       left: 0;
       overflow: hidden;
       position: absolute;
@@ -1594,7 +1595,7 @@
       border-right: 1px solid var(--line);
       display: flex;
       flex-direction: column;
-      max-height: 300px;
+      height: 100%;
       overflow-y: auto;
       padding: 6px;
       width: 172px;
@@ -1602,21 +1603,38 @@
     .ap-col-models {
       display: flex;
       flex-direction: column;
-      max-height: 300px;
+      height: 100%;
       overflow-y: auto;
       padding: 6px;
-      width: 236px;
+      width: 248px;
     }
     .ap-col-head {
+      align-items: center;
       color: var(--faint);
+      display: flex;
+      flex: none;
       font-size: 11px;
       font-weight: 550;
+      justify-content: space-between;
+      gap: 6px;
       letter-spacing: 0.02em;
       overflow: hidden;
       padding: 4px 8px 6px;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .ap-head-refresh {
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      color: var(--faint);
+      cursor: pointer;
+      flex: none;
+      font-size: 12px;
+      line-height: 1;
+      padding: 2px 5px;
+    }
+    .ap-head-refresh:hover { background: var(--chip); color: var(--text); }
     .ap-item {
       align-items: center;
       background: transparent;
@@ -1625,6 +1643,7 @@
       color: var(--text);
       cursor: pointer;
       display: flex;
+      flex: none;
       font: inherit;
       font-size: 12.5px;
       gap: 8px;
@@ -1677,6 +1696,7 @@
       color: var(--muted);
       cursor: pointer;
       display: flex;
+      flex: none;
       font: inherit;
       font-size: 12px;
       gap: 6px;
@@ -3231,6 +3251,317 @@
     }
     .code-run:hover { background: rgba(106, 90, 224, 0.38); }
     :root[data-theme="light"] .code-run { color: var(--indigo); background: rgba(91, 78, 214, 0.14); }
+    .code-to-nb {
+      background: rgba(56, 189, 248, 0.14);
+      border: 0;
+      border-radius: 5px;
+      color: #93c5fd;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 7px;
+    }
+    .code-to-nb:hover { background: rgba(56, 189, 248, 0.28); }
+    :root[data-theme="light"] .code-to-nb { color: #0369a1; background: rgba(14, 165, 233, 0.14); }
+
+    /* ── Native Colab Notebook Mode ── */
+    .notebook-view {
+      display: flex;
+      flex: 1 1 0;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .notebook-view[hidden] { display: none; }
+    .nb-toolbar {
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex: none;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 18px;
+    }
+    .nb-title-input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 110px;
+      max-width: 210px;
+      outline: none;
+      padding: 4px 8px;
+    }
+    .nb-title-input:hover,
+    .nb-title-input:focus { background: var(--card); border-color: var(--line-strong); }
+    .nb-tb-sep { background: var(--line); height: 16px; margin: 0 2px; width: 1px; }
+    .nb-btn {
+      align-items: center;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      font: inherit;
+      font-size: 11.5px;
+      gap: 4px;
+      height: 27px;
+      padding: 0 9px;
+      transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+      white-space: nowrap;
+    }
+    .nb-btn:hover { background: var(--chip); color: var(--text); }
+    .nb-btn.is-primary { background: rgba(130, 115, 245, 0.2); border-color: rgba(130, 115, 245, 0.38); color: #d8d3ff; }
+    .nb-btn.is-primary:hover { background: rgba(130, 115, 245, 0.32); color: #fff; }
+    .nb-btn.is-active { background: rgba(56, 189, 248, 0.18); border-color: rgba(56, 189, 248, 0.4); color: #bae6fd; }
+    .nb-btn:disabled { cursor: not-allowed; opacity: 0.45; }
+    :root[data-theme="light"] .nb-btn.is-primary { color: var(--indigo); }
+    :root[data-theme="light"] .nb-btn.is-active { color: #0369a1; }
+
+    .nb-vars-drawer {
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex: none;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 170px;
+      overflow-y: auto;
+      padding: 8px 18px 10px;
+    }
+    .nb-vars-drawer[hidden] { display: none; }
+    .nb-vars-head {
+      align-items: center;
+      color: var(--muted);
+      display: flex;
+      font-size: 11.5px;
+      justify-content: space-between;
+    }
+    .nb-vars-table {
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      width: 100%;
+    }
+    .nb-vars-table th,
+    .nb-vars-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 4px 8px;
+      text-align: left;
+    }
+    .nb-vars-table th { color: var(--faint); font-weight: 500; }
+    .nb-vars-table td.v-name { color: #a89bf8; font-weight: 600; }
+    .nb-vars-table td.v-type { color: #8be0ab; }
+    .nb-vars-table td.v-shape { color: #93c5fd; }
+    .nb-vars-table td.v-val { color: var(--muted); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .nb-scroll {
+      display: flex;
+      flex: 1 1 0;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 16px 22px 48px;
+    }
+    .nb-cell {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr);
+      overflow: hidden;
+      transition: border-color 140ms ease;
+    }
+    .nb-cell:focus-within,
+    .nb-cell.is-running { border-color: rgba(130, 115, 245, 0.55); }
+    .nb-cell.is-error { border-color: rgba(255, 99, 112, 0.45); }
+    .nb-gutter {
+      align-items: center;
+      background: rgba(255, 255, 255, 0.015);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px 4px;
+    }
+    .nb-run-btn {
+      align-items: center;
+      background: rgba(130, 115, 245, 0.16);
+      border: 0;
+      border-radius: 50%;
+      color: #c9c2ff;
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 11px;
+      height: 26px;
+      justify-content: center;
+      transition: background 120ms ease, transform 120ms ease;
+      width: 26px;
+    }
+    .nb-run-btn:hover { background: rgba(130, 115, 245, 0.34); color: #fff; }
+    .nb-run-btn.is-running { animation: pulse 1.1s ease-in-out infinite; background: rgba(240, 184, 96, 0.24); color: #f2c374; }
+    .nb-exec-count {
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 10.5px;
+    }
+    .nb-cell-main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .nb-cell-head {
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      gap: 6px;
+      justify-content: space-between;
+      padding: 4px 10px;
+    }
+    .nb-cell-kind {
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      text-transform: uppercase;
+    }
+    .nb-cell-actions {
+      display: inline-flex;
+      gap: 4px;
+      opacity: 0.72;
+      transition: opacity 120ms ease;
+    }
+    .nb-cell:hover .nb-cell-actions,
+    .nb-cell:focus-within .nb-cell-actions { opacity: 1; }
+    .nb-mini-btn {
+      background: transparent;
+      border: 0;
+      border-radius: 5px;
+      color: var(--muted);
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+      padding: 2px 6px;
+    }
+    .nb-mini-btn:hover { background: var(--chip); color: var(--text); }
+    .nb-mini-btn.is-ai { color: #b7adff; }
+    .nb-mini-btn.is-danger:hover { color: var(--danger); }
+    .nb-editor {
+      background: transparent;
+      border: 0;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.55;
+      min-height: 54px;
+      outline: none;
+      overflow: hidden;
+      padding: 10px 12px;
+      resize: none;
+      width: 100%;
+    }
+    .nb-md-preview {
+      cursor: text;
+      font-size: 13.5px;
+      line-height: 1.65;
+      min-height: 36px;
+      padding: 10px 14px;
+    }
+    .nb-md-preview:empty::before { color: var(--faint); content: "双击编辑 Markdown 笔记…"; font-style: italic; }
+    .nb-ai-bar {
+      align-items: center;
+      background: rgba(130, 115, 245, 0.08);
+      border-top: 1px solid rgba(130, 115, 245, 0.24);
+      display: flex;
+      gap: 6px;
+      padding: 6px 10px;
+    }
+    .nb-ai-bar input {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--text);
+      flex: 1;
+      font: inherit;
+      font-size: 12px;
+      outline: none;
+      padding: 5px 9px;
+    }
+    .nb-output {
+      background: rgba(0, 0, 0, 0.22);
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px;
+    }
+    :root[data-theme="light"] .nb-output { background: rgba(20, 18, 40, 0.04); }
+    .nb-stdout {
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0;
+      max-height: 360px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .nb-stderr {
+      background: rgba(255, 99, 112, 0.09);
+      border-radius: 8px;
+      color: var(--danger);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0;
+      max-height: 280px;
+      overflow: auto;
+      overflow-wrap: anywhere;
+      padding: 8px 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .nb-out-images {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .nb-out-images img {
+      background: #fff;
+      border-radius: 8px;
+      max-height: 420px;
+      max-width: 100%;
+    }
+    .nb-out-foot {
+      align-items: center;
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+    .nb-fix-btn {
+      align-items: center;
+      background: rgba(130, 115, 245, 0.22);
+      border: 1px solid rgba(130, 115, 245, 0.42);
+      border-radius: 8px;
+      color: #e4e0ff;
+      cursor: pointer;
+      display: inline-flex;
+      font: inherit;
+      font-size: 11.5px;
+      gap: 4px;
+      padding: 4px 10px;
+    }
+    .nb-fix-btn:hover { background: rgba(130, 115, 245, 0.36); color: #fff; }
+    .nb-add-strip {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      padding: 6px 0;
+    }
     .runner-body {
       display: grid;
       flex: 1 1 0;
@@ -3557,6 +3888,7 @@
             </div>
             <div class="mode-switch" role="tablist" aria-label="Mode">
               <button id="mode-agent" class="mode-btn is-active" type="button" role="tab" aria-selected="true">Agent</button>
+              <button id="mode-notebook" class="mode-btn" type="button" role="tab" aria-selected="false" data-i18n="ws.modeNotebook">Notebook</button>
               <button id="mode-cli" class="mode-btn" type="button" role="tab" aria-selected="false">CLI</button>
             </div>
             <div class="tools-dropdown-wrap">
@@ -3734,6 +4066,41 @@
             <button id="send-btn" class="send" type="submit" aria-label="Submit" title="发送 (⌘Enter)">↑</button>
           </div>
         </form>
+
+        <!-- Native Colab Notebook Mode (uses official `colab exec` persistent kernel) -->
+        <section id="notebook-view" class="notebook-view" data-region="notebook" aria-label="notebook" hidden>
+          <div class="nb-toolbar">
+            <input id="nb-title-input" class="nb-title-input" type="text" value="untitled.ipynb" aria-label="Notebook filename" />
+            <span class="nb-tb-sep"></span>
+            <button id="nb-add-code" class="nb-btn" type="button" data-i18n="nb.addCode">+ 代码</button>
+            <button id="nb-add-md" class="nb-btn" type="button" data-i18n="nb.addMd">+ 笔记</button>
+            <span class="nb-tb-sep"></span>
+            <button id="nb-run-all" class="nb-btn is-primary" type="button" data-i18n="nb.runAll">▶ 全部运行</button>
+            <button id="nb-restart-run-all" class="nb-btn" type="button" data-i18n="nb.restartRunAll">↻ 重启并运行</button>
+            <button id="nb-clear-outputs" class="nb-btn" type="button" data-i18n="nb.clearOut">清空输出</button>
+            <span class="nb-tb-sep"></span>
+            <button id="nb-open-local" class="nb-btn" type="button" data-i18n="nb.openLocal">打开 .ipynb</button>
+            <button id="nb-open-cloud" class="nb-btn" type="button" data-i18n="nb.openCloud">云端打开</button>
+            <button id="nb-save-local" class="nb-btn" type="button" data-i18n="nb.saveLocal">导出 .ipynb</button>
+            <button id="nb-save-cloud" class="nb-btn" type="button" data-i18n="nb.saveCloud">存到云端</button>
+            <button id="nb-vars-toggle" class="nb-btn" type="button" data-i18n="nb.vars">变量</button>
+            <input id="nb-open-file-input" type="file" accept=".ipynb,application/json" hidden />
+          </div>
+          <div id="nb-vars-drawer" class="nb-vars-drawer" hidden>
+            <div class="nb-vars-head">
+              <span id="nb-vars-title">内核变量监视器 (Kernel Variables)</span>
+              <button id="nb-vars-refresh" class="nb-btn" type="button" data-i18n="nb.varsRefresh">刷新变量</button>
+            </div>
+            <div id="nb-vars-body"></div>
+          </div>
+          <div id="nb-scroll" class="nb-scroll">
+            <div id="nb-cells"></div>
+            <div class="nb-add-strip">
+              <button id="nb-bottom-code" class="nb-btn" type="button" data-i18n="nb.addCode">+ 代码</button>
+              <button id="nb-bottom-md" class="nb-btn" type="button" data-i18n="nb.addMd">+ 笔记</button>
+            </div>
+          </div>
+        </section>
           </div>
 
         <!-- Interactive PTY Terminal View (connected Colab VM SSH only) -->
@@ -4313,7 +4680,8 @@
                     </div>
                     <div class="s-field">
                       <label for="api-model" data-i18n="settings.providers.apiModel">模型名称</label>
-                      <input id="api-model" class="s-input" type="text" placeholder="gpt-4o / deepseek-chat" />
+                      <input id="api-model" class="s-input" type="text" list="api-models-datalist" placeholder="gpt-4o / deepseek-chat" />
+                      <datalist id="api-models-datalist"></datalist>
                     </div>
                     <div class="s-field is-full">
                       <label for="api-base-url" data-i18n="settings.providers.apiBaseUrl">Base URL</label>
@@ -4326,6 +4694,7 @@
                   </div>
                   <div class="s-actions">
                     <button id="api-save-btn" class="s-btn is-primary" type="button" data-i18n="settings.providers.apiSave">保存并启用</button>
+                    <button id="api-fetch-models-btn" class="s-btn" type="button" data-i18n="settings.providers.apiFetchModels">拉取模型</button>
                     <button id="api-test-btn" class="s-btn" type="button" data-i18n="settings.providers.apiTest">测试连接</button>
                     <span id="api-test-status" class="s-desc"></span>
                   </div>
@@ -4569,7 +4938,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.2.1</span>
+                    <span class="s-title">Colab Desk 0.3.0</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -4582,7 +4951,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.2.1（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.3.0（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -4781,7 +5150,17 @@
 
     // Agent composer controls
     const modeAgentBtn = document.querySelector("#mode-agent");
+    const modeNotebookBtn = document.querySelector("#mode-notebook");
     const modeCliBtn = document.querySelector("#mode-cli");
+    const notebookView = document.querySelector("#notebook-view");
+    const nbTitleInput = document.querySelector("#nb-title-input");
+    const nbCellsEl = document.querySelector("#nb-cells");
+    const nbOpenFileInput = document.querySelector("#nb-open-file-input");
+    const nbVarsDrawer = document.querySelector("#nb-vars-drawer");
+    const nbVarsBody = document.querySelector("#nb-vars-body");
+    const nbVarsToggle = document.querySelector("#nb-vars-toggle");
+    const apiFetchModelsBtn = document.querySelector("#api-fetch-models-btn");
+    const apiModelsDatalist = document.querySelector("#api-models-datalist");
     const agentControls = document.querySelector("#agent-controls");
     const cliControls = document.querySelector("#cli-controls");
     const agentProviderSelect = document.querySelector("#agent-provider");
@@ -5948,7 +6327,7 @@
           renderUsageBadge();
         }
         if (settings && typeof settings === "object") {
-          if (settings.composerMode === "cli" || settings.composerMode === "agent") {
+          if (settings.composerMode === "cli" || settings.composerMode === "agent" || settings.composerMode === "notebook") {
             composerMode = settings.composerMode;
           }
           if (settings.approvalMode === "ask" || settings.approvalMode === "auto") {
@@ -6648,7 +7027,7 @@
           const body = (lang ? lines.slice(1) : lines).join("\n").replace(/\n$/, "");
           const safeLang = escapeHtml(lang || "code");
           htmlParts.push(
-            `<div class="code-wrap"><div class="code-head"><span>${safeLang}</span><div class="code-head-actions"><button type="button" class="code-run" data-lang="${safeLang}">${L("▶ 运行", "▶ Run")}</button><button type="button" class="code-copy">${L("复制", "Copy")}</button></div></div><pre><code>${escapeHtml(body)}</code></pre></div>`
+            `<div class="code-wrap"><div class="code-head"><span>${safeLang}</span><div class="code-head-actions"><button type="button" class="code-run" data-lang="${safeLang}">${L("▶ 运行", "▶ Run")}</button><button type="button" class="code-to-nb" data-lang="${safeLang}">${tr("nb.insertToNotebook")}</button><button type="button" class="code-copy">${L("复制", "Copy")}</button></div></div><pre><code>${escapeHtml(body)}</code></pre></div>`
           );
           continue;
         }
@@ -6701,6 +7080,20 @@
             btn.textContent = L("已复制", "Copied");
             setTimeout(() => { btn.textContent = L("复制", "Copy"); }, 1400);
           } catch {}
+        });
+      });
+      container.querySelectorAll(".code-to-nb").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const codeEl = btn.closest(".code-wrap")?.querySelector("code");
+          if (!codeEl) return;
+          const src = codeEl.textContent || "";
+          const lang = String(btn.dataset.lang || "").toLowerCase();
+          const finalCode = ["bash", "sh", "shell", "zsh"].includes(lang)
+            ? src.split("\n").map((l) => (l.trim() && !l.trim().startsWith("#") ? `!${l}` : l)).join("\n")
+            : src;
+          addNotebookCell("code", finalCode);
+          setComposerMode("notebook");
+          showToast(L("已插入到 Notebook 单元格", "Inserted into Notebook cell"));
         });
       });
       container.querySelectorAll(".code-run").forEach((btn) => {
@@ -7591,15 +7984,22 @@
       if (thoughtPickerBtn) thoughtPickerBtn.setAttribute("aria-expanded", "false");
     }
 
-    async function ensurePickerProviderModels(pid) {
-      if (providerModelsCache[pid]) return providerModelsCache[pid];
+    async function ensurePickerProviderModels(pid, force = false) {
+      if (!force && providerModelsCache[pid] && !providerModelsCache[pid]._needsGatewayFetch) {
+        return providerModelsCache[pid];
+      }
       try {
         const res = await fetch(`/api/agent/models?provider=${encodeURIComponent(pid)}`);
         const data = await res.json();
+        data._needsGatewayFetch = false;
         providerModelsCache[pid] = data;
+        if (agentProviderSelect.value === pid) {
+          renderModelOptions(pid, data);
+        }
         return data;
       } catch {
-        return { models: [] };
+        if (providerModelsCache[pid]) providerModelsCache[pid]._needsGatewayFetch = false;
+        return providerModelsCache[pid] || { models: [] };
       }
     }
 
@@ -7609,7 +8009,28 @@
       const snap = providerListSnapshot.find((p) => p.id === pid);
       const head = document.createElement("div");
       head.className = "ap-col-head";
-      head.textContent = snap ? `${snap.label}${snap.transport === "openai-compat" && snap.path ? ` · ${snap.path.replace(/^https?:\/\//, "")}` : ""}` : pid;
+      const headTitle = document.createElement("span");
+      headTitle.style.overflow = "hidden";
+      headTitle.style.textOverflow = "ellipsis";
+      headTitle.textContent = snap ? `${snap.label}${snap.transport === "openai-compat" && snap.path ? ` · ${snap.path.replace(/^https?:\/\//, "")}` : ""}` : pid;
+      head.append(headTitle);
+      if (snap && snap.available !== false) {
+        const refreshBtn = document.createElement("button");
+        refreshBtn.type = "button";
+        refreshBtn.className = "ap-head-refresh";
+        refreshBtn.title = L("刷新模型列表", "Refresh models");
+        refreshBtn.textContent = "↻";
+        refreshBtn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          refreshBtn.disabled = true;
+          ensurePickerProviderModels(pid, true).then(() => {
+            if (agentPickerMenu && !agentPickerMenu.hidden && hoveredPickerProviderId === pid) {
+              renderAgentModelsSubmenu(pid);
+            }
+          });
+        });
+        head.append(refreshBtn);
+      }
       apModelsList.append(head);
 
       if (snap && snap.available === false) {
@@ -7639,12 +8060,21 @@
         loading.className = "ap-empty";
         loading.textContent = L("正在加载模型列表…", "Loading models…");
         apModelsList.append(loading);
-        ensurePickerProviderModels(pid).then(() => {
+        ensurePickerProviderModels(pid, true).then(() => {
           if (agentPickerMenu && !agentPickerMenu.hidden && hoveredPickerProviderId === pid) {
             renderAgentModelsSubmenu(pid);
           }
         });
         return;
+      }
+
+      if (cached._needsGatewayFetch) {
+        cached._needsGatewayFetch = false;
+        ensurePickerProviderModels(pid, true).then(() => {
+          if (agentPickerMenu && !agentPickerMenu.hidden && hoveredPickerProviderId === pid) {
+            renderAgentModelsSubmenu(pid);
+          }
+        });
       }
 
       const models = Array.isArray(cached.models) ? cached.models : [];
@@ -7908,6 +8338,7 @@
               current: p.defaultModel,
               models: p.models,
               thoughtLevels: p.thoughtLevels || null,
+              _needsGatewayFetch: p.transport === "openai-compat",
             };
           }
         }
@@ -8239,15 +8670,739 @@
       }
     }
 
+    /* ── Native Colab Notebook Workbench ── */
+    function defaultNotebookState() {
+      return {
+        name: "untitled.ipynb",
+        remotePath: "",
+        execCounter: 0,
+        cells: [
+          {
+            id: "nb-cell-intro",
+            type: "markdown",
+            source: "## Colab Desk Notebook\n使用官方 `colab exec` 持久内核：变量与显存跨单元格保留。按 `Shift+Enter` 运行当前格并跳到下一格。",
+            executionCount: null,
+            stdout: "",
+            stderr: "",
+            images: [],
+            ok: true,
+            durationMs: null,
+            editingMd: false,
+          },
+          {
+            id: "nb-cell-gpu",
+            type: "code",
+            source: "import sys, platform\nprint('Python:', sys.version.split()[0], platform.machine())\ntry:\n    import torch\n    print('CUDA:', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')\nexcept Exception as e:\n    print('torch not installed:', e)",
+            executionCount: null,
+            stdout: "",
+            stderr: "",
+            images: [],
+            ok: true,
+            durationMs: null,
+          },
+        ],
+      };
+    }
+
+    let notebookState = loadJsonStorage("colab-desk.notebook-v1", null) || defaultNotebookState();
+    if (!notebookState || !Array.isArray(notebookState.cells) || notebookState.cells.length === 0) {
+      notebookState = defaultNotebookState();
+    }
+    const nbRunningCells = new Set();
+    let nbAiEditingCellId = null;
+
+    function persistNotebookState() {
+      const compact = {
+        name: notebookState.name || "untitled.ipynb",
+        remotePath: notebookState.remotePath || "",
+        execCounter: notebookState.execCounter || 0,
+        cells: notebookState.cells.map((c) => ({
+          id: c.id,
+          type: c.type,
+          source: c.source || "",
+          executionCount: c.executionCount ?? null,
+          stdout: String(c.stdout || "").slice(0, 24_000),
+          stderr: String(c.stderr || "").slice(0, 12_000),
+          images: Array.isArray(c.images) ? c.images.slice(0, 3) : [],
+          ok: c.ok !== false,
+          durationMs: c.durationMs ?? null,
+        })),
+      };
+      saveJsonStorage("colab-desk.notebook-v1", compact);
+    }
+
+    function autoResizeNbTextarea(el) {
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = `${Math.max(54, el.scrollHeight)}px`;
+    }
+
+    function addNotebookCell(type = "code", source = "", atIndex = null) {
+      const cell = {
+        id: `nb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        type: type === "markdown" ? "markdown" : "code",
+        source: String(source || ""),
+        executionCount: null,
+        stdout: "",
+        stderr: "",
+        images: [],
+        ok: true,
+        durationMs: null,
+        editingMd: type === "markdown",
+      };
+      if (typeof atIndex === "number" && atIndex >= 0 && atIndex <= notebookState.cells.length) {
+        notebookState.cells.splice(atIndex, 0, cell);
+      } else {
+        notebookState.cells.push(cell);
+      }
+      persistNotebookState();
+      renderNotebook();
+      const targetTa = nbCellsEl?.querySelector(`[data-cell-id="${cell.id}"] textarea.nb-editor`);
+      if (targetTa) targetTa.focus();
+      return cell;
+    }
+
+    function moveNotebookCell(idx, delta) {
+      const next = idx + delta;
+      if (next < 0 || next >= notebookState.cells.length) return;
+      const [item] = notebookState.cells.splice(idx, 1);
+      notebookState.cells.splice(next, 0, item);
+      persistNotebookState();
+      renderNotebook();
+    }
+
+    function deleteNotebookCell(idx) {
+      if (notebookState.cells.length <= 1) {
+        notebookState.cells[0].source = "";
+        notebookState.cells[0].stdout = "";
+        notebookState.cells[0].stderr = "";
+        notebookState.cells[0].images = [];
+        notebookState.cells[0].executionCount = null;
+      } else {
+        notebookState.cells.splice(idx, 1);
+      }
+      persistNotebookState();
+      renderNotebook();
+    }
+
+    async function runNotebookCell(idx, advance = false) {
+      const cell = notebookState.cells[idx];
+      if (!cell) return;
+      if (cell.type === "markdown") {
+        cell.editingMd = false;
+        persistNotebookState();
+        renderNotebook();
+        if (advance) {
+          if (idx + 1 < notebookState.cells.length) {
+            const nextId = notebookState.cells[idx + 1].id;
+            nbCellsEl?.querySelector(`[data-cell-id="${nextId}"] textarea.nb-editor`)?.focus();
+          } else {
+            addNotebookCell("code", "");
+          }
+        }
+        return;
+      }
+      if (!selected) {
+        showToast(L("请先连接一台 Colab 虚拟机再运行单元格", "Connect to a Colab VM first"));
+        return;
+      }
+      nbRunningCells.add(cell.id);
+      renderNotebook();
+      try {
+        const res = await fetch("/api/notebook/exec", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ session: selected, code: cell.source || "", timeout: 300 }),
+        });
+        const data = await res.json();
+        notebookState.execCounter = (notebookState.execCounter || 0) + 1;
+        cell.executionCount = notebookState.execCounter;
+        cell.ok = !!data.ok;
+        cell.stdout = data.stdout || "";
+        cell.stderr = data.error || data.stderr || "";
+        cell.images = Array.isArray(data.images) ? data.images : [];
+        cell.durationMs = data.durationMs ?? null;
+      } catch (err) {
+        cell.ok = false;
+        cell.stderr = err?.message || String(err);
+      } finally {
+        nbRunningCells.delete(cell.id);
+        persistNotebookState();
+        renderNotebook();
+        if (nbVarsDrawer && !nbVarsDrawer.hidden) inspectNotebookVars();
+      }
+      if (advance) {
+        if (idx + 1 < notebookState.cells.length) {
+          const nextId = notebookState.cells[idx + 1].id;
+          nbCellsEl?.querySelector(`[data-cell-id="${nextId}"] textarea.nb-editor`)?.focus();
+        } else {
+          addNotebookCell("code", "");
+        }
+      }
+    }
+
+    async function runAllNotebookCells(restartFirst = false) {
+      if (!selected) {
+        showToast(L("请先连接一台 Colab 虚拟机", "Connect to a Colab VM first"));
+        return;
+      }
+      if (restartFirst) {
+        showToast(L("正在重启云端内核…", "Restarting remote kernel…"));
+        await fetch("/api/action", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ type: "restart-kernel", session: selected }),
+        }).catch(() => {});
+        notebookState.execCounter = 0;
+      }
+      for (let i = 0; i < notebookState.cells.length; i += 1) {
+        const c = notebookState.cells[i];
+        if (c.type === "code" && (c.source || "").trim()) {
+          await runNotebookCell(i, false);
+          if (!c.ok) break;
+        }
+      }
+    }
+
+    function clearNotebookOutputs() {
+      for (const c of notebookState.cells) {
+        c.executionCount = null;
+        c.stdout = "";
+        c.stderr = "";
+        c.images = [];
+        c.ok = true;
+        c.durationMs = null;
+      }
+      notebookState.execCounter = 0;
+      persistNotebookState();
+      renderNotebook();
+    }
+
+    async function inspectNotebookVars() {
+      if (!nbVarsBody) return;
+      if (!selected) {
+        nbVarsBody.innerHTML = `<span class="s-desc">${escapeHtml(L("未连接 Colab 虚拟机", "No active Colab VM"))}</span>`;
+        return;
+      }
+      nbVarsBody.innerHTML = `<span class="s-desc">${escapeHtml(L("正在检查内核变量…", "Inspecting kernel variables…"))}</span>`;
+      try {
+        const res = await fetch("/api/notebook/vars", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ session: selected }),
+        });
+        const data = await res.json();
+        const vars = Array.isArray(data.variables) ? data.variables : [];
+        if (!data.ok) {
+          nbVarsBody.innerHTML = `<span class="s-desc">${escapeHtml(data.error || "Inspect failed")}</span>`;
+          return;
+        }
+        if (vars.length === 0) {
+          nbVarsBody.innerHTML = `<span class="s-desc">${escapeHtml(tr("nb.varsEmpty"))}</span>`;
+          return;
+        }
+        const table = document.createElement("table");
+        table.className = "nb-vars-table";
+        table.innerHTML = `<thead><tr><th>${L("变量名", "Name")}</th><th>${L("类型", "Type")}</th><th>${L("维度 / 大小", "Shape")}</th><th>${L("值预览", "Preview")}</th></tr></thead><tbody></tbody>`;
+        const tbody = table.querySelector("tbody");
+        for (const v of vars) {
+          const trEl = document.createElement("tr");
+          trEl.innerHTML = `<td class="v-name">${escapeHtml(v.name)}</td><td class="v-type">${escapeHtml(v.type)}</td><td class="v-shape">${escapeHtml(v.shape || "—")}</td><td class="v-val" title="${escapeHtml(v.preview || "")}">${escapeHtml(v.preview || "")}</td>`;
+          tbody.append(trEl);
+        }
+        nbVarsBody.replaceChildren(table);
+      } catch (err) {
+        nbVarsBody.innerHTML = `<span class="s-desc">${escapeHtml(err?.message || String(err))}</span>`;
+      }
+    }
+
+    function fixNotebookCellWithAgent(idx) {
+      const cell = notebookState.cells[idx];
+      if (!cell) return;
+      const promptText = activeLang === "en"
+        ? `Please fix this Notebook cell #${idx + 1} error and provide the corrected Python code:\n\n\`\`\`python\n${cell.source}\n\`\`\`\n\nError output:\n\`\`\`\n${cell.stderr}\n\`\`\``
+        : `请帮我修复 Notebook 第 ${idx + 1} 个单元格的报错，并给出修正后的 Python 代码：\n\n\`\`\`python\n${cell.source}\n\`\`\`\n\n报错信息：\n\`\`\`\n${cell.stderr}\n\`\`\``;
+      setComposerMode("agent");
+      sendAgentMessage(promptText);
+    }
+
+    async function runCellAiEdit(idx, instruction, inputEl, goBtn) {
+      const cell = notebookState.cells[idx];
+      if (!cell || !instruction.trim()) return;
+      goBtn.disabled = true;
+      goBtn.textContent = L("生成中…", "Working…");
+      const provider = agentProviderSelect.value || "agy";
+      const model = agentModelSelect.value || "";
+      const prompt = [
+        `You are editing a single ${cell.type === "markdown" ? "Markdown" : "Python"} notebook cell.`,
+        `Return ONLY the updated cell content inside a single fenced code block (\`\`\`${cell.type === "markdown" ? "markdown" : "python"} ... \`\`\`), with no extra explanation.`,
+        cell.source ? `Current cell content:\n\`\`\`\n${cell.source}\n\`\`\`` : "The cell is currently empty.",
+        `Instruction: ${instruction.trim()}`,
+      ].join("\n\n");
+      try {
+        const res = await fetch("/api/agent/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            provider,
+            model,
+            approvalMode: "ask",
+            prompt,
+            chatThreadId: `nb-inline-${cell.id}`,
+            colabSession: selected,
+          }),
+        });
+        if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        let reply = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const frames = buf.split("\n\n");
+          buf = frames.pop() || "";
+          for (const frame of frames) {
+            const line = frame.split("\n").find((l) => l.startsWith("data: "));
+            if (!line) continue;
+            try {
+              const ev = JSON.parse(line.slice(6));
+              if (ev.type === "text") reply += ev.text || "";
+              if (ev.type === "error") throw new Error(ev.error);
+            } catch (e) {
+              if (e instanceof Error && e.message && !e.message.includes("JSON")) throw e;
+            }
+          }
+        }
+        const fenced = reply.match(/```(?:python|py|markdown|md)?\s*\n([\s\S]*?)```/i);
+        const updated = (fenced ? fenced[1] : reply).trim();
+        if (updated) {
+          cell.source = updated;
+          nbAiEditingCellId = null;
+          persistNotebookState();
+          renderNotebook();
+          showToast(L("已用 AI 更新单元格内容", "Updated cell with AI"));
+        } else {
+          showToast(L("AI 未返回可应用的改写内容", "AI returned empty content"));
+        }
+      } catch (err) {
+        showToast(`${L("AI 改写失败：", "AI edit failed: ")}${err?.message || String(err)}`);
+      } finally {
+        goBtn.disabled = false;
+        goBtn.textContent = L("应用", "Apply");
+      }
+    }
+
+    function exportLocalIpynb() {
+      const cells = notebookState.cells.map((c) => {
+        if (c.type === "markdown") {
+          return { cell_type: "markdown", metadata: {}, source: (c.source || "").split("\n").map((l, i, a) => (i < a.length - 1 ? `${l}\n` : l)) };
+        }
+        const outputs = [];
+        if (c.stdout) outputs.push({ output_type: "stream", name: "stdout", text: c.stdout.split("\n").map((l, i, a) => (i < a.length - 1 ? `${l}\n` : l)) });
+        if (c.stderr) outputs.push({ output_type: "stream", name: "stderr", text: c.stderr.split("\n").map((l, i, a) => (i < a.length - 1 ? `${l}\n` : l)) });
+        for (const img of c.images || []) {
+          const m = String(img?.dataUrl || "").match(/^data:(image\/(?:png|jpeg));base64,(.+)$/i);
+          if (m) outputs.push({ output_type: "display_data", data: { [m[1].toLowerCase()]: m[2] }, metadata: {} });
+        }
+        return {
+          cell_type: "code",
+          execution_count: c.executionCount ?? null,
+          metadata: {},
+          source: (c.source || "").split("\n").map((l, i, a) => (i < a.length - 1 ? `${l}\n` : l)),
+          outputs,
+        };
+      });
+      const content = JSON.stringify({
+        nbformat: 4,
+        nbformat_minor: 5,
+        metadata: { kernelspec: { display_name: "Python 3", language: "python", name: "python3" }, language_info: { name: "python" } },
+        cells,
+      }, null, 2);
+      const fname = (notebookState.name || "untitled.ipynb").endsWith(".ipynb") ? notebookState.name : `${notebookState.name}.ipynb`;
+      const blob = new Blob([content], { type: "application/x-ipynb+json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fname;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(L(`已导出 ${fname}`, `Exported ${fname}`));
+    }
+
+    async function openCloudIpynb(presetPath = "") {
+      if (!selected) {
+        showToast(L("请先连接一台 Colab 虚拟机", "Connect to a Colab VM first"));
+        return;
+      }
+      const remotePath = presetPath || window.prompt(
+        L("输入云端 .ipynb 文件路径（例如 /content/demo.ipynb 或 /content/drive/MyDrive/train.ipynb）：", "Enter cloud .ipynb path (e.g. /content/demo.ipynb):"),
+        notebookState.remotePath || "/content/notebook.ipynb",
+      );
+      if (!remotePath || !remotePath.trim()) return;
+      showToast(L("正在从云端读取 Notebook…", "Loading cloud notebook…"));
+      try {
+        const res = await fetch("/api/notebook/cloud-read", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ session: selected, remotePath: remotePath.trim() }),
+        });
+        const data = await res.json();
+        if (!data.ok || !data.notebook) {
+          showToast(`${L("打开失败：", "Open failed: ")}${data.error || "Unknown error"}`);
+          return;
+        }
+        notebookState = {
+          name: data.name || "notebook.ipynb",
+          remotePath: data.remotePath || remotePath.trim(),
+          execCounter: 0,
+          cells: data.notebook.cells,
+        };
+        persistNotebookState();
+        renderNotebook();
+        setComposerMode("notebook");
+        showToast(L(`已打开云端 ${notebookState.name}`, `Opened ${notebookState.name}`));
+      } catch (err) {
+        showToast(`${L("打开失败：", "Open failed: ")}${err?.message || String(err)}`);
+      }
+    }
+
+    async function saveCloudIpynb() {
+      if (!selected) {
+        showToast(L("请先连接一台 Colab 虚拟机", "Connect to a Colab VM first"));
+        return;
+      }
+      const defaultName = (notebookState.name || "untitled.ipynb").endsWith(".ipynb") ? notebookState.name : `${notebookState.name}.ipynb`;
+      const remotePath = window.prompt(
+        L("保存到云端路径（支持 /content 或 /content/drive/MyDrive）：", "Save to cloud path (e.g. /content/notebook.ipynb):"),
+        notebookState.remotePath || `/content/${defaultName}`,
+      );
+      if (!remotePath || !remotePath.trim()) return;
+      showToast(L("正在保存到云端…", "Saving notebook to cloud…"));
+      try {
+        const res = await fetch("/api/notebook/cloud-save", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ session: selected, remotePath: remotePath.trim(), cells: notebookState.cells }),
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          showToast(`${L("保存失败：", "Save failed: ")}${data.error || "Unknown error"}`);
+          return;
+        }
+        notebookState.remotePath = remotePath.trim();
+        notebookState.name = remotePath.trim().split("/").pop() || defaultName;
+        persistNotebookState();
+        if (nbTitleInput) nbTitleInput.value = notebookState.name;
+        showToast(L(`已保存到 ${notebookState.remotePath}`, `Saved to ${notebookState.remotePath}`));
+      } catch (err) {
+        showToast(`${L("保存失败：", "Save failed: ")}${err?.message || String(err)}`);
+      }
+    }
+
+    function parseLocalIpynbObject(parsed, fileName) {
+      const rawCells = Array.isArray(parsed?.cells) ? parsed.cells : [];
+      const joinSrc = (s) => (typeof s === "string" ? s : Array.isArray(s) ? s.join("") : "");
+      const cells = rawCells.map((cell, idx) => {
+        const type = cell?.cell_type === "markdown" ? "markdown" : "code";
+        const stdoutParts = [];
+        const stderrParts = [];
+        const images = [];
+        for (const out of cell?.outputs || []) {
+          if (out?.output_type === "stream") {
+            const t = joinSrc(out.text);
+            if (out.name === "stderr") stderrParts.push(t);
+            else stdoutParts.push(t);
+          } else if (out?.output_type === "error") {
+            stderrParts.push(Array.isArray(out.traceback) ? out.traceback.join("\n").replace(/\x1b\[[0-9;]*m/g, "") : `${out.ename || "Error"}: ${out.evalue || ""}`);
+          } else if (out?.output_type === "display_data" || out?.output_type === "execute_result") {
+            const d = out.data || {};
+            if (d["image/png"]) images.push({ dataUrl: `data:image/png;base64,${joinSrc(d["image/png"]).replace(/\s+/g, "")}` });
+            else if (d["image/jpeg"]) images.push({ dataUrl: `data:image/jpeg;base64,${joinSrc(d["image/jpeg"]).replace(/\s+/g, "")}` });
+            else if (d["text/plain"]) stdoutParts.push(joinSrc(d["text/plain"]));
+          }
+        }
+        return {
+          id: String(cell?.id || `nb-${Date.now().toString(36)}-${idx}`),
+          type,
+          source: joinSrc(cell?.source),
+          executionCount: typeof cell?.execution_count === "number" ? cell.execution_count : null,
+          stdout: stdoutParts.join(""),
+          stderr: stderrParts.join("\n").trim(),
+          images,
+          ok: stderrParts.length === 0,
+          durationMs: null,
+          editingMd: false,
+        };
+      });
+      notebookState = {
+        name: fileName || "notebook.ipynb",
+        remotePath: "",
+        execCounter: 0,
+        cells: cells.length > 0 ? cells : defaultNotebookState().cells,
+      };
+      persistNotebookState();
+      renderNotebook();
+      showToast(L(`已加载 ${notebookState.name}（${notebookState.cells.length} 个单元格）`, `Loaded ${notebookState.name} (${notebookState.cells.length} cells)`));
+    }
+
+    function renderNotebook() {
+      if (!nbCellsEl) return;
+      if (nbTitleInput && document.activeElement !== nbTitleInput) {
+        nbTitleInput.value = notebookState.name || "untitled.ipynb";
+      }
+      nbCellsEl.replaceChildren();
+      notebookState.cells.forEach((cell, idx) => {
+        const isRunning = nbRunningCells.has(cell.id);
+        const card = document.createElement("div");
+        card.className = `nb-cell${isRunning ? " is-running" : ""}${cell.ok === false ? " is-error" : ""}`;
+        card.dataset.cellId = cell.id;
+
+        const gutter = document.createElement("div");
+        gutter.className = "nb-gutter";
+        const runBtn = document.createElement("button");
+        runBtn.type = "button";
+        runBtn.className = `nb-run-btn${isRunning ? " is-running" : ""}`;
+        runBtn.title = tr("nb.runCell");
+        runBtn.textContent = isRunning ? "⋯" : cell.type === "markdown" ? "✓" : "▶";
+        runBtn.disabled = isRunning;
+        runBtn.addEventListener("click", () => runNotebookCell(idx, false));
+        const execLbl = document.createElement("span");
+        execLbl.className = "nb-exec-count";
+        execLbl.textContent = cell.type === "markdown"
+          ? "MD"
+          : isRunning
+            ? "[*]"
+            : cell.executionCount != null
+              ? `[${cell.executionCount}]`
+              : "[ ]";
+        gutter.append(runBtn, execLbl);
+        if (cell.durationMs != null && !isRunning) {
+          const dur = document.createElement("span");
+          dur.className = "nb-exec-count";
+          dur.textContent = `${(cell.durationMs / 1000).toFixed(1)}s`;
+          gutter.append(dur);
+        }
+
+        const main = document.createElement("div");
+        main.className = "nb-cell-main";
+
+        const head = document.createElement("div");
+        head.className = "nb-cell-head";
+        const kindSpan = document.createElement("span");
+        kindSpan.className = "nb-cell-kind";
+        kindSpan.textContent = `${cell.type === "markdown" ? "Markdown" : "Python"} · #${idx + 1}`;
+        const actions = document.createElement("div");
+        actions.className = "nb-cell-actions";
+
+        const aiBtn = document.createElement("button");
+        aiBtn.type = "button";
+        aiBtn.className = "nb-mini-btn is-ai";
+        aiBtn.textContent = tr("nb.aiEdit");
+        aiBtn.addEventListener("click", () => {
+          nbAiEditingCellId = nbAiEditingCellId === cell.id ? null : cell.id;
+          renderNotebook();
+          if (nbAiEditingCellId === cell.id) {
+            nbCellsEl.querySelector(`[data-cell-id="${cell.id}"] .nb-ai-bar input`)?.focus();
+          }
+        });
+
+        const toggleBtn = document.createElement("button");
+        toggleBtn.type = "button";
+        toggleBtn.className = "nb-mini-btn";
+        toggleBtn.textContent = cell.type === "markdown" ? "→ Code" : "→ MD";
+        toggleBtn.addEventListener("click", () => {
+          cell.type = cell.type === "markdown" ? "code" : "markdown";
+          cell.editingMd = cell.type === "markdown";
+          persistNotebookState();
+          renderNotebook();
+        });
+
+        const upBtn = document.createElement("button");
+        upBtn.type = "button";
+        upBtn.className = "nb-mini-btn";
+        upBtn.textContent = "↑";
+        upBtn.disabled = idx === 0;
+        upBtn.addEventListener("click", () => moveNotebookCell(idx, -1));
+
+        const downBtn = document.createElement("button");
+        downBtn.type = "button";
+        downBtn.className = "nb-mini-btn";
+        downBtn.textContent = "↓";
+        downBtn.disabled = idx === notebookState.cells.length - 1;
+        downBtn.addEventListener("click", () => moveNotebookCell(idx, 1));
+
+        const addBelowBtn = document.createElement("button");
+        addBelowBtn.type = "button";
+        addBelowBtn.className = "nb-mini-btn";
+        addBelowBtn.textContent = "+";
+        addBelowBtn.title = L("在下方插入代码格", "Insert code cell below");
+        addBelowBtn.addEventListener("click", () => addNotebookCell("code", "", idx + 1));
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "nb-mini-btn is-danger";
+        delBtn.textContent = "✕";
+        delBtn.title = L("删除单元格", "Delete cell");
+        delBtn.addEventListener("click", () => deleteNotebookCell(idx));
+
+        actions.append(aiBtn, toggleBtn, upBtn, downBtn, addBelowBtn, delBtn);
+        head.append(kindSpan, actions);
+        main.append(head);
+
+        if (cell.type === "markdown" && !cell.editingMd) {
+          const preview = document.createElement("div");
+          preview.className = "nb-md-preview agent-prose";
+          if (cell.source && cell.source.trim()) {
+            renderMarkdownInto(preview, cell.source);
+          }
+          preview.addEventListener("dblclick", () => {
+            cell.editingMd = true;
+            renderNotebook();
+            nbCellsEl.querySelector(`[data-cell-id="${cell.id}"] textarea.nb-editor`)?.focus();
+          });
+          main.append(preview);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.className = "nb-editor";
+          ta.spellcheck = false;
+          ta.value = cell.source || "";
+          ta.placeholder = cell.type === "markdown"
+            ? L("输入 Markdown 笔记（Shift+Enter 渲染预览）…", "Write Markdown (Shift+Enter to preview)…")
+            : L("# 输入 Python 代码（Shift+Enter 运行并跳转下一格，⌘Enter 原地运行）", "# Write Python (Shift+Enter to run & advance, ⌘Enter to run)");
+          ta.addEventListener("input", () => {
+            cell.source = ta.value;
+            autoResizeNbTextarea(ta);
+            persistNotebookState();
+          });
+          ta.addEventListener("keydown", (ev) => {
+            if (ev.key === "Enter" && ev.shiftKey && !ev.isComposing) {
+              ev.preventDefault();
+              runNotebookCell(idx, true);
+              return;
+            }
+            if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey) && !ev.isComposing) {
+              ev.preventDefault();
+              runNotebookCell(idx, false);
+              return;
+            }
+            if (ev.key === "Tab") {
+              ev.preventDefault();
+              const start = ta.selectionStart;
+              const end = ta.selectionEnd;
+              ta.value = `${ta.value.slice(0, start)}  ${ta.value.slice(end)}`;
+              ta.selectionStart = ta.selectionEnd = start + 2;
+              cell.source = ta.value;
+              persistNotebookState();
+            }
+          });
+          if (cell.type === "markdown") {
+            ta.addEventListener("blur", () => {
+              cell.editingMd = false;
+              persistNotebookState();
+              renderNotebook();
+            });
+          }
+          main.append(ta);
+          requestAnimationFrame(() => autoResizeNbTextarea(ta));
+        }
+
+        if (nbAiEditingCellId === cell.id) {
+          const aiBar = document.createElement("div");
+          aiBar.className = "nb-ai-bar";
+          const aiInput = document.createElement("input");
+          aiInput.type = "text";
+          aiInput.placeholder = L("告诉 AI 如何生成或改写这一格（如：加上 tqdm 进度条 / 用 matplotlib 画柱状图）…", "Tell AI how to generate or edit this cell…");
+          const aiGo = document.createElement("button");
+          aiGo.type = "button";
+          aiGo.className = "nb-btn is-primary";
+          aiGo.textContent = L("应用", "Apply");
+          const aiCancel = document.createElement("button");
+          aiCancel.type = "button";
+          aiCancel.className = "nb-btn";
+          aiCancel.textContent = L("取消", "Cancel");
+          aiGo.addEventListener("click", () => runCellAiEdit(idx, aiInput.value, aiInput, aiGo));
+          aiInput.addEventListener("keydown", (ev) => {
+            if (ev.key === "Enter" && !ev.isComposing) {
+              ev.preventDefault();
+              runCellAiEdit(idx, aiInput.value, aiInput, aiGo);
+            } else if (ev.key === "Escape") {
+              nbAiEditingCellId = null;
+              renderNotebook();
+            }
+          });
+          aiCancel.addEventListener("click", () => {
+            nbAiEditingCellId = null;
+            renderNotebook();
+          });
+          aiBar.append(aiInput, aiGo, aiCancel);
+          main.append(aiBar);
+        }
+
+        if (cell.type === "code" && (cell.stdout || cell.stderr || (cell.images && cell.images.length > 0))) {
+          const out = document.createElement("div");
+          out.className = "nb-output";
+          if (cell.stdout) {
+            const pre = document.createElement("pre");
+            pre.className = "nb-stdout";
+            pre.textContent = cell.stdout;
+            out.append(pre);
+          }
+          if (cell.images && cell.images.length > 0) {
+            const imgWrap = document.createElement("div");
+            imgWrap.className = "nb-out-images";
+            for (const im of cell.images) {
+              if (!im?.dataUrl) continue;
+              const imgEl = document.createElement("img");
+              imgEl.src = im.dataUrl;
+              imgEl.alt = "Cell output figure";
+              imgWrap.append(imgEl);
+            }
+            out.append(imgWrap);
+          }
+          if (cell.stderr) {
+            const errPre = document.createElement("pre");
+            errPre.className = "nb-stderr";
+            errPre.textContent = cell.stderr;
+            out.append(errPre);
+            const foot = document.createElement("div");
+            foot.className = "nb-out-foot";
+            const fixBtn = document.createElement("button");
+            fixBtn.type = "button";
+            fixBtn.className = "nb-fix-btn";
+            fixBtn.textContent = tr("nb.fixWithAgent");
+            fixBtn.addEventListener("click", () => fixNotebookCellWithAgent(idx));
+            foot.append(fixBtn);
+            out.append(foot);
+          }
+          main.append(out);
+        }
+
+        card.append(gutter, main);
+        nbCellsEl.append(card);
+      });
+    }
+
     function setComposerMode(nextMode, sync = true) {
-      composerMode = nextMode === "cli" ? "cli" : "agent";
+      composerMode = nextMode === "cli" ? "cli" : nextMode === "notebook" ? "notebook" : "agent";
       const isAgent = composerMode === "agent";
+      const isNotebook = composerMode === "notebook";
+      const isCli = composerMode === "cli";
       modeAgentBtn.classList.toggle("is-active", isAgent);
       modeAgentBtn.setAttribute("aria-selected", isAgent ? "true" : "false");
-      modeCliBtn.classList.toggle("is-active", !isAgent);
-      modeCliBtn.setAttribute("aria-selected", !isAgent ? "true" : "false");
+      if (modeNotebookBtn) {
+        modeNotebookBtn.classList.toggle("is-active", isNotebook);
+        modeNotebookBtn.setAttribute("aria-selected", isNotebook ? "true" : "false");
+      }
+      modeCliBtn.classList.toggle("is-active", isCli);
+      modeCliBtn.setAttribute("aria-selected", isCli ? "true" : "false");
+      if (notebookView) notebookView.hidden = !isNotebook;
+      if (transcript) transcript.hidden = isNotebook;
+      if (composer) composer.hidden = isNotebook;
       agentControls.hidden = !isAgent;
-      cliControls.hidden = isAgent;
+      cliControls.hidden = !isCli;
+      if (isNotebook) renderNotebook();
       try { localStorage.setItem("colab-desk.composer-mode", composerMode); } catch {}
       if (sync) scheduleStoreSync();
       syncComposer();
@@ -9147,6 +10302,52 @@
       renderSettingsModal();
     });
 
+    if (apiFetchModelsBtn) {
+      apiFetchModelsBtn.addEventListener("click", async () => {
+        const baseUrl = apiBaseUrlInput.value.trim();
+        if (!baseUrl) {
+          apiTestStatus.textContent = L("请先填写 Base URL", "Enter Base URL first");
+          return;
+        }
+        apiFetchModelsBtn.disabled = true;
+        apiTestStatus.textContent = L("正在拉取网关模型列表…", "Fetching /v1/models…");
+        try {
+          const res = await fetch("/api/agent/fetch-models", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ baseUrl, apiKey: apiKeyInput.value.trim(), model: apiModelInput.value.trim() }),
+          });
+          const data = await res.json();
+          if (data.ok && Array.isArray(data.models) && data.models.length > 0) {
+            if (apiModelsDatalist) {
+              apiModelsDatalist.replaceChildren();
+              for (const m of data.models) {
+                const opt = document.createElement("option");
+                opt.value = m.value;
+                apiModelsDatalist.append(opt);
+              }
+            }
+            if (!apiModelInput.value.trim()) {
+              apiModelInput.value = data.models[0].value;
+            }
+            apiTestStatus.textContent = L(
+              `已拉取 ${data.models.length} 个模型（可在上方模型输入框下拉选择）`,
+              `Fetched ${data.models.length} models (pick from the Model input list)`,
+            );
+          } else {
+            apiTestStatus.textContent = L(
+              `拉取失败：${data.error || "网关未返回模型列表"}`,
+              `Fetch failed: ${data.error || "no models returned"}`,
+            );
+          }
+        } catch (err) {
+          apiTestStatus.textContent = `${L("拉取失败：", "Fetch failed: ")}${err?.message || String(err)}`;
+        } finally {
+          apiFetchModelsBtn.disabled = false;
+        }
+      });
+    }
+
     document.querySelector("#api-test-btn").addEventListener("click", async () => {
       const btn = document.querySelector("#api-test-btn");
       btn.disabled = true;
@@ -9290,7 +10491,50 @@
 
     // Mode & Agent controls
     modeAgentBtn.addEventListener("click", () => setComposerMode("agent"));
+    if (modeNotebookBtn) modeNotebookBtn.addEventListener("click", () => setComposerMode("notebook"));
     modeCliBtn.addEventListener("click", () => setComposerMode("cli"));
+
+    // Notebook Toolbar listeners
+    if (nbTitleInput) {
+      nbTitleInput.addEventListener("change", () => {
+        notebookState.name = nbTitleInput.value.trim() || "untitled.ipynb";
+        persistNotebookState();
+      });
+    }
+    document.querySelector("#nb-add-code")?.addEventListener("click", () => addNotebookCell("code", ""));
+    document.querySelector("#nb-add-md")?.addEventListener("click", () => addNotebookCell("markdown", ""));
+    document.querySelector("#nb-bottom-code")?.addEventListener("click", () => addNotebookCell("code", ""));
+    document.querySelector("#nb-bottom-md")?.addEventListener("click", () => addNotebookCell("markdown", ""));
+    document.querySelector("#nb-run-all")?.addEventListener("click", () => runAllNotebookCells(false));
+    document.querySelector("#nb-restart-run-all")?.addEventListener("click", () => runAllNotebookCells(true));
+    document.querySelector("#nb-clear-outputs")?.addEventListener("click", () => clearNotebookOutputs());
+    document.querySelector("#nb-open-local")?.addEventListener("click", () => nbOpenFileInput?.click());
+    document.querySelector("#nb-open-cloud")?.addEventListener("click", () => openCloudIpynb());
+    document.querySelector("#nb-save-local")?.addEventListener("click", () => exportLocalIpynb());
+    document.querySelector("#nb-save-cloud")?.addEventListener("click", () => saveCloudIpynb());
+    document.querySelector("#nb-vars-refresh")?.addEventListener("click", () => inspectNotebookVars());
+    if (nbVarsToggle) {
+      nbVarsToggle.addEventListener("click", () => {
+        if (!nbVarsDrawer) return;
+        const willOpen = nbVarsDrawer.hidden;
+        nbVarsDrawer.hidden = !willOpen;
+        nbVarsToggle.classList.toggle("is-active", willOpen);
+        if (willOpen) inspectNotebookVars();
+      });
+    }
+    if (nbOpenFileInput) {
+      nbOpenFileInput.addEventListener("change", async () => {
+        const file = nbOpenFileInput.files?.[0];
+        nbOpenFileInput.value = "";
+        if (!file) return;
+        try {
+          const text = await file.text();
+          parseLocalIpynbObject(JSON.parse(text), file.name);
+        } catch (err) {
+          showToast(`${L("无法解析 .ipynb：", "Invalid .ipynb: ")}${err?.message || String(err)}`);
+        }
+      });
+    }
     agentProviderSelect.addEventListener("change", () => {
       const pid = agentProviderSelect.value;
       try { localStorage.setItem("colab-desk.agent-provider", pid); } catch {}
@@ -11100,7 +12344,7 @@
       const savedTheme = localStorage.getItem("colab-desk.theme");
       if (savedTheme === "system" || savedTheme === "dark" || savedTheme === "light") themePref = savedTheme;
       const savedMode = localStorage.getItem("colab-desk.composer-mode");
-      if (savedMode === "cli" || savedMode === "agent") composerMode = savedMode;
+      if (savedMode === "cli" || savedMode === "agent" || savedMode === "notebook") composerMode = savedMode;
       const savedApproval = localStorage.getItem("colab-desk.approval-mode");
       if (savedApproval === "ask" || savedApproval === "auto") approvalMode = savedApproval;
       const savedEnter = localStorage.getItem("colab-desk.enter-to-send");
