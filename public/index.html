@@ -325,7 +325,30 @@
     :root[data-theme="light"] .sidebar-foot-btn:hover,
     :root[data-theme="light"] .rail-row-btn:hover:not(:disabled) { background: rgba(20, 18, 40, 0.07); }
     :root[data-theme="light"] .s-toggle-track { background: rgba(20, 18, 40, 0.18); }
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--muted) 32%, transparent) transparent;
+    }
+    *::-webkit-scrollbar {
+      height: 5px;
+      width: 5px;
+    }
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+      background-clip: content-box;
+      background-color: color-mix(in srgb, var(--muted) 28%, transparent);
+      border: 1px solid transparent;
+      border-radius: 999px;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background-color: color-mix(in srgb, var(--muted) 54%, transparent);
+    }
+    *::-webkit-scrollbar-corner {
+      background: transparent;
+    }
     html, body { height: 100%; margin: 0; overflow: hidden; }
     body {
       background: var(--bg);
@@ -5342,7 +5365,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.4.7</span>
+                    <span class="s-title">Colab Desk 0.4.8</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5355,7 +5378,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.7（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.8（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
