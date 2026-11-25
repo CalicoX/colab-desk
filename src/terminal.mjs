@@ -150,29 +150,19 @@ export class TerminalManager {
     return Array.from(this.sessions.values()).map((s) => this._summary(s));
   }
 
-  create({ target = "colab", session = "", cols = 100, rows = 30 } = {}) {
+  create({ session = "", cols = 100, rows = 30 } = {}) {
     const pyExe = findExecutable("python3") || "/usr/bin/python3";
-    let cmdArgs = [];
-    let title = "";
-    let cwd = this.defaultCwd;
-
-    if (target === "colab") {
-      const colabExe = findExecutable("colab");
-      if (!colabExe) {
-        return { ok: false, error: "未找到 colab 命令（请先安装 google-colab-cli）" };
-      }
-      const cleanSession = String(session || "").trim();
-      if (!cleanSession) {
-        return { ok: false, error: "请先选择一个运行中的 Colab 会话，或改用「本机终端」" };
-      }
-      cmdArgs = [colabExe, "ssh", "-s", cleanSession];
-      title = `colab: ${cleanSession}`;
-    } else {
-      const shell = process.env.SHELL || "/bin/zsh";
-      cmdArgs = [shell];
-      title = `local: ${path.basename(shell)}`;
-      cwd = os.homedir();
+    const colabExe = findExecutable("colab");
+    if (!colabExe) {
+      return { ok: false, error: "未找到 colab 命令（请先安装 google-colab-cli）" };
     }
+    const cleanSession = String(session || "").trim();
+    if (!cleanSession) {
+      return { ok: false, error: "请先连接一个运行中的 Colab 会话" };
+    }
+    const cmdArgs = [colabExe, "ssh", "-s", cleanSession];
+    const title = `colab: ${cleanSession}`;
+    const cwd = this.defaultCwd;
 
     const id = `term-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const child = spawn(pyExe, [bridgeScript, ...cmdArgs], {
@@ -187,8 +177,8 @@ export class TerminalManager {
 
     const rec = {
       id,
-      target,
-      session: target === "colab" ? String(session || "").trim() : "",
+      target: "colab",
+      session: cleanSession,
       title,
       alive: true,
       exitCode: null,

@@ -2389,6 +2389,7 @@
       padding: 2px;
     }
     :root[data-theme="light"] .view-switch { background: rgba(20, 18, 40, 0.055); }
+    .view-switch[hidden] { display: none; }
     .view-switch-btn {
       align-items: center;
       background: transparent;
@@ -2654,7 +2655,7 @@
             </div>
           </div>
           <div class="workspace-head-actions">
-            <div class="view-switch" role="tablist" aria-label="视图切换">
+            <div id="view-switch" class="view-switch" role="tablist" aria-label="视图切换" hidden>
               <button id="view-chat-btn" class="view-switch-btn is-active" type="button" role="tab" aria-selected="true" data-i18n="ws.viewChat">对话</button>
               <button id="view-term-btn" class="view-switch-btn" type="button" role="tab" aria-selected="false" data-i18n-title="ws.viewTerminalTitle" title="切换交互式命令行终端 (⌘J)">
                 <span class="term-live-dot" id="term-live-dot" hidden></span>
@@ -2783,23 +2784,21 @@
           </div>
         </form>
 
-        <!-- Interactive PTY Terminal View (for running CLI agents / shells on Colab VM or locally) -->
+        <!-- Interactive PTY Terminal View (connected Colab VM SSH only) -->
         <section id="terminal-view" data-region="terminal" aria-label="interactive terminal">
           <div class="term-bar">
             <div id="term-tabs" class="term-tabs"></div>
             <div class="term-actions">
-              <button id="term-new-colab" class="rail-chip" type="button" data-i18n="term.newColab">+ Colab SSH</button>
-              <button id="term-new-local" class="rail-chip" type="button" data-i18n="term.newLocal">+ 本机终端</button>
+              <button id="term-new-colab" class="rail-chip" type="button" data-i18n="term.newColab">+ 新建终端</button>
               <button id="term-reconnect" class="rail-chip" type="button" data-i18n="term.reconnect">重连</button>
               <button id="term-clear" class="rail-chip" type="button" data-i18n="term.clear">清屏</button>
             </div>
           </div>
           <div class="term-stage">
             <div id="term-empty" class="term-empty">
-              <p data-i18n="term.emptyHint">点击上方「+ Colab SSH」直接连入当前云端虚拟机（支持运行 Claude Code / AGY / OpenCode / vim / htop 等交互式 TUI），或打开「+ 本机终端」。</p>
+              <p data-i18n="term.emptyHint">点击「+ 新建终端」连入当前 Colab 虚拟机（支持运行 Claude Code / AGY / OpenCode / vim / htop 等交互式 TUI）。</p>
               <div class="s-actions">
-                <button id="term-empty-colab" class="s-btn is-primary" type="button" data-i18n="term.newColab">+ Colab SSH</button>
-                <button id="term-empty-local" class="s-btn" type="button" data-i18n="term.newLocal">+ 本机终端</button>
+                <button id="term-empty-colab" class="s-btn is-primary" type="button" data-i18n="term.newColab">+ 新建终端</button>
               </div>
             </div>
             <div id="term-canvas" hidden></div>
@@ -3578,6 +3577,7 @@
 
     const app = document.querySelector("#app");
     const workspaceEl = document.querySelector(".workspace");
+    const viewSwitchEl = document.querySelector("#view-switch");
     const viewChatBtn = document.querySelector("#view-chat-btn");
     const viewTermBtn = document.querySelector("#view-term-btn");
     const termLiveDot = document.querySelector("#term-live-dot");
@@ -3585,7 +3585,6 @@
     const termCanvasEl = document.querySelector("#term-canvas");
     const termEmptyEl = document.querySelector("#term-empty");
     const termNewColabBtn = document.querySelector("#term-new-colab");
-    const termNewLocalBtn = document.querySelector("#term-new-local");
     const termReconnectBtn = document.querySelector("#term-reconnect");
     const termClearBtn = document.querySelector("#term-clear");
     const sessionItems = document.querySelector("#session-items");
@@ -4965,6 +4964,10 @@
       const hasSession = !!session;
 
       inspectorHost.textContent = hasSession ? session.name : tr("rail.disconnected");
+      if (viewSwitchEl) viewSwitchEl.hidden = !hasSession;
+      if (!hasSession && activeWorkspaceView === "terminal") {
+        setWorkspaceView("chat");
+      }
       inspectorLs.disabled = !hasSession;
       inspectorRestart.disabled = !hasSession;
       inspectorStop.disabled = !hasSession;
@@ -7456,9 +7459,10 @@
       };
     }
 
-    async function createTerminalTab(target = "colab") {
-      if (target === "colab" && !selected) {
-        showToast(activeLang === "en" ? "No active Colab session selected — opening Local Shell instead" : "未选中活跃 Colab 会话，可先新建会话或使用本机终端");
+    async function createTerminalTab() {
+      const sess = currentSessionObject();
+      if (!sess) {
+        showToast(activeLang === "en" ? "Connect to a Colab VM first" : "请先连接一台 Colab 虚拟机");
         return;
       }
       const cols = xtermInst?.cols || 100;
@@ -7467,7 +7471,7 @@
         const res = await fetch("/api/terminal/create", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ target, session: target === "colab" ? selected : "", cols, rows }),
+          body: JSON.stringify({ session: sess.name, cols, rows }),
         });
         const data = await res.json();
         if (!data.ok || !data.terminal) {
@@ -7500,6 +7504,16 @@
     }
 
     function setWorkspaceView(nextView) {
+      const hasSession = Boolean(currentSessionObject());
+      if (nextView === "terminal" && !hasSession) {
+        activeWorkspaceView = "chat";
+        workspaceEl.classList.remove("is-terminal-view");
+        viewChatBtn.classList.add("is-active");
+        viewChatBtn.setAttribute("aria-selected", "true");
+        viewTermBtn.classList.remove("is-active");
+        viewTermBtn.setAttribute("aria-selected", "false");
+        return;
+      }
       activeWorkspaceView = nextView === "terminal" ? "terminal" : "chat";
       const isTerm = activeWorkspaceView === "terminal";
       workspaceEl.classList.toggle("is-terminal-view", isTerm);
@@ -7508,14 +7522,15 @@
       viewTermBtn.classList.toggle("is-active", isTerm);
       viewTermBtn.setAttribute("aria-selected", isTerm ? "true" : "false");
       if (isTerm) {
-        if (termList.length === 0) {
-          createTerminalTab(selected ? "colab" : "local");
-        } else {
-          if (!activeTermId) attachTerminalTab(termList[0].id);
+        const forCurrent = termList.find((tItem) => tItem.session === selected && tItem.alive);
+        if (forCurrent) {
+          if (activeTermId !== forCurrent.id) attachTerminalTab(forCurrent.id);
           requestAnimationFrame(() => {
             fitActiveTerminal();
             xtermInst?.focus();
           });
+        } else {
+          createTerminalTab();
         }
       } else {
         code.focus();
@@ -7523,38 +7538,22 @@
     }
 
     function toggleTerminalView() {
+      if (!currentSessionObject()) {
+        if (activeWorkspaceView === "terminal") setWorkspaceView("chat");
+        return;
+      }
       setWorkspaceView(activeWorkspaceView === "terminal" ? "chat" : "terminal");
     }
 
     viewChatBtn.addEventListener("click", () => setWorkspaceView("chat"));
     viewTermBtn.addEventListener("click", () => setWorkspaceView("terminal"));
-    termNewColabBtn.addEventListener("click", () => createTerminalTab("colab"));
-    termNewLocalBtn.addEventListener("click", () => createTerminalTab("local"));
-    document.querySelector("#term-empty-colab").addEventListener("click", () => createTerminalTab("colab"));
-    document.querySelector("#term-empty-local").addEventListener("click", () => createTerminalTab("local"));
+    termNewColabBtn.addEventListener("click", () => createTerminalTab());
+    document.querySelector("#term-empty-colab").addEventListener("click", () => createTerminalTab());
     termClearBtn.addEventListener("click", () => { if (xtermInst) xtermInst.clear(); });
     termReconnectBtn.addEventListener("click", async () => {
       const current = termList.find((x) => x.id === activeTermId);
-      if (!current) {
-        createTerminalTab(selected ? "colab" : "local");
-        return;
-      }
-      const target = current.target;
-      const oldSession = current.session;
-      await closeTerminalTab(current.id);
-      if (target === "colab" && (selected || oldSession)) {
-        const res = await fetch("/api/terminal/create", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ target: "colab", session: selected || oldSession, cols: xtermInst?.cols || 100, rows: xtermInst?.rows || 30 }),
-        }).then((r) => r.json());
-        if (res.ok && res.terminal) {
-          termList.push(res.terminal);
-          attachTerminalTab(res.terminal.id);
-        }
-      } else {
-        createTerminalTab("local");
-      }
+      if (current) await closeTerminalTab(current.id);
+      if (currentSessionObject()) createTerminalTab();
     });
 
     /* ── 4. Cost & Idle VM Guardrails ── */

@@ -556,8 +556,10 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="gpu-section"/);
     assert.match(page, /id="tunnels-section"/);
     assert.match(page, /id="guard-alert-banner"/);
+    assert.match(page, /id="view-switch"[^>]*hidden/);
     assert.match(page, /id="view-term-btn"/);
     assert.match(page, /id="terminal-view"/);
+    assert.doesNotMatch(page, /id="term-new-local"/);
     assert.match(page, /\/vendor\/xterm\/xterm\.js/);
     const xtermAsset = await fetch(`http://127.0.0.1:${port}/vendor/xterm/xterm.js`);
     assert.equal(xtermAsset.status, 200);

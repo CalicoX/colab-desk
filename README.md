@@ -12,8 +12,8 @@ Colab Desk lets you drive Google Colab GPU/TPU runtimes through **AI Agents**, *
   - **OpenCode (`opencode acp`)**: ACP protocol support with 30-day & lifetime token/cost stats.
   - **Custom OpenAI-Compatible API Profiles**: Works even with **no local Agent CLI installed** — save multiple profiles (OpenAI, DeepSeek, OpenRouter, Gemini, local Ollama) with built-in Colab tool calling.
 - **Interactive PTY Terminal (`⌘J`)**
-  - Switch between **Chat** and **Terminal** right in the workspace header.
-  - Full `xterm.js` + POSIX PTY over WebSocket (`colab ssh -s <session>` or local shell), supporting multiple tabs, resize (`SIGWINCH`), scrollback replay, and full TUI agents (`claude`, `agy`, `opencode`, `vim`, `htop`, `nvidia-smi`).
+  - Appears automatically once connected to an active Colab VM to switch between **Chat** and **Terminal**.
+  - Full `xterm.js` + POSIX PTY over WebSocket (`colab ssh -s <session>`), supporting multiple tabs, resize (`SIGWINCH`), scrollback replay, and full TUI agents (`claude`, `agy`, `opencode`, `vim`, `htop`, `nvidia-smi`).
 - **Cloud File Explorer**
   - Visual browser for `/content` and Google Drive (`/content/drive/MyDrive`) with one-click `drivemount`, drag-and-drop upload, download, delete, inline image/text preview, and one-click "Analyze with Agent".
 - **Live GPU / VRAM Monitor & SSH Port Forwarding**
