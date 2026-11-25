@@ -3094,9 +3094,20 @@
     .tunnel-close:hover { color: var(--danger); }
     .export-row {
       display: flex;
-      gap: 6px;
+      gap: 8px;
+      margin-top: 4px;
     }
-    .export-row button { flex: 1; }
+    .export-row button {
+      align-items: center;
+      border-radius: 9px;
+      display: inline-flex;
+      flex: 1;
+      font-size: 12.5px;
+      font-weight: 520;
+      height: 34px;
+      justify-content: center;
+      padding: 0 10px;
+    }
     .guard-banner {
       align-items: center;
       background: rgba(255, 99, 112, 0.12);
@@ -5267,7 +5278,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.4.4</span>
+                    <span class="s-title">Colab Desk 0.4.5</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5280,7 +5291,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.4（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.5（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
