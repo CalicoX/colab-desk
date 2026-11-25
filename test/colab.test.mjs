@@ -642,6 +642,8 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="quick-skin-btn"/);
     assert.match(page, /data-skin="ocean"/);
     assert.match(page, /data-skin="paper"/);
+    assert.match(page, /--toggle-on:/);
+    assert.doesNotMatch(page, /#9d68e8/);
     assert.match(page, /initUniversalIconTooltips/);
     assert.match(page, /id="open-usage-modal"/);
     assert.match(page, /id="colab-cu-modal"/);
