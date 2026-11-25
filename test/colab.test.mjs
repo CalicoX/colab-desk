@@ -26,7 +26,7 @@ import {
   renderParameterizedScript,
 } from "../src/cloud-ops.mjs";
 import { resolveLanguage, t } from "../src/i18n.mjs";
-import { applyNewResult, composeAction, createDeskState, record, showSession } from "../src/desk.mjs";
+import { applyNewResult, composeAction, createDeskState, isRetryableColabError, record, showSession, summarizeColabError } from "../src/desk.mjs";
 import { parseCommandOutput } from "../src/parse.mjs";
 import { plan } from "../src/plan.mjs";
 import { runAction } from "../src/run.mjs";
@@ -578,6 +578,8 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="boot-hf-transfer"/);
     assert.match(page, /id="files-mode-gallery"/);
     assert.match(page, /id="check-updates-btn"/);
+    assert.match(page, /id="bg-snipe-btn"/);
+    assert.match(page, /id="snipe-banner"/);
     assert.doesNotMatch(page, /id="term-new-local"/);
     assert.match(page, /\/vendor\/xterm\/xterm\.js/);
     const xtermAsset = await fetch(`http://127.0.0.1:${port}/vendor/xterm/xterm.js`);
@@ -864,6 +866,11 @@ test("agent parsers handle ACP updates, model catalogs, and Grok NDJSON events",
   assert.equal(compareSemver("0.2.0", "0.1.0"), 1);
   assert.equal(compareSemver("0.1.0", "0.1.0"), 0);
   assert.equal(compareSemver("0.1.0", "0.2.0"), -1);
+  const richTraceback = "╭── Traceback (most recent call last) ──╮\n| colab_cli/client.py:238 |\n╰──╯\nColabRequestError: Failed to issue request POST https://colab.research.google.com/tun/m/assign: Service Unavailable";
+  assert.doesNotMatch(summarizeColabError(richTraceback, "zh-CN"), /Traceback/);
+  assert.match(summarizeColabError(richTraceback, "zh-CN"), /稍后再试/);
+  assert.equal(isRetryableColabError(richTraceback), true);
+  assert.equal(isRetryableColabError("TooManyAssignmentsError: limit reached"), false);
 });
 
 test("mac app does not start a login shell", () => {

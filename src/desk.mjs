@@ -115,6 +115,78 @@ export function showSession(state, sessionName) {
   return bucket ? bucket.slice() : [];
 }
 
+export function isRetryableColabError(rawErr) {
+  const text = String(rawErr || "");
+  if (/TooManyAssignmentsError|too many assignments/i.test(text)) return false;
+  if (/already exists/i.test(text)) return false;
+  if (/\b(400|401|403)\b|Unauthorized|Bad Request|Forbidden|OAuth|not authenticated/i.test(text)) return false;
+  if (/503|Service Unavailable|502|504|429|Too Many Requests|capacity|temporarily unavailable|timed out|timeout|ECONNRESET|fetch failed|Assignment request failed/i.test(text)) {
+    return true;
+  }
+  return false;
+}
+
+export function summarizeColabError(rawErr, lang = "zh-CN") {
+  const text = String(rawErr || "").replace(/\r\n/g, "\n").trim();
+  const isEn = lang === "en";
+  if (!text) return isEn ? "Failed to create session. Please try again later." : "创建会话失败，请稍后再试。";
+
+  if (/503|Service Unavailable|capacity|temporarily unavailable/i.test(text)) {
+    return isEn
+      ? "This GPU/TPU tier is temporarily unavailable. Please try again later, or use Snipe in Background."
+      : "当前硬件规格暂时无空闲节点，请稍后再试（可点「转后台抢卡」持续自动重试）。";
+  }
+  if (/TooManyAssignmentsError|too many assignments/i.test(text)) {
+    return isEn
+      ? "Active runtime limit reached. Stop an existing VM first."
+      : "当前账号活跃节点数已达上限，请先停止一个旧会话再试。";
+  }
+  if (/already exists/i.test(text)) {
+    return isEn
+      ? "A session with this name already exists. Choose a different name."
+      : "同名会话已存在，请更换一个会话名称。";
+  }
+  if (/\b(401|403)\b|Unauthorized|not authenticated|re-authenticate|OAuth/i.test(text)) {
+    return isEn
+      ? "Google Colab session expired. Please sign in again in Settings → Colab CLI."
+      : "Google Colab 登录状态已过期，请前往「设置 → Colab 环境」重新登录。";
+  }
+  if (/\b400\b|Bad Request/i.test(text)) {
+    return isEn
+      ? "This hardware tier is unavailable for your account. Try another GPU or disable high-mem."
+      : "当前账号暂不支持该硬件规格，请取消高内存或换选其他 GPU。";
+  }
+  if (/429|Too Many Requests/i.test(text)) {
+    return isEn
+      ? "Too many requests to Google Colab. Please try again in a moment."
+      : "请求过于频繁，请稍后再试。";
+  }
+  if (/timeout|timed out/i.test(text)) {
+    return isEn
+      ? "Request timed out. Please try again later."
+      : "申请节点超时，请稍后再试。";
+  }
+
+  // Strip Rich / Python Traceback walls and keep only the final exception summary line
+  const cleaned = text
+    .replace(/[╭╮╰╯│─━┃┏┓┗┛┣┫┳┻╋❯]+/g, " ")
+    .replace(/\|+/g, " ")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  for (let i = cleaned.length - 1; i >= 0; i--) {
+    const line = cleaned[i];
+    if (/^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception)\s*:/.test(line)) {
+      const compact = line.replace(/\s+/g, " ").replace(/https?:\/\/\S+/g, "").trim();
+      return compact.length > 160 ? `${compact.slice(0, 157)}…` : compact;
+    }
+  }
+  const last = cleaned[cleaned.length - 1] || text;
+  const compact = last.replace(/\s+/g, " ").trim();
+  return compact.length > 160 ? `${compact.slice(0, 157)}…` : compact;
+}
+
 // A failed `new` stays on the transcript already on screen. The new name only
 // becomes the view after that session is actually in the list.
 export function applyNewResult(state, input) {

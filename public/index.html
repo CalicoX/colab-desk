@@ -1667,6 +1667,74 @@
     }
     .env-banner-btn:hover { background: rgba(240, 184, 96, 0.34); }
 
+    /* ── Background GPU Snipe Banner ── */
+    .snipe-banner {
+      align-items: center;
+      background: rgba(139, 108, 255, 0.14);
+      border-bottom: 1px solid rgba(139, 108, 255, 0.34);
+      color: #d9ceff;
+      display: flex;
+      flex: none;
+      font-size: 12.5px;
+      gap: 10px;
+      justify-content: space-between;
+      min-width: 0;
+      padding: 8px 20px;
+    }
+    .snipe-banner[hidden] { display: none; }
+    .snipe-banner-left {
+      align-items: center;
+      display: flex;
+      gap: 9px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .snipe-pulse {
+      background: #9f84ff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(159, 132, 255, 0.65);
+      flex: none;
+      height: 8px;
+      width: 8px;
+      animation: snipePulse 1.6s ease-out infinite;
+    }
+    @keyframes snipePulse {
+      0% { box-shadow: 0 0 0 0 rgba(159, 132, 255, 0.7); }
+      70% { box-shadow: 0 0 0 7px rgba(159, 132, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(159, 132, 255, 0); }
+    }
+    .snipe-banner-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    :root[data-theme="light"] .snipe-banner {
+      background: rgba(108, 71, 255, 0.09);
+      border-bottom-color: rgba(108, 71, 255, 0.24);
+      color: #4528b8;
+    }
+    .btn-snipe {
+      background: rgba(139, 108, 255, 0.16);
+      border: 1px solid rgba(139, 108, 255, 0.38);
+      border-radius: 9px;
+      color: #d5c8ff;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 560;
+      margin-right: auto;
+      padding: 7px 12px;
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+    .btn-snipe:hover {
+      background: rgba(139, 108, 255, 0.28);
+      border-color: rgba(139, 108, 255, 0.6);
+    }
+    :root[data-theme="light"] .btn-snipe {
+      background: rgba(108, 71, 255, 0.1);
+      border-color: rgba(108, 71, 255, 0.32);
+      color: #4f31cc;
+    }
+
     /* ── T3 Code Style Two-Column Settings Modal ── */
     dialog.settings-modal {
       background: #171521;
@@ -2877,6 +2945,14 @@
           </div>
         </div>
 
+        <div id="snipe-banner" class="snipe-banner" hidden>
+          <div class="snipe-banner-left">
+            <span class="snipe-pulse" aria-hidden="true"></span>
+            <span id="snipe-banner-text" class="snipe-banner-text"></span>
+          </div>
+          <button id="snipe-stop-btn" class="s-btn is-danger" type="button" data-i18n="snipe.stop">停止抢卡</button>
+        </div>
+
         <div class="workspace-panes">
           <div class="chat-pane">
             <section id="transcript" data-region="transcript" aria-label="transcript">
@@ -3241,6 +3317,7 @@
       <div id="new-session-status" class="modal-status" hidden></div>
       <p id="new-session-error" class="modal-error" hidden></p>
       <div class="modal-foot">
+        <button id="bg-snipe-btn" class="btn-snipe" type="button" data-i18n="modal.newSession.bgSnipe">转后台抢卡</button>
         <button id="cancel-new-session" class="btn-secondary" type="button" data-i18n="modal.newSession.cancel">取消</button>
         <button id="start-session" class="btn-primary" type="submit" data-i18n="modal.newSession.start">开始</button>
       </div>
@@ -3952,7 +4029,7 @@
   </dialog>
 
   <script type="module">
-    import { applyNewResult, composeAction, createDeskState, record, showSession } from "/desk.mjs";
+    import { applyNewResult, composeAction, createDeskState, isRetryableColabError, record, showSession, summarizeColabError } from "/desk.mjs";
     import { resolveLanguage, t } from "/i18n.mjs";
 
     const SINGLE_SHAPE = new Set(["L4", "v5e1", "v6e1"]);
@@ -4051,6 +4128,10 @@
     const modalStatus = document.querySelector("#new-session-status");
     const modalError = document.querySelector("#new-session-error");
     const startSessionBtn = document.querySelector("#start-session");
+    const bgSnipeBtn = document.querySelector("#bg-snipe-btn");
+    const snipeBanner = document.querySelector("#snipe-banner");
+    const snipeBannerText = document.querySelector("#snipe-banner-text");
+    const snipeStopBtn = document.querySelector("#snipe-stop-btn");
 
     // CU, Usage & Settings modals
     const cuModal = document.querySelector("#colab-cu-modal");
@@ -4227,8 +4308,8 @@
       });
     }
 
-    function sendDesktopNotification(titleText, bodyText) {
-      if (!notifyOnComplete) return;
+    function sendDesktopNotification(titleText, bodyText, force = false) {
+      if (!force && !notifyOnComplete) return;
       if (window.webkit?.messageHandlers?.notify) {
         try {
           window.webkit.messageHandlers.notify.postMessage({ title: titleText, body: bodyText });
@@ -6637,6 +6718,9 @@
       renderInspector();
     }
 
+    let activeCreate = null;
+    let bgSnipe = null;
+
     function stopCreateWatchers() {
       clearInterval(createPollTimer);
       clearInterval(createTickTimer);
@@ -6645,11 +6729,198 @@
     }
 
     function abortOngoingCreate() {
+      if (activeCreate && !activeCreate.handedOff) {
+        activeCreate.controller.abort();
+        activeCreate = null;
+      }
       if (createController) {
         createController.abort();
         createController = null;
       }
       stopCreateWatchers();
+    }
+
+    function renderSnipeBanner() {
+      if (!bgSnipe || bgSnipe.stopped) {
+        snipeBanner.hidden = true;
+        return;
+      }
+      const elapsed = Math.max(0, Math.floor((Date.now() - bgSnipe.startedAt) / 1000));
+      const isEn = activeLang === "en";
+      let detail = "";
+      if (bgSnipe.cooldownSec > 0) {
+        detail = isEn
+          ? `retry #${bgSnipe.attempt + 1} in ${bgSnipe.cooldownSec}s`
+          : `${bgSnipe.cooldownSec}s 后发起第 ${bgSnipe.attempt + 1} 轮`;
+      } else {
+        detail = bgSnipe.statusHint || (isEn ? `attempt #${bgSnipe.attempt}` : `第 ${bgSnipe.attempt} 轮申请中`);
+      }
+      snipeBannerText.textContent = isEn
+        ? `Background Sniping · ${bgSnipe.name} (${bgSnipe.hwLabel}) · ${elapsed}s · ${detail}`
+        : `后台抢卡中 · ${bgSnipe.name} (${bgSnipe.hwLabel}) · 已等待 ${elapsed}s · ${detail}`;
+      snipeBanner.hidden = false;
+    }
+
+    function stopBgSnipe(silent = false) {
+      if (!bgSnipe) return;
+      const prev = bgSnipe;
+      prev.stopped = true;
+      bgSnipe = null;
+      clearInterval(prev.tickTimer);
+      clearInterval(prev.pollTimer);
+      clearTimeout(prev.retryTimer);
+      if (prev.controller) {
+        try { prev.controller.abort(); } catch {}
+      }
+      snipeBanner.hidden = true;
+      if (!silent) {
+        showToast(activeLang === "en" ? `Stopped background sniping for ${prev.name}` : `已停止后台抢卡（${prev.name}）`);
+      }
+    }
+
+    async function completeSessionCreate({ name, hwLabel, result, elapsedSec, fromBg }) {
+      const listed = await fetch("/api/sessions").then((res) => res.json()).catch(() => ({ ok: false }));
+      const names = listed.ok && listed.state && listed.state.sessions
+        ? listed.state.sessions.map((item) => item.name)
+        : sessions.map((item) => item.name);
+      sessions = listed.ok && listed.state && listed.state.sessions ? listed.state.sessions : sessions;
+      const cleanErr = result.ok ? "" : summarizeColabError(result.error || "colab failed", activeLang);
+      paintNew(applyNewResult(desk, {
+        current: selected || "",
+        requestedName: name,
+        ok: !!result.ok,
+        entry: {
+          kind: "cli",
+          label: `new ${name}`,
+          ok: !!result.ok,
+          error: cleanErr,
+          text: result.stdout || "",
+          argv: Array.isArray(result.argv) ? result.argv : [],
+        },
+        sessionNames: names,
+      }));
+      if (result.ok) {
+        sessionNameInput.value = "";
+        refreshUsageSilently();
+        if (bootstrapConfig.autoMountDrive || bootstrapConfig.enableHfTransfer || bootstrapConfig.hfCacheToDrive || bootstrapConfig.autoInstallUv || (bootstrapConfig.autoInjectEnv && envVars.length > 0) || (bootstrapConfig.customScript || "").trim()) {
+          runBootstrapOnSession(name, true);
+        }
+        if (fromBg) {
+          const isEn = activeLang === "en";
+          const titleText = isEn ? "Colab GPU Ready!" : "🎉 抢到 Colab 节点啦！";
+          const bodyText = isEn
+            ? `${name} (${hwLabel}) is online after ${elapsedSec}s.`
+            : `${name} (${hwLabel}) 已就绪，耗时 ${elapsedSec}s，已自动切换。`;
+          sendDesktopNotification(titleText, bodyText, true);
+          showToast(bodyText);
+        }
+      }
+      return { cleanErr };
+    }
+
+    async function handleBgSnipeAttemptResult(snipe, result, fetchErr) {
+      if (snipe.stopped || bgSnipe !== snipe) return;
+      const elapsedSec = Math.max(0, Math.floor((Date.now() - snipe.startedAt) / 1000));
+      if (!fetchErr && result && result.ok) {
+        stopBgSnipe(true);
+        await completeSessionCreate({ name: snipe.name, hwLabel: snipe.hwLabel, result, elapsedSec, fromBg: true });
+        return;
+      }
+      const rawErr = fetchErr ? (fetchErr.message || String(fetchErr)) : (result && result.error) || "";
+      if (fetchErr && fetchErr.name === "AbortError") return;
+
+      if (isRetryableColabError(rawErr)) {
+        snipe.controller = null;
+        snipe.cooldownSec = 10;
+        snipe.statusHint = "";
+        renderSnipeBanner();
+        const tickCooldown = () => {
+          if (snipe.stopped || bgSnipe !== snipe) return;
+          snipe.cooldownSec -= 1;
+          renderSnipeBanner();
+          if (snipe.cooldownSec <= 0) {
+            launchBgSnipeRound(snipe);
+          } else {
+            snipe.retryTimer = setTimeout(tickCooldown, 1000);
+          }
+        };
+        snipe.retryTimer = setTimeout(tickCooldown, 1000);
+        return;
+      }
+
+      const friendly = summarizeColabError(rawErr, activeLang);
+      stopBgSnipe(true);
+      const isEn = activeLang === "en";
+      sendDesktopNotification(
+        isEn ? `Sniping stopped (${snipe.name})` : `后台抢卡已停止（${snipe.name}）`,
+        friendly,
+        true,
+      );
+      showToast(friendly);
+    }
+
+    async function launchBgSnipeRound(snipe) {
+      if (snipe.stopped || bgSnipe !== snipe) return;
+      snipe.attempt += 1;
+      snipe.cooldownSec = 0;
+      snipe.statusHint = activeLang === "en" ? `attempt #${snipe.attempt}…` : `第 ${snipe.attempt} 轮申请中…`;
+      const controller = new AbortController();
+      snipe.controller = controller;
+      renderSnipeBanner();
+      try {
+        const response = await fetch("/api/action", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ type: "new", name: snipe.name, ...snipe.hw }),
+          signal: controller.signal,
+        });
+        const result = await response.json();
+        await handleBgSnipeAttemptResult(snipe, result, null);
+      } catch (err) {
+        await handleBgSnipeAttemptResult(snipe, null, err);
+      }
+    }
+
+    function startBgSnipe({ name, hw, hwLabel, existingController = null, existingStartedAt = null }) {
+      stopBgSnipe(true);
+      const snipe = {
+        name,
+        hw,
+        hwLabel,
+        startedAt: existingStartedAt || Date.now(),
+        attempt: existingController ? 1 : 0,
+        controller: existingController,
+        cooldownSec: 0,
+        statusHint: existingController
+          ? (activeLang === "en" ? "attempt #1 (in progress)…" : "第 1 轮申请中…")
+          : "",
+        stopped: false,
+        tickTimer: null,
+        pollTimer: null,
+        retryTimer: null,
+      };
+      bgSnipe = snipe;
+      snipe.tickTimer = setInterval(() => renderSnipeBanner(), 1000);
+      snipe.pollTimer = setInterval(async () => {
+        if (snipe.stopped || bgSnipe !== snipe || snipe.cooldownSec > 0) return;
+        try {
+          const data = await fetch("/api/log-tail").then((r) => r.json());
+          if (!data.ok || !Array.isArray(data.lines)) return;
+          const tail = data.lines.slice(-6).join("\n");
+          const retryMatch = [...tail.matchAll(/Assignment request failed; retrying in (\d+)s/g)].pop();
+          if (retryMatch) {
+            snipe.statusHint = activeLang === "en"
+              ? `attempt #${snipe.attempt} · 503 retry in ${retryMatch[1]}s`
+              : `第 ${snipe.attempt} 轮 · 503 退避 ${retryMatch[1]}s 重试`;
+            renderSnipeBanner();
+          }
+        } catch {}
+      }, 2500);
+      renderSnipeBanner();
+      if (!existingController) {
+        launchBgSnipeRound(snipe);
+      }
+      return snipe;
     }
 
     function openNewSessionModal() {
@@ -6672,8 +6943,8 @@
       });
     }
 
-    function closeNewSessionModal() {
-      abortOngoingCreate();
+    function closeNewSessionModal(keepOngoing = false) {
+      if (keepOngoing !== true) abortOngoingCreate();
       if (typeof modal.close === "function") {
         if (modal.open) modal.close();
       } else {
@@ -6689,7 +6960,7 @@
       if (retryMatch) {
         return {
           warn: true,
-          text: `Google Colab 返回 ${has503 ? "503（节点暂时繁忙/无空闲资源）" : "临时错误"}，colab CLI 正在等待 ${retryMatch[1]}s 后自动重试（已等待 ${elapsedSec}s）。可点「取消」中断并切换硬件规格或取消 high-mem。`,
+          text: `Google Colab 返回 ${has503 ? "503（当前节点繁忙）" : "临时错误"}，${retryMatch[1]}s 后自动重试（已等待 ${elapsedSec}s）。可点「转后台抢卡」继续自动抢，抢到会发系统通知。`,
         };
       }
       if (has400) {
@@ -6698,12 +6969,50 @@
       return { warn: false, text: `正在向 Google Colab 申请 ${hwLabel} 节点（${elapsedSec}s）…` };
     }
 
+    bgSnipeBtn.addEventListener("click", () => {
+      if (activeCreate && !activeCreate.handedOff) {
+        const ref = activeCreate;
+        ref.handedOff = true;
+        ref.snipe = startBgSnipe({
+          name: ref.name,
+          hw: ref.hw,
+          hwLabel: ref.hwLabel,
+          existingController: ref.controller,
+          existingStartedAt: ref.startedAt,
+        });
+        activeCreate = null;
+        createController = null;
+        stopCreateWatchers();
+        modalStatus.hidden = true;
+        setBusy(-1);
+        startSessionBtn.disabled = false;
+        startSessionBtn.textContent = t(activeLang, "modal.newSession.start");
+        closeNewSessionModal(true);
+        showToast(activeLang === "en" ? `Moved ${ref.name} to background sniping` : `已转入后台抢卡（${ref.name}），抢到后将发系统通知`);
+        return;
+      }
+      const name = sessionNameInput.value.trim();
+      if (!name) {
+        modalError.textContent = activeLang === "en" ? "Please enter a session name" : "请输入会话名称";
+        modalError.hidden = false;
+        sessionNameInput.focus();
+        return;
+      }
+      const hw = hardware();
+      const hwLabel = (hw.gpu || hw.tpu || "CPU") + (hw.highMem ? " + high-mem" : "");
+      closeNewSessionModal(true);
+      startBgSnipe({ name, hw, hwLabel });
+      showToast(activeLang === "en" ? `Background sniping started for ${name} (${hwLabel})` : `已开始后台抢卡：${name} (${hwLabel})，抢到后将发系统通知`);
+    });
+
+    snipeStopBtn.addEventListener("click", () => stopBgSnipe(false));
+
     modalForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (createController) return;
       const name = sessionNameInput.value.trim();
       if (!name) {
-        modalError.textContent = "请输入会话名称";
+        modalError.textContent = activeLang === "en" ? "Please enter a session name" : "请输入会话名称";
         modalError.hidden = false;
         sessionNameInput.focus();
         return;
@@ -6723,8 +7032,11 @@
 
       const controller = new AbortController();
       createController = controller;
+      const createRef = { name, hw, hwLabel, controller, startedAt, handedOff: false, snipe: null };
+      activeCreate = createRef;
       startSessionBtn.disabled = true;
       const paintProgress = () => {
+        if (createRef.handedOff) return;
         const sec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
         startSessionBtn.textContent = `创建中 ${sec}s`;
         const info = describeCreateLog(latestLines, hwLabel, sec);
@@ -6735,6 +7047,7 @@
       paintProgress();
       createTickTimer = setInterval(paintProgress, 1000);
       createPollTimer = setInterval(async () => {
+        if (createRef.handedOff) return;
         try {
           const data = await fetch("/api/log-tail").then((r) => r.json());
           if (!data.ok || !Array.isArray(data.lines)) return;
@@ -6753,62 +7066,47 @@
           signal: controller.signal,
         });
         const result = await response.json();
-        const listed = await fetch("/api/sessions").then((res) => res.json());
-        const names = listed.ok && listed.state && listed.state.sessions
-          ? listed.state.sessions.map((item) => item.name)
-          : sessions.map((item) => item.name);
-        sessions = listed.ok && listed.state && listed.state.sessions ? listed.state.sessions : sessions;
-        paintNew(applyNewResult(desk, {
-          current: selected || "",
-          requestedName: name,
-          ok: !!result.ok,
-          entry: {
-            kind: "cli",
-            label: `new ${name}`,
-            ok: !!result.ok,
-            error: result.ok ? "" : result.error || "colab failed",
-            text: result.stdout || "",
-            argv: Array.isArray(result.argv) ? result.argv : [],
-          },
-          sessionNames: names,
-        }));
+        if (createRef.handedOff && createRef.snipe) {
+          await handleBgSnipeAttemptResult(createRef.snipe, result, null);
+          return;
+        }
+        const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+        const { cleanErr } = await completeSessionCreate({ name, hwLabel, result, elapsedSec, fromBg: false });
         if (result.ok) {
-          sessionNameInput.value = "";
-          closeNewSessionModal();
-          refreshUsageSilently();
-          if (bootstrapConfig.autoMountDrive || bootstrapConfig.enableHfTransfer || bootstrapConfig.hfCacheToDrive || bootstrapConfig.autoInstallUv || (bootstrapConfig.autoInjectEnv && envVars.length > 0) || (bootstrapConfig.customScript || "").trim()) {
-            runBootstrapOnSession(name, true);
-          }
+          closeNewSessionModal(true);
         } else {
-          const rawErr = result.error || "创建会话失败";
-          const hint = /503|Service Unavailable/i.test(rawErr)
-            ? "（Google Colab 当前该硬件规格暂时繁忙/无空闲节点，建议取消 high-mem 或换选其他 GPU）"
-            : "";
-          modalError.textContent = `${rawErr}${hint}`;
+          modalError.textContent = cleanErr;
           modalError.hidden = false;
         }
       } catch (err) {
+        if (createRef.handedOff && createRef.snipe) {
+          await handleBgSnipeAttemptResult(createRef.snipe, null, err);
+          return;
+        }
         if (err && err.name === "AbortError") {
           modalStatus.hidden = true;
-          modalError.textContent = "已取消创建（已中止 colab new 进程）";
+          modalError.textContent = activeLang === "en" ? "Creation cancelled." : "已取消创建。";
           modalError.hidden = false;
         } else {
-          modalError.textContent = (err && err.message) || "网络或服务请求失败";
+          modalError.textContent = summarizeColabError((err && err.message) || "network error", activeLang);
           modalError.hidden = false;
         }
       } finally {
-        stopCreateWatchers();
-        if (createController === controller) createController = null;
-        modalStatus.hidden = true;
-        setBusy(-1);
-        startSessionBtn.disabled = false;
-        startSessionBtn.textContent = "开始";
+        if (!createRef.handedOff) {
+          stopCreateWatchers();
+          if (createController === controller) createController = null;
+          if (activeCreate === createRef) activeCreate = null;
+          modalStatus.hidden = true;
+          setBusy(-1);
+          startSessionBtn.disabled = false;
+          startSessionBtn.textContent = t(activeLang, "modal.newSession.start");
+        }
       }
     });
 
     // Event bindings
-    document.querySelector("#close-new-session").addEventListener("click", closeNewSessionModal);
-    document.querySelector("#cancel-new-session").addEventListener("click", closeNewSessionModal);
+    document.querySelector("#close-new-session").addEventListener("click", () => closeNewSessionModal(false));
+    document.querySelector("#cancel-new-session").addEventListener("click", () => closeNewSessionModal(false));
     modal.addEventListener("cancel", () => abortOngoingCreate());
     modal.addEventListener("click", (event) => { if (event.target === modal) closeNewSessionModal(); });
     sessionNameInput.addEventListener("input", () => { modalError.hidden = true; modalCmd.textContent = buildNewPreview(); });
