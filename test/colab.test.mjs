@@ -17,10 +17,12 @@ import { parseWhoami } from "../src/colab-env.mjs";
 import {
   buildMarkdownFromHistory,
   buildNotebookFromHistory,
+  compareSemver,
   extractTemplateParams,
   parseGpuProcesses,
   parseListeningPorts,
   parseNvidiaSmi,
+  parseReleaseTagFromUrl,
   renderParameterizedScript,
 } from "../src/cloud-ops.mjs";
 import { resolveLanguage, t } from "../src/i18n.mjs";
@@ -858,6 +860,10 @@ test("agent parsers handle ACP updates, model catalogs, and Grok NDJSON events",
 
   assert.deepEqual(extractTemplateParams("echo {{prompt}} {{seed}} {{prompt}}"), ["prompt", "seed"]);
   assert.equal(renderParameterizedScript("run {{prompt}} --seed {{seed}}", { prompt: "sunset", seed: 42 }), "run sunset --seed 42");
+  assert.equal(parseReleaseTagFromUrl("https://github.com/CalicoX/colab-desk/releases/tag/v0.2.1"), "0.2.1");
+  assert.equal(compareSemver("0.2.0", "0.1.0"), 1);
+  assert.equal(compareSemver("0.1.0", "0.1.0"), 0);
+  assert.equal(compareSemver("0.1.0", "0.2.0"), -1);
 });
 
 test("mac app does not start a login shell", () => {
