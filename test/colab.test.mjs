@@ -25,6 +25,7 @@ import {
   buildNotebookFromHistory,
   compareSemver,
   extractTemplateParams,
+  extractTryCloudflareUrl,
   parseGpuProcesses,
   parseIpynb,
   parseListeningPorts,
@@ -616,6 +617,9 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /@keyframes thoughtChunkReveal/);
     assert.match(page, /\.thought-body\.has-fade-top/);
     assert.match(page, /function enqueueThoughtChunk\(/);
+    assert.match(page, /id="tunnel-mode-cf"/);
+    assert.match(page, /id="tunnel-mode-ssh"/);
+    assert.match(page, /tunnel-badge/);
     assert.match(page, /@container\s*\(max-width:\s*268px\)/);
     assert.match(page, /id="new-chat-thread-btn"/);
     assert.match(page, /function currentTranscriptKey\(\)\s*\{\s*return activeThreadId \|\| "";\s*\}/);
@@ -1109,6 +1113,13 @@ test("gateway /v1/models discovery and .ipynb parse/serialize round-trip work cl
   assert.equal(parsed.cells[1].stdout, "42\n");
   assert.equal(parsed.cells[1].images.length, 1);
   assert.match(parsed.cells[1].images[0].dataUrl, /^data:image\/png;base64,/);
+
+  assert.equal(
+    extractTryCloudflareUrl("2026-11-25 INF |  https://gentle-river-42.trycloudflare.com  |"),
+    "https://gentle-river-42.trycloudflare.com",
+  );
+  assert.equal(extractTryCloudflareUrl("no tunnel url here"), null);
+  assert.deepEqual(parseListeningPorts("22\n2222\n8188\n7860\n9000\n"), [7860, 8188]);
 });
 
 test("mac app does not start a login shell", () => {

@@ -3156,6 +3156,31 @@
       outline: none;
       padding: 5px 8px;
     }
+    .tunnel-mode-switch {
+      background: var(--rail-control);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: grid;
+      gap: 2px;
+      grid-template-columns: 1fr 1fr;
+      padding: 2px;
+    }
+    .tunnel-mode-btn {
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 540;
+      padding: 4px 6px;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .tunnel-mode-btn:hover { color: var(--text); }
+    .tunnel-mode-btn.is-active {
+      background: var(--accent-soft);
+      color: var(--accent-text);
+    }
     .tunnel-list {
       display: flex;
       flex-direction: column;
@@ -3164,20 +3189,37 @@
     .tunnel-item {
       align-items: center;
       background: var(--rail-control);
+      border: 1px solid var(--border);
       border-radius: 8px;
       display: flex;
       gap: 6px;
       justify-content: space-between;
-      padding: 6px 9px;
+      padding: 6px 8px;
       font-size: 12px;
+    }
+    .tunnel-badge {
+      background: var(--accent-soft);
+      border-radius: 4px;
+      color: var(--accent-text);
+      flex: none;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+    }
+    .tunnel-badge.is-cf {
+      background: rgba(245, 158, 11, 0.16);
+      color: #f59e0b;
     }
     .tunnel-link {
       background: transparent;
       border: 0;
-      color: var(--indigo-2);
+      color: var(--accent-text);
       cursor: pointer;
+      flex: 1;
       font-family: var(--mono);
-      font-size: 11.5px;
+      font-size: 11px;
+      min-width: 0;
       overflow: hidden;
       padding: 0;
       text-align: left;
@@ -3185,11 +3227,28 @@
       white-space: nowrap;
     }
     .tunnel-link:hover { text-decoration: underline; }
+    .tunnel-copy {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 5px;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      flex: none;
+      height: 22px;
+      justify-content: center;
+      padding: 0;
+      width: 22px;
+    }
+    .tunnel-copy:hover { background: var(--control-hover); color: var(--text); }
+    .tunnel-copy svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.8; }
     .tunnel-close {
       background: transparent;
       border: 0;
       color: var(--muted);
       cursor: pointer;
+      flex: none;
       font-size: 14px;
       line-height: 1;
       padding: 0 3px;
@@ -4783,6 +4842,10 @@
               <button id="inspector-bootstrap-btn" class="meter-refresh" type="button" disabled data-i18n="rail.bootstrap">初始化</button>
             </div>
           </div>
+          <div class="tunnel-mode-switch" role="tablist" aria-label="Tunnel mode">
+            <button id="tunnel-mode-cf" class="tunnel-mode-btn is-active" type="button" data-tunnel-mode="cloudflared" data-i18n="rail.tunnelModeCf" title="在 Colab VM 上建立 Cloudflare 临时公网 HTTPS 隧道 (*.trycloudflare.com)">CF 公网</button>
+            <button id="tunnel-mode-ssh" class="tunnel-mode-btn" type="button" data-tunnel-mode="ssh" data-i18n="rail.tunnelModeSsh" title="通过 colab ssh 建立本地 127.0.0.1 端口转发">SSH 本地</button>
+          </div>
           <div id="detected-ports-box" class="detected-ports" hidden></div>
           <div class="rail-chip-row" id="tunnel-presets">
             <button class="rail-chip" type="button" data-tunnel-port="8188" data-tunnel-label="ComfyUI" disabled>ComfyUI :8188</button>
@@ -5432,7 +5495,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.4.10</span>
+                    <span class="s-title">Colab Desk 0.5.0</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5445,7 +5508,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.10（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.5.0（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -11905,10 +11968,12 @@
           chip.className = "detected-port-chip";
           const lbl = knownNames[port] ? `${knownNames[port]} :${port}` : `:${port}`;
           chip.textContent = `● ${lbl} ↗`;
-          chip.title = activeLang === "en" ? `Auto-detected port ${port} — click to forward & open` : `检测到已监听端口 ${port}，点击一键转发并打开`;
+          chip.title = activeLang === "en"
+            ? `Auto-detected port ${port} — click to open ${activeTunnelMode === "cloudflared" ? "Cloudflare Quick Tunnel" : "SSH tunnel"}`
+            : `检测到已监听端口 ${port}，点击一键建立${activeTunnelMode === "cloudflared" ? " CF 公网隧道" : "本地 SSH 转发"}并打开`;
           chip.addEventListener("click", async () => {
-            await openTunnel(port, knownNames[port] || `:${port}`);
-            openExternalUrl(`http://127.0.0.1:${port}`);
+            const tun = await openTunnel(port, knownNames[port] || `:${port}`);
+            if (tun && tun.url) openExternalUrl(tun.url);
           });
           detectedPortsBox.append(chip);
         }
@@ -11990,6 +12055,31 @@
     }
     gpuRefreshBtn.addEventListener("click", () => refreshGpuTelemetry(false));
 
+    const tunnelModeCfBtn = document.querySelector("#tunnel-mode-cf");
+    const tunnelModeSshBtn = document.querySelector("#tunnel-mode-ssh");
+    let activeTunnelMode = localStorage.getItem("colab-desk.tunnel-mode") === "ssh" ? "ssh" : "cloudflared";
+
+    function syncTunnelModeUi() {
+      if (tunnelModeCfBtn) tunnelModeCfBtn.classList.toggle("is-active", activeTunnelMode === "cloudflared");
+      if (tunnelModeSshBtn) tunnelModeSshBtn.classList.toggle("is-active", activeTunnelMode === "ssh");
+      if (latestGpuInfo) renderGpuTelemetry(latestGpuInfo);
+    }
+    if (tunnelModeCfBtn) {
+      tunnelModeCfBtn.addEventListener("click", () => {
+        activeTunnelMode = "cloudflared";
+        localStorage.setItem("colab-desk.tunnel-mode", "cloudflared");
+        syncTunnelModeUi();
+      });
+    }
+    if (tunnelModeSshBtn) {
+      tunnelModeSshBtn.addEventListener("click", () => {
+        activeTunnelMode = "ssh";
+        localStorage.setItem("colab-desk.tunnel-mode", "ssh");
+        syncTunnelModeUi();
+      });
+    }
+    syncTunnelModeUi();
+
     function renderTunnels() {
       if (!tunnelListEl) return;
       tunnelListEl.replaceChildren();
@@ -12003,23 +12093,40 @@
         return;
       }
       for (const tun of visible) {
+        const isCf = tun.mode === "cloudflared";
         const row = document.createElement("div");
         row.className = "tunnel-item";
+        const badge = document.createElement("span");
+        badge.className = `tunnel-badge${isCf ? " is-cf" : ""}`;
+        badge.textContent = isCf ? "CF" : "SSH";
         const link = document.createElement("button");
         link.type = "button";
         link.className = "tunnel-link";
-        link.textContent = `${tun.label} → 127.0.0.1:${tun.localPort} ↗`;
+        const shortHost = isCf ? String(tun.url || "").replace(/^https?:\/\//i, "") : `127.0.0.1:${tun.localPort}`;
+        link.textContent = `${tun.label} · ${shortHost} ↗`;
         link.title = tun.url;
         link.addEventListener("click", () => openExternalUrl(tun.url));
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "tunnel-copy";
+        copyBtn.title = activeLang === "en" ? "Copy URL" : "复制链接";
+        copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(tun.url);
+            showToast(activeLang === "en" ? "URL copied" : "链接已复制");
+          } catch {}
+        });
         const closeBtn = document.createElement("button");
         closeBtn.type = "button";
         closeBtn.className = "tunnel-close";
+        closeBtn.title = activeLang === "en" ? "Close tunnel" : "关闭隧道";
         closeBtn.textContent = "×";
         closeBtn.addEventListener("click", async () => {
           await fetch(`/api/tunnels/${encodeURIComponent(tun.id)}`, { method: "DELETE" });
           await refreshTunnels();
         });
-        row.append(link, closeBtn);
+        row.append(badge, link, copyBtn, closeBtn);
         tunnelListEl.append(row);
       }
     }
@@ -12036,34 +12143,56 @@
     }
 
     async function openTunnel(port, label) {
-      if (!selected) return;
-      showToast(activeLang === "en" ? `Opening tunnel :${port}…` : `正在建立端口转发 :${port}…`);
+      if (!selected) return null;
+      const isCf = activeTunnelMode === "cloudflared";
+      showToast(
+        isCf
+          ? (activeLang === "en" ? `Starting Cloudflare tunnel for :${port}…` : `正在为 :${port} 建立 CF 公网隧道…`)
+          : (activeLang === "en" ? `Opening SSH tunnel :${port}…` : `正在建立本地 SSH 转发 :${port}…`),
+      );
       try {
         const res = await fetch("/api/tunnels", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ session: selected, remotePort: Number(port), localPort: Number(port), label }),
+          body: JSON.stringify({
+            session: selected,
+            remotePort: Number(port),
+            localPort: Number(port),
+            label,
+            mode: activeTunnelMode,
+          }),
         });
         const data = await res.json();
-        if (data.ok) {
+        if (data.ok && data.tunnel) {
           await refreshTunnels();
-          showToast(activeLang === "en" ? `Forwarded to ${data.tunnel.url}` : `已转发到 ${data.tunnel.url}`);
+          showToast(
+            isCf
+              ? (activeLang === "en" ? `CF tunnel ready: ${data.tunnel.url}` : `CF 隧道已就绪：${data.tunnel.url}`)
+              : (activeLang === "en" ? `Forwarded to ${data.tunnel.url}` : `已转发到 ${data.tunnel.url}`),
+          );
+          return data.tunnel;
         } else {
-          showToast(data.error || "Tunnel failed");
+          showToast(data.error || (activeLang === "en" ? "Tunnel failed" : "隧道建立失败"));
+          return null;
         }
       } catch (err) {
         showToast(err.message);
+        return null;
       }
     }
 
     tunnelPresetsWrap.querySelectorAll("[data-tunnel-port]").forEach((btn) => {
-      btn.addEventListener("click", () => openTunnel(btn.dataset.tunnelPort, btn.dataset.tunnelLabel));
+      btn.addEventListener("click", async () => {
+        const tun = await openTunnel(btn.dataset.tunnelPort, btn.dataset.tunnelLabel);
+        if (tun && tun.url) openExternalUrl(tun.url);
+      });
     });
-    tunnelOpenBtn.addEventListener("click", () => {
+    tunnelOpenBtn.addEventListener("click", async () => {
       const p = Number(tunnelPortInput.value);
       if (p >= 1 && p <= 65535) {
-        openTunnel(p, `:${p}`);
         tunnelPortInput.value = "";
+        const tun = await openTunnel(p, `:${p}`);
+        if (tun && tun.url) openExternalUrl(tun.url);
       }
     });
 
