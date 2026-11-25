@@ -72,6 +72,8 @@
     :root[data-theme="light"] #agent-provider,
     :root[data-theme="light"] #agent-model,
     :root[data-theme="light"] #agent-thought,
+    :root[data-theme="light"] .agent-picker-btn,
+    :root[data-theme="light"] .thought-picker-btn,
     :root[data-theme="light"] .pill-toggle,
     :root[data-theme="light"] .attach-btn,
     :root[data-theme="light"] .extra input[type="text"],
@@ -1390,9 +1392,11 @@
       gap: 8px;
       margin: 0 20px 16px;
       min-width: 0;
-      overflow: hidden;
+      overflow: visible;
       padding: 10px 12px;
+      position: relative;
       transition: background-color 120ms ease, box-shadow 120ms ease;
+      z-index: 30;
     }
     #composer.is-dragover {
       background: #272338;
@@ -1496,10 +1500,220 @@
       gap: 6px;
       height: 34px;
       min-width: 0;
-      overflow: hidden;
+      overflow: visible;
     }
     .agent-controls[hidden],
     .cli-controls[hidden] { display: none; }
+
+    /* Custom Drop-Up Cascading Provider & Model Picker */
+    .agent-picker-wrap,
+    .thought-picker-wrap {
+      flex: 0 1 auto;
+      min-width: 0;
+      position: relative;
+    }
+    .thought-picker-wrap { flex: 0 0 auto; }
+    .thought-picker-wrap[hidden] { display: none; }
+    .agent-picker-btn,
+    .thought-picker-btn {
+      align-items: center;
+      background: #171521;
+      border: 0;
+      border-radius: 999px;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      font: inherit;
+      font-size: 12.5px;
+      gap: 6px;
+      height: 34px;
+      max-width: 270px;
+      min-width: 0;
+      padding: 0 11px 0 11px;
+      transition: background-color 120ms ease;
+    }
+    .thought-picker-btn { color: var(--muted); font-size: 12px; max-width: 120px; }
+    .agent-picker-btn:hover,
+    .agent-picker-btn[aria-expanded="true"],
+    .thought-picker-btn:hover,
+    .thought-picker-btn[aria-expanded="true"] { background: #1d1a2a; color: var(--text); }
+    .agent-picker-dot {
+      background: #38bdf8;
+      border-radius: 50%;
+      flex: none;
+      height: 7px;
+      width: 7px;
+    }
+    .agent-picker-dot.p-agy { background: #8273f5; }
+    .agent-picker-dot.p-grok { background: #f0b860; }
+    .agent-picker-dot.p-opencode { background: #6ee7b7; }
+    .agent-picker-provider {
+      color: var(--text);
+      flex: none;
+      font-weight: 560;
+      max-width: 96px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .agent-picker-sep { color: var(--faint); flex: none; font-size: 11px; }
+    .agent-picker-model {
+      color: var(--muted);
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .agent-picker-caret {
+      color: var(--faint);
+      flex: none;
+      height: 12px;
+      transition: transform 140ms ease;
+      width: 12px;
+    }
+    .agent-picker-btn[aria-expanded="true"] .agent-picker-caret,
+    .thought-picker-btn[aria-expanded="true"] .agent-picker-caret {
+      transform: rotate(180deg);
+    }
+
+    .agent-picker-menu {
+      background: var(--popover);
+      border: 1px solid var(--line-strong);
+      border-radius: 13px;
+      bottom: calc(100% + 8px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.48);
+      display: flex;
+      left: 0;
+      overflow: hidden;
+      position: absolute;
+      z-index: 95;
+    }
+    .agent-picker-menu[hidden] { display: none; }
+    .ap-col-providers {
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 6px;
+      width: 172px;
+    }
+    .ap-col-models {
+      display: flex;
+      flex-direction: column;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 6px;
+      width: 236px;
+    }
+    .ap-col-head {
+      color: var(--faint);
+      font-size: 11px;
+      font-weight: 550;
+      letter-spacing: 0.02em;
+      overflow: hidden;
+      padding: 4px 8px 6px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ap-item {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      font: inherit;
+      font-size: 12.5px;
+      gap: 8px;
+      min-height: 30px;
+      padding: 5px 8px;
+      text-align: left;
+      transition: background-color 100ms ease, color 100ms ease;
+      width: 100%;
+    }
+    .ap-item:hover,
+    .ap-item.is-hovered { background: var(--chip); }
+    .ap-item.is-selected { background: rgba(130, 115, 245, 0.16); color: var(--text); }
+    .ap-item.is-disabled { color: var(--faint); }
+    .ap-item-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ap-item-tag {
+      color: var(--faint);
+      flex: none;
+      font-size: 10.5px;
+    }
+    .ap-item-check {
+      color: var(--accent);
+      flex: none;
+      font-size: 12px;
+      font-weight: 700;
+      width: 14px;
+    }
+    .ap-item-arrow {
+      color: var(--faint);
+      flex: none;
+      font-size: 13px;
+      line-height: 1;
+    }
+    .ap-divider {
+      background: var(--line);
+      flex: none;
+      height: 1px;
+      margin: 5px 4px;
+    }
+    .ap-manage-btn {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      font: inherit;
+      font-size: 12px;
+      gap: 6px;
+      margin-top: auto;
+      padding: 6px 8px;
+      text-align: left;
+      width: 100%;
+    }
+    .ap-manage-btn:hover { background: var(--chip); color: var(--text); }
+    .ap-empty {
+      color: var(--faint);
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+      gap: 8px;
+      padding: 12px 10px;
+    }
+
+    .thought-picker-menu {
+      background: var(--popover);
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      bottom: calc(100% + 8px);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      left: 0;
+      min-width: 132px;
+      padding: 5px;
+      position: absolute;
+      z-index: 95;
+    }
+    .thought-picker-menu[hidden] { display: none; }
+    :root[data-theme="light"] .agent-picker-menu,
+    :root[data-theme="light"] .thought-picker-menu {
+      box-shadow: 0 12px 28px rgba(20, 18, 40, 0.14);
+    }
 
     #command,
     #agent-provider,
@@ -3434,15 +3648,42 @@
           <input id="attach-file-input" type="file" multiple hidden />
           <div class="composer-foot">
             <div id="agent-controls" class="agent-controls">
-              <select id="agent-provider" aria-label="Agent 引擎">
+              <select id="agent-provider" aria-label="Agent 引擎" hidden>
                 <option value="agy">AGY</option>
                 <option value="grok">Grok</option>
                 <option value="opencode">OpenCode</option>
               </select>
-              <select id="agent-model" aria-label="Agent Model">
+              <select id="agent-model" aria-label="Agent Model" hidden>
                 <option value="" data-i18n="composer.defaultModel">默认模型</option>
               </select>
               <select id="agent-thought" aria-label="Thinking Level" data-i18n-title="composer.thoughtTitle" title="思考深度" hidden></select>
+
+              <div id="agent-picker-wrap" class="agent-picker-wrap">
+                <button id="agent-picker-btn" class="agent-picker-btn" type="button" aria-haspopup="menu" aria-expanded="false">
+                  <span id="agent-picker-dot" class="agent-picker-dot p-agy"></span>
+                  <span id="agent-picker-provider" class="agent-picker-provider">AGY</span>
+                  <span class="agent-picker-sep">·</span>
+                  <span id="agent-picker-model" class="agent-picker-model">默认模型</span>
+                  <svg class="agent-picker-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 15 12 9 18 15" />
+                  </svg>
+                </button>
+                <div id="agent-picker-menu" class="agent-picker-menu" role="menu" hidden>
+                  <div id="ap-providers-list" class="ap-col-providers"></div>
+                  <div id="ap-models-list" class="ap-col-models"></div>
+                </div>
+              </div>
+
+              <div id="thought-picker-wrap" class="thought-picker-wrap" hidden>
+                <button id="thought-picker-btn" class="thought-picker-btn" type="button" aria-haspopup="menu" aria-expanded="false" data-i18n-title="composer.thoughtTitle" title="思考深度">
+                  <span id="thought-picker-label">思考</span>
+                  <svg class="agent-picker-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 15 12 9 18 15" />
+                  </svg>
+                </button>
+                <div id="thought-picker-menu" class="thought-picker-menu" role="menu" hidden></div>
+              </div>
+
               <button id="approval-toggle" class="pill-toggle" type="button">自动</button>
               <button id="busy-mode-toggle" class="pill-toggle" type="button">排队</button>
               <button id="attach-file-btn" class="attach-btn" type="button" data-i18n-title="composer.attachTitle" title="附加本地文件（可让 Agent 自动上传到 Colab）" aria-label="Attach local files">
@@ -4328,7 +4569,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.1.0</span>
+                    <span class="s-title">Colab Desk 0.2.0</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -4341,7 +4582,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.1.0（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.2.0（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -4546,6 +4787,19 @@
     const agentProviderSelect = document.querySelector("#agent-provider");
     const agentModelSelect = document.querySelector("#agent-model");
     const agentThoughtSelect = document.querySelector("#agent-thought");
+    const agentPickerWrap = document.querySelector("#agent-picker-wrap");
+    const agentPickerBtn = document.querySelector("#agent-picker-btn");
+    const agentPickerDot = document.querySelector("#agent-picker-dot");
+    const agentPickerProviderEl = document.querySelector("#agent-picker-provider");
+    const agentPickerModelEl = document.querySelector("#agent-picker-model");
+    const agentPickerMenu = document.querySelector("#agent-picker-menu");
+    const apProvidersList = document.querySelector("#ap-providers-list");
+    const apModelsList = document.querySelector("#ap-models-list");
+    const thoughtPickerWrap = document.querySelector("#thought-picker-wrap");
+    const thoughtPickerBtn = document.querySelector("#thought-picker-btn");
+    const thoughtPickerLabel = document.querySelector("#thought-picker-label");
+    const thoughtPickerMenu = document.querySelector("#thought-picker-menu");
+    let hoveredPickerProviderId = "";
     const approvalToggle = document.querySelector("#approval-toggle");
     const busyModeToggle = document.querySelector("#busy-mode-toggle");
     const attachFileBtn = document.querySelector("#attach-file-btn");
@@ -7303,6 +7557,286 @@
     }
 
     /* ── Agent Providers, Models & Streaming Chat ── */
+    function getProviderDotClass(providerId) {
+      if (providerId === "agy") return "p-agy";
+      if (providerId === "grok") return "p-grok";
+      if (providerId === "opencode") return "p-opencode";
+      return "p-api";
+    }
+
+    function syncAgentPickerLabel() {
+      if (!agentPickerProviderEl || !agentPickerModelEl) return;
+      const pid = agentProviderSelect.value || "agy";
+      const snap = providerListSnapshot.find((p) => p.id === pid);
+      const selProvOpt = agentProviderSelect.options[agentProviderSelect.selectedIndex];
+      const provName = snap?.label || selProvOpt?.textContent?.replace(/\s*\(未安装\)$/, "") || pid;
+      const selModelOpt = agentModelSelect.options[agentModelSelect.selectedIndex];
+      const modelName = selModelOpt?.textContent || agentModelSelect.value || tr("composer.defaultModel");
+      if (agentPickerDot) {
+        agentPickerDot.className = `agent-picker-dot ${getProviderDotClass(pid)}`;
+      }
+      agentPickerProviderEl.textContent = provName;
+      agentPickerModelEl.textContent = modelName;
+      if (agentPickerBtn) {
+        agentPickerBtn.title = `${provName} · ${modelName}`;
+      }
+    }
+
+    function syncThoughtPickerLabel() {
+      if (!thoughtPickerWrap || !thoughtPickerLabel || !agentThoughtSelect) return;
+      const hasOptions = agentThoughtSelect.options.length > 0;
+      thoughtPickerWrap.hidden = !hasOptions;
+      if (!hasOptions) {
+        closeThoughtPicker();
+        return;
+      }
+      const sel = agentThoughtSelect.options[agentThoughtSelect.selectedIndex];
+      thoughtPickerLabel.textContent = sel?.textContent || agentThoughtSelect.value || L("思考", "Think");
+    }
+
+    function closeAgentPicker() {
+      if (agentPickerMenu) agentPickerMenu.hidden = true;
+      if (agentPickerBtn) agentPickerBtn.setAttribute("aria-expanded", "false");
+    }
+
+    function closeThoughtPicker() {
+      if (thoughtPickerMenu) thoughtPickerMenu.hidden = true;
+      if (thoughtPickerBtn) thoughtPickerBtn.setAttribute("aria-expanded", "false");
+    }
+
+    async function ensurePickerProviderModels(pid) {
+      if (providerModelsCache[pid]) return providerModelsCache[pid];
+      try {
+        const res = await fetch(`/api/agent/models?provider=${encodeURIComponent(pid)}`);
+        const data = await res.json();
+        providerModelsCache[pid] = data;
+        return data;
+      } catch {
+        return { models: [] };
+      }
+    }
+
+    function renderAgentModelsSubmenu(pid) {
+      if (!apModelsList) return;
+      apModelsList.replaceChildren();
+      const snap = providerListSnapshot.find((p) => p.id === pid);
+      const head = document.createElement("div");
+      head.className = "ap-col-head";
+      head.textContent = snap ? `${snap.label}${snap.transport === "openai-compat" && snap.path ? ` · ${snap.path.replace(/^https?:\/\//, "")}` : ""}` : pid;
+      apModelsList.append(head);
+
+      if (snap && snap.available === false) {
+        const empty = document.createElement("div");
+        empty.className = "ap-empty";
+        const msg = document.createElement("span");
+        msg.textContent = snap.id === "api"
+          ? L("尚未配置自定义 API 网关。", "No custom API gateway configured.")
+          : L(`本机未检测到 ${snap.label} CLI。`, `${snap.label} CLI is not installed locally.`);
+        const cfgBtn = document.createElement("button");
+        cfgBtn.type = "button";
+        cfgBtn.className = "s-btn";
+        cfgBtn.style.alignSelf = "flex-start";
+        cfgBtn.textContent = L("前往配置", "Configure");
+        cfgBtn.addEventListener("click", () => {
+          closeAgentPicker();
+          openSettings("providers");
+        });
+        empty.append(msg, cfgBtn);
+        apModelsList.append(empty);
+        return;
+      }
+
+      const cached = providerModelsCache[pid];
+      if (!cached) {
+        const loading = document.createElement("div");
+        loading.className = "ap-empty";
+        loading.textContent = L("正在加载模型列表…", "Loading models…");
+        apModelsList.append(loading);
+        ensurePickerProviderModels(pid).then(() => {
+          if (agentPickerMenu && !agentPickerMenu.hidden && hoveredPickerProviderId === pid) {
+            renderAgentModelsSubmenu(pid);
+          }
+        });
+        return;
+      }
+
+      const models = Array.isArray(cached.models) ? cached.models : [];
+      if (models.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "ap-empty";
+        empty.textContent = L("暂无可选模型（将使用默认模型）", "No model list (using default)");
+        const useDef = document.createElement("button");
+        useDef.type = "button";
+        useDef.className = "ap-item";
+        useDef.textContent = tr("composer.defaultModel");
+        useDef.addEventListener("click", () => selectAgentProviderAndModel(pid, ""));
+        apModelsList.append(empty, useDef);
+        return;
+      }
+
+      const activePid = agentProviderSelect.value;
+      const activeModel = agentModelSelect.value;
+      for (const m of models) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const isCurrent = activePid === pid && (activeModel === m.value || (!activeModel && m.value === (cached.current || models[0].value)));
+        btn.className = `ap-item${isCurrent ? " is-selected" : ""}`;
+        btn.setAttribute("role", "menuitemradio");
+        btn.setAttribute("aria-checked", isCurrent ? "true" : "false");
+        const check = document.createElement("span");
+        check.className = "ap-item-check";
+        check.textContent = isCurrent ? "✓" : "";
+        const lbl = document.createElement("span");
+        lbl.className = "ap-item-label";
+        lbl.textContent = m.name || m.value;
+        lbl.title = m.name && m.name !== m.value ? `${m.name} (${m.value})` : m.value;
+        btn.append(check, lbl);
+        btn.addEventListener("click", () => selectAgentProviderAndModel(pid, m.value));
+        apModelsList.append(btn);
+      }
+    }
+
+    function renderAgentPickerMenu() {
+      if (!apProvidersList) return;
+      apProvidersList.replaceChildren();
+      const activePid = agentProviderSelect.value || providerListSnapshot[0]?.id || "agy";
+      if (!hoveredPickerProviderId || !providerListSnapshot.some((p) => p.id === hoveredPickerProviderId)) {
+        hoveredPickerProviderId = activePid;
+      }
+
+      const head = document.createElement("div");
+      head.className = "ap-col-head";
+      head.textContent = L("引擎 / 网关", "Providers");
+      apProvidersList.append(head);
+
+      for (const p of providerListSnapshot) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const isActive = p.id === activePid;
+        const isHovered = p.id === hoveredPickerProviderId;
+        btn.className = `ap-item${isActive ? " is-selected" : ""}${isHovered ? " is-hovered" : ""}${p.available === false ? " is-disabled" : ""}`;
+        btn.dataset.providerId = p.id;
+        const dot = document.createElement("span");
+        dot.className = `agent-picker-dot ${getProviderDotClass(p.id)}`;
+        const lbl = document.createElement("span");
+        lbl.className = "ap-item-label";
+        lbl.textContent = p.label;
+        btn.append(dot, lbl);
+        if (p.available === false) {
+          const tag = document.createElement("span");
+          tag.className = "ap-item-tag";
+          tag.textContent = L("未安装", "Off");
+          btn.append(tag);
+        }
+        const arrow = document.createElement("span");
+        arrow.className = "ap-item-arrow";
+        arrow.textContent = "›";
+        btn.append(arrow);
+
+        const activateHover = () => {
+          hoveredPickerProviderId = p.id;
+          for (const el of apProvidersList.querySelectorAll(".ap-item")) {
+            el.classList.toggle("is-hovered", el.dataset.providerId === p.id);
+          }
+          renderAgentModelsSubmenu(p.id);
+        };
+        btn.addEventListener("mouseenter", activateHover);
+        btn.addEventListener("focus", activateHover);
+        btn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          activateHover();
+          // For single-model custom API profiles, clicking once also selects immediately if already hovered
+          const cached = providerModelsCache[p.id];
+          if (p.available && cached && Array.isArray(cached.models) && cached.models.length === 1) {
+            selectAgentProviderAndModel(p.id, cached.models[0].value);
+          }
+        });
+        apProvidersList.append(btn);
+      }
+
+      const div = document.createElement("div");
+      div.className = "ap-divider";
+      const manageBtn = document.createElement("button");
+      manageBtn.type = "button";
+      manageBtn.className = "ap-manage-btn";
+      manageBtn.textContent = L("⚙ 管理引擎与 API 网关…", "⚙ Manage providers & API…");
+      manageBtn.addEventListener("click", () => {
+        closeAgentPicker();
+        openSettings("providers");
+      });
+      apProvidersList.append(div, manageBtn);
+
+      renderAgentModelsSubmenu(hoveredPickerProviderId);
+    }
+
+    function selectAgentProviderAndModel(pid, modelValue) {
+      agentProviderSelect.value = pid;
+      try { localStorage.setItem("colab-desk.agent-provider", pid); } catch {}
+      if (modelValue) {
+        savedModelsByProvider[pid] = modelValue;
+        saveJsonStorage("colab-desk.agent-models", savedModelsByProvider);
+      }
+      if (providerModelsCache[pid]) {
+        renderModelOptions(pid, providerModelsCache[pid]);
+      } else {
+        loadProviderModels(pid);
+      }
+      if (modelValue && Array.from(agentModelSelect.options).some((o) => o.value === modelValue)) {
+        agentModelSelect.value = modelValue;
+      }
+      syncAgentPickerLabel();
+      closeAgentPicker();
+      scheduleStoreSync();
+    }
+
+    function openAgentPicker() {
+      closeThoughtPicker();
+      hoveredPickerProviderId = agentProviderSelect.value || providerListSnapshot[0]?.id || "agy";
+      renderAgentPickerMenu();
+      if (agentPickerMenu) agentPickerMenu.hidden = false;
+      if (agentPickerBtn) agentPickerBtn.setAttribute("aria-expanded", "true");
+    }
+
+    function renderThoughtPickerMenu() {
+      if (!thoughtPickerMenu || !agentThoughtSelect) return;
+      thoughtPickerMenu.replaceChildren();
+      const head = document.createElement("div");
+      head.className = "ap-col-head";
+      head.textContent = tr("composer.thoughtTitle");
+      thoughtPickerMenu.append(head);
+      const curVal = agentThoughtSelect.value;
+      for (const opt of Array.from(agentThoughtSelect.options)) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const isSel = opt.value === curVal;
+        btn.className = `ap-item${isSel ? " is-selected" : ""}`;
+        const check = document.createElement("span");
+        check.className = "ap-item-check";
+        check.textContent = isSel ? "✓" : "";
+        const lbl = document.createElement("span");
+        lbl.className = "ap-item-label";
+        lbl.textContent = opt.textContent;
+        btn.append(check, lbl);
+        btn.addEventListener("click", () => {
+          agentThoughtSelect.value = opt.value;
+          const pid = agentProviderSelect.value;
+          savedThoughtByProvider[pid] = opt.value;
+          saveJsonStorage("colab-desk.agent-thoughts", savedThoughtByProvider);
+          syncThoughtPickerLabel();
+          closeThoughtPicker();
+          scheduleStoreSync();
+        });
+        thoughtPickerMenu.append(btn);
+      }
+    }
+
+    function openThoughtPicker() {
+      closeAgentPicker();
+      renderThoughtPickerMenu();
+      if (thoughtPickerMenu) thoughtPickerMenu.hidden = false;
+      if (thoughtPickerBtn) thoughtPickerBtn.setAttribute("aria-expanded", "true");
+    }
+
     function renderModelOptions(providerId, data) {
       agentModelSelect.replaceChildren();
       const models = Array.isArray(data?.models) ? data.models : [];
@@ -7334,11 +7868,11 @@
             if (optDef.value === prefT) opt.selected = true;
             agentThoughtSelect.append(opt);
           }
-          agentThoughtSelect.hidden = false;
-        } else {
-          agentThoughtSelect.hidden = true;
         }
+        agentThoughtSelect.hidden = true;
       }
+      syncAgentPickerLabel();
+      syncThoughtPickerLabel();
     }
 
     async function loadProviderModels(providerId) {
@@ -7349,8 +7883,9 @@
       agentModelSelect.replaceChildren();
       const loadingOpt = document.createElement("option");
       loadingOpt.value = "";
-      loadingOpt.textContent = "加载模型…";
+      loadingOpt.textContent = L("加载模型…", "Loading…");
       agentModelSelect.append(loadingOpt);
+      syncAgentPickerLabel();
       try {
         const res = await fetch(`/api/agent/models?provider=${encodeURIComponent(providerId)}`);
         const data = await res.json();
@@ -7394,6 +7929,7 @@
           chosen = firstAvail ? firstAvail.id : data.providers[0]?.id || "agy";
         }
         agentProviderSelect.value = chosen;
+        syncAgentPickerLabel();
         loadProviderModels(chosen);
       } catch {}
     }
@@ -7526,7 +8062,7 @@
       lastActivityAt = Date.now();
       idleAlertedSession = "";
       try {
-        const thoughtLevel = agentThoughtSelect && !agentThoughtSelect.hidden ? agentThoughtSelect.value : "";
+        const thoughtLevel = thoughtPickerWrap && !thoughtPickerWrap.hidden && agentThoughtSelect ? agentThoughtSelect.value : "";
         const res = await fetch("/api/agent/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -8783,7 +9319,32 @@
       const pid = agentProviderSelect.value;
       savedThoughtByProvider[pid] = agentThoughtSelect.value;
       saveJsonStorage("colab-desk.agent-thoughts", savedThoughtByProvider);
+      syncThoughtPickerLabel();
       scheduleStoreSync();
+    });
+    if (agentPickerBtn) {
+      agentPickerBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        if (agentPickerMenu && !agentPickerMenu.hidden) closeAgentPicker();
+        else openAgentPicker();
+      });
+    }
+    if (thoughtPickerBtn) {
+      thoughtPickerBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        if (thoughtPickerMenu && !thoughtPickerMenu.hidden) closeThoughtPicker();
+        else openThoughtPicker();
+      });
+    }
+    document.addEventListener("click", (ev) => {
+      if (agentPickerWrap && !agentPickerWrap.contains(ev.target)) closeAgentPicker();
+      if (thoughtPickerWrap && !thoughtPickerWrap.contains(ev.target)) closeThoughtPicker();
+    });
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") {
+        closeAgentPicker();
+        closeThoughtPicker();
+      }
     });
     approvalToggle.addEventListener("click", () => {
       approvalMode = approvalMode === "auto" ? "ask" : "auto";

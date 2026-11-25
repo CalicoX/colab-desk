@@ -404,7 +404,7 @@ async function handle(req, res) {
 
   // In-app Update Check
   if (req.method === "GET" && url.pathname === "/api/updates/check") {
-    let ver = "0.1.0";
+    let ver = "0.2.0";
     try {
       ver = JSON.parse(fs.readFileSync(path.join(rootDir, "../package.json"), "utf8")).version || ver;
     } catch {}

@@ -16,8 +16,10 @@
 
 ## Mandatory Release Workflow (After Every Task)
 After completing any code or UI change:
-1. Run `npm test` and ensure all tests pass (add/update unit tests in `test/colab.test.mjs` for new behavior).
-2. Run `npm run app` to rebuild `dist/Colab Desk.app`, regenerate `dist/Colab-Desk-macOS-arm64.zip`, codesign, and restart the app.
-3. Verify code signature (`codesign --verify --verbose "dist/Colab Desk.app"`) and confirm no personal info leaked into the built bundle or git diff.
-4. Commit all changes (including the updated `dist/Colab-Desk-macOS-arm64.zip`) and `git push origin main`.
-5. Update the GitHub Release asset when the built app changes (`gh release upload v0.1.0 dist/Colab-Desk-macOS-arm64.zip --clobber`).
+1. **Bump the version number** (SemVer: patch `0.2.x` for bug fixes / UI polish, minor `0.x.0` for new features) consistently across `package.json`, `macos/Info.plist` (`CFBundleShortVersionString` & `CFBundleVersion`), `src/i18n.mjs`, `src/cloud-ops.mjs`, `src/server.mjs`, `src/agent.mjs`, and `public/index.html`.
+2. Run `npm test` and ensure all tests pass (add/update unit tests in `test/colab.test.mjs` for new behavior).
+3. Run `npm run app` to rebuild `dist/Colab Desk.app`, regenerate `dist/Colab-Desk-macOS-arm64.zip`, codesign, and restart the app.
+4. Verify code signature (`codesign --verify --verbose "dist/Colab Desk.app"`) and confirm no personal info leaked into the built bundle or git diff.
+5. Commit all changes (including the updated `dist/Colab-Desk-macOS-arm64.zip`) and `git push origin main`.
+6. Publish a **new versioned GitHub Release** (`v<version>`) with detailed bilingual (Chinese & English) release notes and attach `dist/Colab-Desk-macOS-arm64.zip`:
+   `gh release create v<version> dist/Colab-Desk-macOS-arm64.zip --title "Colab Desk v<version>" --notes "..."`

@@ -620,6 +620,11 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(expRes.content, /"nbformat": 4/);
     assert.match(page, /id="agent-provider"/);
     assert.match(page, /id="agent-model"/);
+    assert.match(page, /id="agent-picker-btn"/);
+    assert.match(page, /id="agent-picker-menu"/);
+    assert.match(page, /id="ap-providers-list"/);
+    assert.match(page, /id="ap-models-list"/);
+    assert.match(page, /id="thought-picker-btn"/);
     assert.match(page, /id="open-usage-modal"/);
     assert.match(page, /id="colab-cu-modal"/);
     assert.match(page, /id="open-settings-modal"/);
@@ -1020,8 +1025,11 @@ test("custom OpenAI-compatible gateway resolves /v1, handles non-SSE JSON, retri
 });
 
 test("mac app does not start a login shell", () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
   const swift = fs.readFileSync(path.join(root, "macos/ColabDesk.swift"), "utf8");
   const plist = fs.readFileSync(path.join(root, "macos/Info.plist"), "utf8");
+  assert.match(plist, new RegExp(`<key>CFBundleShortVersionString</key>\\s*<string>${pkg.version.replace(/\./g, "\\.")}</string>`));
+  assert.match(plist, new RegExp(`<key>CFBundleVersion</key>\\s*<string>${pkg.version.replace(/\./g, "\\.")}</string>`));
   assert.doesNotMatch(swift, /zsh -lic|\/bin\/zsh/);
   assert.match(swift, /SIGTERM/);
   assert.match(swift, /WKWebView/);
