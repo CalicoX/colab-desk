@@ -30,11 +30,13 @@ rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$server"
 
 swiftc -O -parse-as-library \
+  -file-prefix-map "$root=." \
   -target "${arch}-apple-macos12.0" \
   -framework Cocoa \
   -framework WebKit \
   "$root/macos/ColabDesk.swift" \
   -o "$app/Contents/MacOS/ColabDesk"
+strip -x "$app/Contents/MacOS/ColabDesk" || true
 
 if [[ -f "$icon_src" ]]; then
   if [[ ! -f "$icon_cache" || "$icon_src" -nt "$icon_cache" ]]; then
@@ -131,8 +133,14 @@ chmod +x "$0"
 codesign --force --sign - "$app"
 touch "$app"
 
+# Package clean distributable zip (no personal paths/state)
+zip_out="$root/dist/Colab-Desk-macOS-${arch}.zip"
+rm -f "$zip_out"
+ditto -c -k --norsrc --keepParent "$app" "$zip_out"
+
 if [[ "${COLAB_DESK_NO_LAUNCH:-0}" != "1" ]]; then
   open "$app"
 fi
 
 echo "$app"
+echo "$zip_out"

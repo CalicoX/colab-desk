@@ -7,7 +7,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Colab Desk</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.stillpilot.colab-desk</string>
+	<string>com.calicox.colab-desk</string>
 	<key>CFBundleExecutable</key>
 	<string>ColabDesk</string>
 	<key>CFBundleIconFile</key>

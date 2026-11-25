@@ -40,13 +40,19 @@ npm start
 
 Opens on `http://127.0.0.1:4173` (override with `PORT`).
 
+### Download Prebuilt macOS App
+
+Download [`dist/Colab-Desk-macOS-arm64.zip`](dist/Colab-Desk-macOS-arm64.zip) (or from [GitHub Releases](https://github.com/CalicoX/colab-desk/releases)), unzip `Colab Desk.app`, and move it to `/Applications`.
+
+> Note: Since the app is ad-hoc signed, if macOS Gatekeeper prompts on first launch, run `xattr -cr "/Applications/Colab Desk.app"` or right-click → Open.
+
 ### Build & Launch macOS App
 
 ```bash
 npm run app
 ```
 
-Compiles `macos/ColabDesk.swift` into `dist/Colab Desk.app`, generates the squircle app icon from `macos/AppIcon.png`, signs the bundle ad-hoc, and launches it automatically. Set `COLAB_DESK_NO_LAUNCH=1` to build without launching.
+Compiles `macos/ColabDesk.swift` into `dist/Colab Desk.app`, packages `dist/Colab-Desk-macOS-<arch>.zip`, generates the squircle app icon from `macos/AppIcon.png`, signs the bundle ad-hoc, and launches it automatically. Set `COLAB_DESK_NO_LAUNCH=1` to build without launching.
 
 ### Run Tests
 
