@@ -331,8 +331,8 @@
       scrollbar-color: color-mix(in srgb, var(--muted) 32%, transparent) transparent;
     }
     *::-webkit-scrollbar {
-      height: 5px;
-      width: 5px;
+      height: 10px;
+      width: 10px;
     }
     *::-webkit-scrollbar-track {
       background: transparent;
@@ -340,11 +340,16 @@
     *::-webkit-scrollbar-thumb {
       background-clip: content-box;
       background-color: color-mix(in srgb, var(--muted) 28%, transparent);
-      border: 1px solid transparent;
+      border: 3px solid transparent;
       border-radius: 999px;
     }
     *::-webkit-scrollbar-thumb:hover {
-      background-color: color-mix(in srgb, var(--muted) 54%, transparent);
+      background-color: color-mix(in srgb, var(--muted) 58%, transparent);
+      border-width: 1px;
+    }
+    *::-webkit-scrollbar-thumb:active {
+      background-color: color-mix(in srgb, var(--muted) 74%, transparent);
+      border-width: 1px;
     }
     *::-webkit-scrollbar-corner {
       background: transparent;
@@ -1481,10 +1486,50 @@
       max-height: 220px;
       overflow-y: auto;
       overscroll-behavior: contain;
-      padding: 2px 10px 6px 26px;
-      scroll-behavior: smooth;
+      padding: 6px 10px 10px 26px;
       white-space: pre-wrap;
       word-break: break-word;
+    }
+    .thought-body.has-fade-top {
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 24px, #000 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 24px, #000 100%);
+    }
+    .thought-body.has-fade-bottom {
+      -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 24px), transparent 100%);
+      mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 24px), transparent 100%);
+    }
+    .thought-body.has-fade-top.has-fade-bottom {
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 24px, #000 calc(100% - 24px), transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 24px, #000 calc(100% - 24px), transparent 100%);
+    }
+    .thought-chunk {
+      animation: thoughtChunkReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes thoughtChunkReveal {
+      from {
+        opacity: 0;
+        filter: blur(1.5px);
+      }
+      to {
+        opacity: 1;
+        filter: blur(0);
+      }
+    }
+    .thought-body.is-streaming::after {
+      animation: thoughtCaretPulse 1.1s ease-in-out infinite;
+      background: linear-gradient(180deg, var(--accent-text, var(--accent)), transparent);
+      border-radius: 2px;
+      content: "";
+      display: inline-block;
+      height: 1em;
+      margin-left: 2px;
+      opacity: 0.72;
+      vertical-align: -0.15em;
+      width: 2px;
+    }
+    @keyframes thoughtCaretPulse {
+      0%, 100% { opacity: 0.18; }
+      50% { opacity: 0.85; }
     }
 
     .tool-group {
@@ -5387,7 +5432,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.4.9</span>
+                    <span class="s-title">Colab Desk 0.4.10</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5400,7 +5445,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.9（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.10（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -8183,6 +8228,137 @@
       return activeLang === "en" ? "Shell command" : "终端命令";
     }
 
+    const thoughtDomMap = new WeakMap();
+    const thoughtStreamMap = new WeakMap();
+
+    function formatThoughtMetaText(entry) {
+      const parts = [];
+      if (entry.thinkSec != null) parts.push(`${entry.thinkSec}s`);
+      if (entry.thoughtTokens) parts.push(`${entry.thoughtTokens} tok`);
+      return parts.join(" · ");
+    }
+
+    function syncThoughtFadeMask(body) {
+      if (!body || !body.isConnected) return;
+      const maxScroll = body.scrollHeight - body.clientHeight;
+      body.classList.toggle("has-fade-top", maxScroll > 4 && body.scrollTop > 4);
+      body.classList.toggle("has-fade-bottom", maxScroll > 4 && body.scrollTop < maxScroll - 4);
+    }
+
+    function updateThoughtMetaInPlace(entry) {
+      const dom = thoughtDomMap.get(entry);
+      if (!dom || !dom.metaEl || !dom.metaEl.isConnected) return false;
+      const text = formatThoughtMetaText(entry);
+      dom.metaEl.textContent = text;
+      dom.metaEl.hidden = !text;
+      return true;
+    }
+
+    function compactThoughtBody(dom, maxLiveSpans = 34) {
+      while (dom.body.childNodes.length > maxLiveSpans + 1) {
+        const oldest = dom.settledNode.nextSibling;
+        if (!oldest) break;
+        dom.settledNode.nodeValue += oldest.textContent || "";
+        oldest.remove();
+      }
+    }
+
+    function flushThoughtStream(entry) {
+      const stream = thoughtStreamMap.get(entry);
+      if (stream) {
+        if (stream.rafId) {
+          cancelAnimationFrame(stream.rafId);
+          stream.rafId = 0;
+        }
+        const dom = thoughtDomMap.get(entry);
+        if (stream.pending && dom && dom.body.isConnected) {
+          compactThoughtBody(dom, 0);
+          dom.settledNode.nodeValue += stream.pending;
+          syncThoughtFadeMask(dom.body);
+        }
+        stream.pending = "";
+      }
+      const dom = thoughtDomMap.get(entry);
+      if (dom && dom.body && dom.body.isConnected) {
+        dom.body.classList.remove("is-streaming");
+      }
+    }
+
+    function enqueueThoughtChunk(entry, chunk) {
+      if (!chunk) {
+        updateThoughtMetaInPlace(entry);
+        return Boolean(thoughtDomMap.get(entry)?.body?.isConnected);
+      }
+      let stream = thoughtStreamMap.get(entry);
+      if (!stream) {
+        stream = { pending: "", rafId: 0, autoFollow: true };
+        thoughtStreamMap.set(entry, stream);
+      }
+      stream.pending += chunk;
+
+      const dom = thoughtDomMap.get(entry);
+      if (!dom || !dom.body || !dom.body.isConnected) return false;
+
+      if (dom.chevron && dom.chevron.hidden) dom.chevron.hidden = false;
+      dom.body.classList.add("is-streaming");
+      updateThoughtMetaInPlace(entry);
+
+      if (entry.thoughtOpen !== false && !dom.wrap.classList.contains("is-open")) {
+        requestAnimationFrame(() => {
+          if (dom.wrap.isConnected && entry.thoughtOpen !== false) {
+            dom.wrap.classList.add("is-open");
+            dom.trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      }
+
+      if (!stream.rafId) {
+        const pump = () => {
+          stream.rafId = 0;
+          const liveDom = thoughtDomMap.get(entry);
+          if (!liveDom || !liveDom.body || !liveDom.body.isConnected) return;
+
+          if (stream.pending.length > 0) {
+            let take = stream.pending.length <= 2
+              ? stream.pending.length
+              : Math.min(stream.pending.length, Math.max(2, Math.ceil(stream.pending.length / 7)));
+            const lastCode = stream.pending.charCodeAt(take - 1);
+            if (lastCode >= 0xd800 && lastCode <= 0xdbff && take < stream.pending.length) {
+              take += 1;
+            }
+            const slice = stream.pending.slice(0, take);
+            stream.pending = stream.pending.slice(take);
+
+            const span = document.createElement("span");
+            span.className = "thought-chunk";
+            span.textContent = slice;
+            liveDom.body.append(span);
+            compactThoughtBody(liveDom, 34);
+          }
+
+          let stillScrolling = false;
+          if (stream.autoFollow) {
+            const target = Math.max(0, liveDom.body.scrollHeight - liveDom.body.clientHeight);
+            const delta = target - liveDom.body.scrollTop;
+            if (delta > 0.6) {
+              liveDom.body.scrollTop += delta > 120 ? delta * 0.35 : Math.max(1.2, delta * 0.24);
+              stillScrolling = true;
+            }
+            if (transcript && transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 140) {
+              transcript.scrollTop = transcript.scrollHeight;
+            }
+          }
+          syncThoughtFadeMask(liveDom.body);
+
+          if (stream.pending.length > 0 || stillScrolling) {
+            stream.rafId = requestAnimationFrame(pump);
+          }
+        };
+        stream.rafId = requestAnimationFrame(pump);
+      }
+      return true;
+    }
+
     function renderTranscript(key) {
       const entries = showSession(desk, key);
       const leftover = empty;
@@ -8269,43 +8445,57 @@
             }
             trigger.append(labelEl);
 
-            const metaParts = [];
-            if (entry.thinkSec != null) metaParts.push(`${entry.thinkSec}s`);
-            if (entry.thoughtTokens) metaParts.push(`${entry.thoughtTokens} tok`);
-            if (metaParts.length > 0) {
-              const metaEl = document.createElement("span");
-              metaEl.className = "thought-meta";
-              metaEl.textContent = metaParts.join(" · ");
-              trigger.append(metaEl);
-            }
-            if (entry.thought) {
-              trigger.append(makeMiniSvg('<polyline points="9 6 15 12 9 18" />', "thought-chevron"));
-            }
+            const metaEl = document.createElement("span");
+            metaEl.className = "thought-meta";
+            const metaText = formatThoughtMetaText(entry);
+            metaEl.textContent = metaText;
+            metaEl.hidden = !metaText;
+            trigger.append(metaEl);
+
+            const chevron = makeMiniSvg('<polyline points="9 6 15 12 9 18" />', "thought-chevron");
+            chevron.hidden = !entry.thought;
+            trigger.append(chevron);
+
             trigger.addEventListener("click", () => {
               if (!entry.thought) return;
               const nextOpen = !wrap.classList.contains("is-open");
               entry.thoughtOpen = nextOpen;
               wrap.classList.toggle("is-open", nextOpen);
               trigger.setAttribute("aria-expanded", nextOpen ? "true" : "false");
+              if (nextOpen) requestAnimationFrame(() => syncThoughtFadeMask(body));
             });
             wrap.append(trigger);
 
-            if (entry.thought) {
-              const collapse = document.createElement("div");
-              collapse.className = "thought-collapse";
-              const inner = document.createElement("div");
-              inner.className = "thought-collapse-inner";
-              const body = document.createElement("div");
-              body.className = "thought-body";
-              body.textContent = entry.thought;
-              inner.append(body);
-              collapse.append(inner);
-              wrap.append(collapse);
-              if (isActivelyThinking && shouldBeOpen) {
-                requestAnimationFrame(() => {
-                  body.scrollTop = body.scrollHeight;
-                });
+            const collapse = document.createElement("div");
+            collapse.className = "thought-collapse";
+            const inner = document.createElement("div");
+            inner.className = "thought-collapse-inner";
+            const body = document.createElement("div");
+            body.className = "thought-body" + (isActivelyThinking && entry.thought ? " is-streaming" : "");
+            const streamState = thoughtStreamMap.get(entry);
+            const pendingLen = streamState && streamState.pending ? streamState.pending.length : 0;
+            const settledText = pendingLen > 0 && pendingLen <= (entry.thought || "").length
+              ? (entry.thought || "").slice(0, entry.thought.length - pendingLen)
+              : (entry.thought || "");
+            const settledNode = document.createTextNode(settledText);
+            body.append(settledNode);
+            body.addEventListener("scroll", () => {
+              syncThoughtFadeMask(body);
+              const s = thoughtStreamMap.get(entry);
+              if (s) {
+                s.autoFollow = (body.scrollHeight - body.scrollTop - body.clientHeight) < 40;
               }
+            }, { passive: true });
+            inner.append(body);
+            collapse.append(inner);
+            wrap.append(collapse);
+
+            thoughtDomMap.set(entry, { wrap, trigger, labelEl, metaEl, chevron, collapse, body, settledNode });
+            if (shouldBeOpen && entry.thought) {
+              requestAnimationFrame(() => {
+                if (isActivelyThinking) body.scrollTop = body.scrollHeight;
+                syncThoughtFadeMask(body);
+              });
             }
             block.append(wrap);
           }
@@ -9137,7 +9327,9 @@
       const thinkTimer = setInterval(() => {
         if (entry.streaming && !entry.text) {
           entry.thinkSec = Number(((Date.now() - turnStartedAt) / 1000).toFixed(1));
-          scheduleRender();
+          if ((desk.view || "") === key && !updateThoughtMetaInPlace(entry)) {
+            scheduleRender();
+          }
         }
       }, 200);
 
@@ -9193,13 +9385,18 @@
               if (ev.providerName) entry.providerName = ev.providerName;
             } else if (ev.type === "text") {
               if (!entry.text) {
+                flushThoughtStream(entry);
                 entry.thinkSec = Number(((Date.now() - turnStartedAt) / 1000).toFixed(1));
                 if (entry.thoughtOpen === undefined) entry.thoughtOpen = keepThoughtOpen;
               }
               entry.text += ev.text || "";
             } else if (ev.type === "thought") {
-              entry.thought += ev.text || "";
+              const delta = ev.text || "";
+              entry.thought += delta;
               entry.thinkSec = Number(((Date.now() - turnStartedAt) / 1000).toFixed(1));
+              if ((desk.view || "") === key && enqueueThoughtChunk(entry, delta)) {
+                continue;
+              }
             } else if (ev.type === "usage") {
               if (ev.used != null) lastCtxUsed = ev.used;
               if (ev.size != null) lastCtxSize = ev.size;
@@ -9279,6 +9476,7 @@
         }
       } finally {
         clearInterval(thinkTimer);
+        flushThoughtStream(entry);
         entry.streaming = false;
         entry.permissions = [];
         for (const t of entry.tools) {

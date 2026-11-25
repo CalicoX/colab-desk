@@ -608,9 +608,14 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /chat-thread-status/);
     assert.match(page, /undoLastDeletedThread/);
     assert.match(page, /id="undo-toast"/);
-    assert.match(page, /\*::-webkit-scrollbar\s*\{[\s\S]*?width:\s*5px;/);
+    assert.match(page, /\*::-webkit-scrollbar\s*\{[\s\S]*?width:\s*10px;/);
+    assert.match(page, /\*::-webkit-scrollbar-thumb\s*\{[\s\S]*?border:\s*3px solid transparent;/);
+    assert.match(page, /\*::-webkit-scrollbar-thumb:hover\s*\{[\s\S]*?border-width:\s*1px;/);
     assert.match(page, /\.thought-collapse\s*\{[\s\S]*?grid-template-rows:\s*0fr;/);
     assert.match(page, /\.thought-body\s*\{[\s\S]*?max-height:\s*220px;/);
+    assert.match(page, /@keyframes thoughtChunkReveal/);
+    assert.match(page, /\.thought-body\.has-fade-top/);
+    assert.match(page, /function enqueueThoughtChunk\(/);
     assert.match(page, /@container\s*\(max-width:\s*268px\)/);
     assert.match(page, /id="new-chat-thread-btn"/);
     assert.match(page, /function currentTranscriptKey\(\)\s*\{\s*return activeThreadId \|\| "";\s*\}/);
