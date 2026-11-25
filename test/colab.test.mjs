@@ -607,6 +607,7 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /chat-thread-dot/);
     assert.match(page, /chat-thread-status/);
     assert.match(page, /undoLastDeletedThread/);
+    assert.match(page, /id="undo-toast"/);
     assert.match(page, /@container\s*\(max-width:\s*268px\)/);
     assert.match(page, /id="new-chat-thread-btn"/);
     assert.match(page, /function currentTranscriptKey\(\)\s*\{\s*return activeThreadId \|\| "";\s*\}/);

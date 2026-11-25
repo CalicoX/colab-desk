@@ -3900,22 +3900,22 @@
       align-items: center;
       background: var(--popover);
       border: 1px solid var(--line-strong);
-      border-radius: 12px;
-      bottom: 24px;
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.48);
+      border-radius: 10px;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
       color: var(--text);
       display: flex;
-      font-size: 12.5px;
-      gap: 10px;
-      left: 50%;
-      max-width: min(440px, calc(100vw - 32px));
-      padding: 9px 12px 9px 14px;
-      position: fixed;
-      transform: translateX(-50%);
-      z-index: 9998;
+      flex: none;
+      font-size: 12px;
+      gap: 6px;
+      margin: 0 10px 8px;
+      min-width: 0;
+      padding: 7px 8px 7px 10px;
     }
-    .undo-toast[hidden] { display: none; }
+    .undo-toast[hidden],
+    .app.is-sidebar-collapsed .undo-toast { display: none; }
     .undo-toast-msg {
+      flex: 1;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -3923,14 +3923,14 @@
     .undo-toast-btn {
       background: var(--accent-soft);
       border: 1px solid var(--accent-border);
-      border-radius: 7px;
+      border-radius: 6px;
       color: var(--accent-text);
       cursor: pointer;
       flex: none;
       font: inherit;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 3px 8px;
     }
     .undo-toast-btn:hover { background: var(--accent-soft-hover); color: var(--text); }
     .undo-toast-close {
@@ -3940,9 +3940,9 @@
       color: var(--muted);
       cursor: pointer;
       flex: none;
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1;
-      padding: 3px 5px;
+      padding: 2px 4px;
     }
     .undo-toast-close:hover { background: var(--chip); color: var(--text); }
     .runner-body {
@@ -4223,6 +4223,8 @@
           </div>
           <div id="chat-threads-list" class="chat-threads-list"></div>
         </div>
+
+        <div id="undo-toast" class="undo-toast" role="status" hidden></div>
 
         <div class="sidebar-foot">
           <div class="sidebar-foot-left">
@@ -5340,7 +5342,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.4.6</span>
+                    <span class="s-title">Colab Desk 0.4.7</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5353,7 +5355,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.6（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.4.7（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -7041,11 +7043,12 @@
 
     function ensureUndoToast() {
       if (undoToastEl) return undoToastEl;
-      const box = document.createElement("div");
+      const box = document.querySelector("#undo-toast") || document.createElement("div");
       box.id = "undo-toast";
       box.className = "undo-toast";
       box.setAttribute("role", "status");
       box.hidden = true;
+      box.replaceChildren();
       const msg = document.createElement("span");
       msg.className = "undo-toast-msg";
       const undoBtn = document.createElement("button");
@@ -7059,7 +7062,7 @@
       closeBtn.textContent = "×";
       closeBtn.addEventListener("click", () => hideUndoToast());
       box.append(msg, undoBtn, closeBtn);
-      document.body.append(box);
+      if (!box.parentElement) document.body.append(box);
       undoToastEl = box;
       return box;
     }
