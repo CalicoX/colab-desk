@@ -628,6 +628,19 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /function handleComposerPaste\(/);
     assert.match(page, /function openImageLightbox\(/);
     assert.match(page, /__onNativeClipboardImage/);
+    assert.match(page, /__onNativeStagedFiles/);
+
+    // Guard against duplicate top-level declarations inside <script type="module"> (which crash Safari/WKWebView)
+    const scriptMatch = page.match(/<script type="module">([\s\S]*?)<\/script>/);
+    assert.ok(scriptMatch, "expected inline module script");
+    const topDecls = new Map();
+    for (const line of scriptMatch[1].split(/\r?\n/)) {
+      const m = line.match(/^    (?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/);
+      if (!m) continue;
+      const name = m[1];
+      assert.equal(topDecls.has(name), false, `duplicate top-level function declaration in public/index.html: ${name}`);
+      topDecls.set(name, true);
+    }
 
     // Verify image staging + /api/image preview serving (and non-image rejection)
     const pngBytes = Buffer.from("89504e470d0a1a0a0000000d49484452", "hex");

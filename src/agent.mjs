@@ -601,7 +601,7 @@ class AcpClient {
         terminal: false,
         auth: { terminal: true },
       },
-      clientInfo: { name: "colab-desk", version: "0.6.2" },
+      clientInfo: { name: "colab-desk", version: "0.6.3" },
     });
     this.initResult = init || null;
     this.agentInfo = init?.agentInfo || null;
