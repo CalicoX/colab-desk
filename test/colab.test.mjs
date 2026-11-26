@@ -1182,6 +1182,7 @@ test("mac app does not start a login shell", () => {
   assert.match(swift, /toggleFillScreen/);
   assert.match(swift, /visibleFrame/);
   assert.match(swift, /clipboardImage/);
+  assert.match(swift, /pasteFromMenu/);
   assert.match(swift, /NSPasteboard/);
   assert.match(plist, /com\.calicox\.colab-desk/);
   assert.match(plist, /ColabDesk/);

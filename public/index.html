@@ -5586,7 +5586,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.6.0</span>
+                    <span class="s-title">Colab Desk 0.6.1</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5599,7 +5599,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.6.0（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.6.1（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -9555,18 +9555,25 @@
       }
     }
 
-    window.__onNativeClipboardImage = (payload) => {
+    window.__onNativeClipboardImages = (items) => {
       try {
-        if (!payload || !payload.base64) return;
-        const bin = atob(payload.base64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
-        const mime = payload.mimeType || "image/png";
-        const file = new File([bytes], payload.name || "image.png", { type: mime });
+        const list = Array.isArray(items) ? items : (items ? [items] : []);
+        const files = [];
+        for (const payload of list) {
+          if (!payload || !payload.base64) continue;
+          const bin = atob(payload.base64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+          const mime = payload.mimeType || "image/png";
+          files.push(new File([bytes], payload.name || "image.png", { type: mime }));
+        }
+        if (files.length === 0) return;
         setComposerMode("agent");
-        stageLocalFiles([file]);
+        stageLocalFiles(files);
+        code.focus();
       } catch {}
     };
+    window.__onNativeClipboardImage = (payload) => window.__onNativeClipboardImages([payload]);
 
     function handleComposerPaste(event) {
       const cd = event.clipboardData;

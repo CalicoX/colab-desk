@@ -965,49 +965,128 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             return
         }
         if message.name == "clipboardImage" {
-            let pb = NSPasteboard.general
-            var imgData: Data? = nil
-            var filename = "image.png"
-            var mime = "image/png"
+            sendClipboardImagesToWebView()
+            return
+        }
+    }
 
-            if let png = pb.data(forType: .png) {
-                imgData = png
-            } else if let tiff = pb.data(forType: .tiff),
-                      let rep = NSBitmapImageRep(data: tiff),
-                      let png = rep.representation(using: .png, properties: [:]) {
-                imgData = png
-            } else if let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] {
-                let allowedExts: Set<String> = ["png", "jpg", "jpeg", "webp", "gif", "bmp"]
-                if let first = urls.first(where: { allowedExts.contains($0.pathExtension.lowercased()) }),
-                   let data = try? Data(contentsOf: first),
-                   data.count <= 25_000_000 {
-                    imgData = data
-                    filename = first.lastPathComponent
-                    let ext = first.pathExtension.lowercased()
+    private func extractClipboardImagePayloads() -> [[String: String]] {
+        let pb = NSPasteboard.general
+        let allowedExts: Set<String> = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "tif", "tiff", "heic"]
+        var payloads: [[String: String]] = []
+
+        // 1. Check copied file URLs first (e.g. Finder ⌘C on image file(s))
+        if let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
+           !urls.isEmpty {
+            for url in urls.prefix(6) {
+                let ext = url.pathExtension.lowercased()
+                guard allowedExts.contains(ext), let raw = try? Data(contentsOf: url), raw.count <= 25_000_000 else {
+                    continue
+                }
+                if ext == "tif" || ext == "tiff" || ext == "heic" {
+                    if let img = NSImage(data: raw),
+                       let tiff = img.tiffRepresentation,
+                       let rep = NSBitmapImageRep(data: tiff),
+                       let png = rep.representation(using: .png, properties: [:]),
+                       png.count <= 25_000_000 {
+                        let baseName = url.deletingPathExtension().lastPathComponent
+                        payloads.append([
+                            "name": "\(baseName.isEmpty ? "image" : baseName).png",
+                            "mimeType": "image/png",
+                            "base64": png.base64EncodedString(),
+                        ])
+                    }
+                } else {
+                    var mime = "image/png"
                     if ext == "jpg" || ext == "jpeg" { mime = "image/jpeg" }
                     else if ext == "webp" { mime = "image/webp" }
                     else if ext == "gif" { mime = "image/gif" }
                     else if ext == "bmp" { mime = "image/bmp" }
-                    else { mime = "image/png" }
+                    payloads.append([
+                        "name": url.lastPathComponent,
+                        "mimeType": mime,
+                        "base64": raw.base64EncodedString(),
+                    ])
                 }
             }
+            // If file URLs were copied (even non-image files), do not misread Finder's TIFF icon as an image.
+            return payloads
+        }
 
-            if let data = imgData, data.count <= 25_000_000 {
-                let payload: [String: String] = [
-                    "name": filename,
-                    "mimeType": mime,
-                    "base64": data.base64EncodedString(),
-                ]
-                if let jsonData = try? JSONSerialization.data(withJSONObject: payload),
-                   let jsonStr = String(data: jsonData, encoding: .utf8) {
-                    webView?.evaluateJavaScript(
-                        "window.__onNativeClipboardImage && window.__onNativeClipboardImage(\(jsonStr));",
-                        completionHandler: nil
-                    )
-                }
-            }
+        // 2. Check raw clipboard image data (macOS screenshots, Copy Image, Snipaste/WeChat/CleanShot)
+        let plain = pb.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let looksLikeRichTextCopy = !plain.isEmpty
+            && !plain.hasPrefix("http://")
+            && !plain.hasPrefix("https://")
+            && pb.data(forType: .rtf) != nil
+        if looksLikeRichTextCopy {
+            return []
+        }
+
+        if let png = pb.data(forType: .png), png.count <= 25_000_000 {
+            payloads.append([
+                "name": "image.png",
+                "mimeType": "image/png",
+                "base64": png.base64EncodedString(),
+            ])
+            return payloads
+        }
+        let jpegType = NSPasteboard.PasteboardType("public.jpeg")
+        if let jpg = pb.data(forType: jpegType), jpg.count <= 25_000_000 {
+            payloads.append([
+                "name": "image.jpg",
+                "mimeType": "image/jpeg",
+                "base64": jpg.base64EncodedString(),
+            ])
+            return payloads
+        }
+        if let tiff = pb.data(forType: .tiff),
+           let rep = NSBitmapImageRep(data: tiff),
+           let png = rep.representation(using: .png, properties: [:]),
+           png.count <= 25_000_000 {
+            payloads.append([
+                "name": "image.png",
+                "mimeType": "image/png",
+                "base64": png.base64EncodedString(),
+            ])
+            return payloads
+        }
+        if plain.isEmpty,
+           let img = NSImage(pasteboard: pb),
+           let tiff = img.tiffRepresentation,
+           let rep = NSBitmapImageRep(data: tiff),
+           let png = rep.representation(using: .png, properties: [:]),
+           png.count <= 25_000_000 {
+            payloads.append([
+                "name": "image.png",
+                "mimeType": "image/png",
+                "base64": png.base64EncodedString(),
+            ])
+            return payloads
+        }
+        return []
+    }
+
+    @discardableResult
+    private func sendClipboardImagesToWebView() -> Bool {
+        let payloads = extractClipboardImagePayloads()
+        guard !payloads.isEmpty else { return false }
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: payloads),
+              let jsonStr = String(data: jsonData, encoding: .utf8) else {
+            return false
+        }
+        webView?.evaluateJavaScript(
+            "window.__onNativeClipboardImages && window.__onNativeClipboardImages(\(jsonStr));",
+            completionHandler: nil
+        )
+        return true
+    }
+
+    @objc private func pasteFromMenu(_ sender: Any?) {
+        if sendClipboardImagesToWebView() {
             return
         }
+        NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: sender)
     }
 
     @objc private func toggleSidebarFromMenu(_ sender: Any?) {
@@ -1066,7 +1145,8 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         let edit = NSMenu(title: "Edit")
         edit.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
         edit.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        edit.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        let pasteItem = edit.addItem(withTitle: "Paste", action: #selector(pasteFromMenu(_:)), keyEquivalent: "v")
+        pasteItem.target = self
         edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         editItem.submenu = edit
 
