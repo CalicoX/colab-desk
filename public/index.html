@@ -5586,7 +5586,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.6.1</span>
+                    <span class="s-title">Colab Desk 0.6.2</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5599,7 +5599,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.6.1（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.6.2（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -9555,6 +9555,42 @@
       }
     }
 
+    window.__onNativeStagedFiles = (items) => {
+      try {
+        const list = Array.isArray(items) ? items : (items ? [items] : []);
+        let added = 0;
+        let lastItem = null;
+        for (const data of list) {
+          if (!data || !data.path) continue;
+          const isImg = Boolean(data.isImage || isImageAttachment(data));
+          const rec = {
+            name: data.name || "image.png",
+            path: data.path,
+            size: Number(data.size) || 0,
+            mimeType: data.mimeType || (isImg ? "image/png" : "application/octet-stream"),
+            isImage: isImg,
+            previewUrl: data.previewUrl || (isImg ? `/api/image?path=${encodeURIComponent(data.path)}` : null),
+          };
+          stagedFiles.push(rec);
+          added += 1;
+          lastItem = rec;
+        }
+        if (added === 0) return;
+        setComposerMode("agent");
+        renderStagedFiles();
+        syncSendButton();
+        code.focus();
+        if (added === 1 && lastItem) {
+          showToast(L(
+            `已粘贴图片 ${lastItem.name} (${formatFileSize(lastItem.size)})`,
+            `Attached image ${lastItem.name} (${formatFileSize(lastItem.size)})`,
+          ));
+        } else {
+          showToast(L(`已粘贴 ${added} 张图片`, `Attached ${added} images`));
+        }
+      } catch {}
+    };
+
     window.__onNativeClipboardImages = (items) => {
       try {
         const list = Array.isArray(items) ? items : (items ? [items] : []);
@@ -9590,15 +9626,17 @@
         for (const f of Array.from(cd.files)) extracted.push(f);
       }
       const plainText = cd ? String(cd.getData("text/plain") || "") : "";
+      const trimmed = plainText.trim();
       if (extracted.length > 0) {
-        const trimmed = plainText.trim();
         const isOnlyFilename = !trimmed || extracted.some((f) => f.name && f.name === trimmed);
         if (isOnlyFilename) event.preventDefault();
         setComposerMode("agent");
         stageLocalFiles(extracted);
         return true;
       }
-      if (!plainText && window.webkit?.messageHandlers?.clipboardImage) {
+      const looksLikeImageFilename = Boolean(trimmed) && !/\r|\n/.test(trimmed) && /\.(?:png|jpe?g|webp|gif|bmp|tiff?|heic)$/i.test(trimmed);
+      if ((!trimmed || looksLikeImageFilename) && window.webkit?.messageHandlers?.clipboardImage) {
+        event.preventDefault();
         window.webkit.messageHandlers.clipboardImage.postMessage({});
         return true;
       }

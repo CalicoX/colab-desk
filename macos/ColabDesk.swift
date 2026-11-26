@@ -494,12 +494,15 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private var window: NSWindow?
     private var webView: WKWebView?
     private var server: ServerSession?
+    private var serverBaseURL: URL?
+    private var keyMonitor: Any?
     private var quitSignals: [DispatchSourceSignal] = []
     private var savedUnmaximizedFrame: NSRect?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installQuitSignals()
         installMainMenu()
+        installPasteKeyMonitor()
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
@@ -521,7 +524,26 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
         server?.stop()
+    }
+
+    private func installPasteKeyMonitor() {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self,
+                  event.window == self.window else {
+                return event
+            }
+            let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
+            let isV = event.charactersIgnoringModifiers?.lowercased() == "v" || event.keyCode == 9
+            if mods == .command && isV && self.handleNativeImagePaste() {
+                return nil
+            }
+            return event
+        }
     }
 
     /// `kill` delivers SIGTERM. Handle it so the node server is stopped
@@ -548,6 +570,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private func present(_ result: Result<URL, LaunchError>) {
         switch result {
         case .success(let url):
+            serverBaseURL = url
             showPage(url)
         case .failure(let error):
             showMessage(error.localizedDescription)
@@ -965,20 +988,34 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             return
         }
         if message.name == "clipboardImage" {
-            sendClipboardImagesToWebView()
+            _ = handleNativeImagePaste()
             return
         }
     }
 
-    private func extractClipboardImagePayloads() -> [[String: String]] {
+    private struct ClipboardImageItem {
+        let name: String
+        let mimeType: String
+        let data: Data
+    }
+
+    private func extractClipboardImages() -> [ClipboardImageItem] {
         let pb = NSPasteboard.general
         let allowedExts: Set<String> = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "tif", "tiff", "heic"]
-        var payloads: [[String: String]] = []
+        var items: [ClipboardImageItem] = []
 
         // 1. Check copied file URLs first (e.g. Finder ⌘C on image file(s))
-        if let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
-           !urls.isEmpty {
-            for url in urls.prefix(6) {
+        var fileUrls: [URL] = []
+        if let rawUrls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
+           !rawUrls.isEmpty {
+            fileUrls = rawUrls.map { ($0 as NSURL).filePathURL ?? $0.standardizedFileURL }
+        } else if let paths = pb.propertyList(forType: NSPasteboard.PasteboardType("NSFilenamesPboardType")) as? [String],
+                  !paths.isEmpty {
+            fileUrls = paths.map { URL(fileURLWithPath: $0) }
+        }
+
+        if !fileUrls.isEmpty {
+            for url in fileUrls.prefix(6) {
                 let ext = url.pathExtension.lowercased()
                 guard allowedExts.contains(ext), let raw = try? Data(contentsOf: url), raw.count <= 25_000_000 else {
                     continue
@@ -990,11 +1027,11 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
                        let png = rep.representation(using: .png, properties: [:]),
                        png.count <= 25_000_000 {
                         let baseName = url.deletingPathExtension().lastPathComponent
-                        payloads.append([
-                            "name": "\(baseName.isEmpty ? "image" : baseName).png",
-                            "mimeType": "image/png",
-                            "base64": png.base64EncodedString(),
-                        ])
+                        items.append(ClipboardImageItem(
+                            name: "\(baseName.isEmpty ? "image" : baseName).png",
+                            mimeType: "image/png",
+                            data: png
+                        ))
                     }
                 } else {
                     var mime = "image/png"
@@ -1002,15 +1039,11 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
                     else if ext == "webp" { mime = "image/webp" }
                     else if ext == "gif" { mime = "image/gif" }
                     else if ext == "bmp" { mime = "image/bmp" }
-                    payloads.append([
-                        "name": url.lastPathComponent,
-                        "mimeType": mime,
-                        "base64": raw.base64EncodedString(),
-                    ])
+                    items.append(ClipboardImageItem(name: url.lastPathComponent, mimeType: mime, data: raw))
                 }
             }
-            // If file URLs were copied (even non-image files), do not misread Finder's TIFF icon as an image.
-            return payloads
+            // Do not misread Finder's generic TIFF icon for non-image files as an image.
+            return items
         }
 
         // 2. Check raw clipboard image data (macOS screenshots, Copy Image, Snipaste/WeChat/CleanShot)
@@ -1024,32 +1057,17 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         }
 
         if let png = pb.data(forType: .png), png.count <= 25_000_000 {
-            payloads.append([
-                "name": "image.png",
-                "mimeType": "image/png",
-                "base64": png.base64EncodedString(),
-            ])
-            return payloads
+            return [ClipboardImageItem(name: "image.png", mimeType: "image/png", data: png)]
         }
         let jpegType = NSPasteboard.PasteboardType("public.jpeg")
         if let jpg = pb.data(forType: jpegType), jpg.count <= 25_000_000 {
-            payloads.append([
-                "name": "image.jpg",
-                "mimeType": "image/jpeg",
-                "base64": jpg.base64EncodedString(),
-            ])
-            return payloads
+            return [ClipboardImageItem(name: "image.jpg", mimeType: "image/jpeg", data: jpg)]
         }
         if let tiff = pb.data(forType: .tiff),
            let rep = NSBitmapImageRep(data: tiff),
            let png = rep.representation(using: .png, properties: [:]),
            png.count <= 25_000_000 {
-            payloads.append([
-                "name": "image.png",
-                "mimeType": "image/png",
-                "base64": png.base64EncodedString(),
-            ])
-            return payloads
+            return [ClipboardImageItem(name: "image.png", mimeType: "image/png", data: png)]
         }
         if plain.isEmpty,
            let img = NSImage(pasteboard: pb),
@@ -1057,33 +1075,79 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
            let rep = NSBitmapImageRep(data: tiff),
            let png = rep.representation(using: .png, properties: [:]),
            png.count <= 25_000_000 {
-            payloads.append([
-                "name": "image.png",
-                "mimeType": "image/png",
-                "base64": png.base64EncodedString(),
-            ])
-            return payloads
+            return [ClipboardImageItem(name: "image.png", mimeType: "image/png", data: png)]
         }
         return []
     }
 
     @discardableResult
-    private func sendClipboardImagesToWebView() -> Bool {
-        let payloads = extractClipboardImagePayloads()
-        guard !payloads.isEmpty else { return false }
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: payloads),
-              let jsonStr = String(data: jsonData, encoding: .utf8) else {
-            return false
+    private func handleNativeImagePaste() -> Bool {
+        let items = extractClipboardImages()
+        guard !items.isEmpty else { return false }
+
+        guard let baseURL = serverBaseURL else {
+            let payloads = items.map { item -> [String: String] in
+                ["name": item.name, "mimeType": item.mimeType, "base64": item.data.base64EncodedString()]
+            }
+            if let jsonData = try? JSONSerialization.data(withJSONObject: payloads),
+               let jsonStr = String(data: jsonData, encoding: .utf8) {
+                webView?.evaluateJavaScript(
+                    "window.__onNativeClipboardImages && window.__onNativeClipboardImages(\(jsonStr));",
+                    completionHandler: nil
+                )
+            }
+            return true
         }
-        webView?.evaluateJavaScript(
-            "window.__onNativeClipboardImages && window.__onNativeClipboardImages(\(jsonStr));",
-            completionHandler: nil
-        )
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            var staged: [[String: Any]] = []
+            let group = DispatchGroup()
+            let lock = NSLock()
+
+            for item in items {
+                var comps = URLComponents(url: baseURL.appendingPathComponent("api/stage-file"), resolvingAgainstBaseURL: false)
+                comps?.queryItems = [
+                    URLQueryItem(name: "name", value: item.name),
+                    URLQueryItem(name: "mime", value: item.mimeType),
+                ]
+                guard let endpoint = comps?.url else { continue }
+                var req = URLRequest(url: endpoint)
+                req.httpMethod = "POST"
+                req.setValue(item.mimeType, forHTTPHeaderField: "Content-Type")
+                req.httpBody = item.data
+
+                group.enter()
+                URLSession.shared.dataTask(with: req) { data, _, _ in
+                    defer { group.leave() }
+                    guard let data,
+                          let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                          (obj["ok"] as? Bool) == true else {
+                        return
+                    }
+                    lock.lock()
+                    staged.append(obj)
+                    lock.unlock()
+                }.resume()
+            }
+
+            group.wait()
+            guard !staged.isEmpty,
+                  let jsonData = try? JSONSerialization.data(withJSONObject: staged),
+                  let jsonStr = String(data: jsonData, encoding: .utf8) else {
+                return
+            }
+            DispatchQueue.main.async {
+                self?.webView?.evaluateJavaScript(
+                    "window.__onNativeStagedFiles && window.__onNativeStagedFiles(\(jsonStr));",
+                    completionHandler: nil
+                )
+            }
+        }
         return true
     }
 
     @objc private func pasteFromMenu(_ sender: Any?) {
-        if sendClipboardImagesToWebView() {
+        if handleNativeImagePaste() {
             return
         }
         NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: sender)
