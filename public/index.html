@@ -1330,11 +1330,43 @@
       word-break: break-word;
     }
     .bubble-files { display: flex; flex-wrap: wrap; gap: 5px; }
+    .bubble-img-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 2px; }
+    .bubble-img-thumb {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      cursor: zoom-in;
+      display: block;
+      max-height: 150px;
+      max-width: 210px;
+      object-fit: cover;
+      transition: transform 140ms ease, opacity 140ms ease;
+    }
+    .bubble-img-thumb:hover { opacity: 0.92; transform: scale(1.015); }
     .bubble-file {
       background: rgba(255, 255, 255, 0.16);
       border-radius: 999px;
       font-size: 11.5px;
       padding: 2px 8px;
+    }
+    .img-lightbox {
+      align-items: center;
+      background: rgba(8, 7, 13, 0.82);
+      backdrop-filter: blur(8px);
+      display: flex;
+      inset: 0;
+      justify-content: center;
+      padding: 28px;
+      position: fixed;
+      z-index: 9998;
+      cursor: zoom-out;
+    }
+    .img-lightbox img {
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      max-height: 88vh;
+      max-width: 90vw;
+      object-fit: contain;
     }
     .entry-argv { color: var(--faint); font-family: var(--mono); font-size: 11px; margin: 0 0 6px; }
     .output, .entry pre {
@@ -1737,21 +1769,80 @@
       box-shadow: 0 0 0 2px var(--indigo-2);
     }
     .staged-files {
+      align-items: flex-end;
       display: none;
       flex-wrap: wrap;
-      gap: 6px;
-      padding: 0 4px;
+      gap: 8px;
+      padding: 2px 4px 2px;
     }
     .staged-files.show { display: flex; }
+    .staged-img-card {
+      background: var(--control);
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      flex: none;
+      height: 68px;
+      overflow: hidden;
+      position: relative;
+      transition: border-color 140ms ease, transform 140ms ease;
+      width: 68px;
+    }
+    .staged-img-card:hover {
+      border-color: var(--accent-border, var(--indigo-2));
+    }
+    .staged-img-thumb {
+      cursor: zoom-in;
+      display: block;
+      height: 100%;
+      object-fit: cover;
+      width: 100%;
+    }
+    .staged-img-remove {
+      align-items: center;
+      backdrop-filter: blur(6px);
+      background: rgba(15, 14, 24, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 7px;
+      color: #fff;
+      cursor: pointer;
+      display: inline-flex;
+      height: 22px;
+      justify-content: center;
+      padding: 0;
+      position: absolute;
+      right: 4px;
+      top: 4px;
+      transition: background 120ms ease, transform 120ms ease;
+      width: 22px;
+    }
+    .staged-img-remove:hover {
+      background: rgba(220, 58, 72, 0.9);
+      transform: scale(1.06);
+    }
+    .staged-img-remove svg {
+      fill: none;
+      height: 12px;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2.1;
+      width: 12px;
+    }
     .staged-chip {
       align-items: center;
       background: var(--control);
+      border: 1px solid var(--line);
       border-radius: 999px;
       color: var(--text);
       display: inline-flex;
       font-size: 12px;
       gap: 6px;
       padding: 4px 10px;
+    }
+    .staged-chip-size {
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 11px;
     }
     .staged-chip button {
       background: transparent;
@@ -5495,7 +5586,7 @@
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.5.0</span>
+                    <span class="s-title">Colab Desk 0.6.0</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -5508,7 +5599,7 @@
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.5.0（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.6.0（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>
@@ -7524,9 +7615,14 @@
     }
 
     function consumeComposerDraft() {
-      const promptText = code.value.trim();
+      const rawText = code.value.trim();
       const files = stagedFiles.slice();
-      if (!promptText) return null;
+      if (!rawText && files.length === 0) return null;
+      const promptText = rawText || (
+        files.some((f) => isImageAttachment(f))
+          ? L("请查看附带的图片并结合上下文协助处理。", "Please inspect the attached image(s) and help.")
+          : L("请查看附带的本地文件并协助处理。", "Please inspect the attached file(s) and help.")
+      );
       code.value = "";
       stagedFiles = [];
       autoGrowCode();
@@ -7580,7 +7676,7 @@
 
     function syncSendButton() {
       const isRunningAgent = !!activeAgentController;
-      const hasDraft = !!code.value.trim();
+      const hasDraft = !!code.value.trim() || stagedFiles.length > 0;
       if (busySendActionsEl) {
         busySendActionsEl.hidden = !(isRunningAgent && composerMode === "agent" && hasDraft);
         if (queueSendBtn) queueSendBtn.textContent = L("排队", "Queue");
@@ -8443,15 +8539,35 @@
           bubble.className = "bubble";
           bubble.append(document.createTextNode(entry.label));
           if (Array.isArray(entry.files) && entry.files.length > 0) {
-            const filesRow = document.createElement("span");
-            filesRow.className = "bubble-files";
-            for (const f of entry.files) {
-              const tag = document.createElement("span");
-              tag.className = "bubble-file";
-              tag.textContent = `📎 ${f.name}`;
-              filesRow.append(tag);
+            const imgFiles = entry.files.filter((f) => isImageAttachment(f));
+            const otherFiles = entry.files.filter((f) => !isImageAttachment(f));
+            if (imgFiles.length > 0) {
+              const imgGrid = document.createElement("span");
+              imgGrid.className = "bubble-img-grid";
+              for (const f of imgFiles) {
+                const src = f.previewUrl || (f.path ? `/api/image?path=${encodeURIComponent(f.path)}` : "");
+                if (!src) continue;
+                const img = document.createElement("img");
+                img.className = "bubble-img-thumb";
+                img.src = src;
+                img.alt = f.name || "image";
+                img.title = f.name || "image";
+                img.addEventListener("click", () => openImageLightbox(src, f.name));
+                imgGrid.append(img);
+              }
+              if (imgGrid.childNodes.length > 0) bubble.prepend(imgGrid);
             }
-            bubble.append(filesRow);
+            if (otherFiles.length > 0) {
+              const filesRow = document.createElement("span");
+              filesRow.className = "bubble-files";
+              for (const f of otherFiles) {
+                const tag = document.createElement("span");
+                tag.className = "bubble-file";
+                tag.textContent = `📎 ${f.name}`;
+                filesRow.append(tag);
+              }
+              bubble.append(filesRow);
+            }
           }
           head.append(bubble);
           node.append(head);
@@ -9268,39 +9384,168 @@
       } catch {}
     }
 
+    function isImageAttachment(file) {
+      if (!file) return false;
+      if (file.isImage) return true;
+      const mime = String(file.mimeType || file.type || "").toLowerCase();
+      if (mime.startsWith("image/")) return true;
+      const target = String(file.name || file.path || "").toLowerCase();
+      return /\.(?:png|jpe?g|webp|gif|bmp)$/.test(target);
+    }
+
+    function formatFileSize(bytes) {
+      const n = Number(bytes) || 0;
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${Math.max(1, Math.round(n / 1024))} KB`;
+      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function openImageLightbox(src, alt = "image") {
+      if (!src) return;
+      const overlay = document.createElement("div");
+      overlay.className = "img-lightbox";
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = alt || "image";
+      overlay.append(img);
+      const close = () => {
+        overlay.remove();
+        window.removeEventListener("keydown", onKey);
+      };
+      const onKey = (ev) => {
+        if (ev.key === "Escape") close();
+      };
+      overlay.addEventListener("click", close);
+      window.addEventListener("keydown", onKey);
+      document.body.append(overlay);
+    }
+
     function renderStagedFiles() {
       stagedFilesBox.replaceChildren();
       stagedFilesBox.classList.toggle("show", stagedFiles.length > 0);
       stagedFiles.forEach((file, idx) => {
+        const isImg = isImageAttachment(file);
+        const previewSrc = file.previewUrl || (isImg && file.path ? `/api/image?path=${encodeURIComponent(file.path)}` : "");
+        if (isImg && previewSrc) {
+          const card = document.createElement("div");
+          card.className = "staged-img-card";
+          card.title = `${file.name}${file.size ? ` (${formatFileSize(file.size)})` : ""}`;
+          const img = document.createElement("img");
+          img.className = "staged-img-thumb";
+          img.src = previewSrc;
+          img.alt = file.name;
+          img.addEventListener("click", () => openImageLightbox(previewSrc, file.name));
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "staged-img-remove";
+          remove.setAttribute("aria-label", L(`移除 ${file.name}`, `Remove ${file.name}`));
+          remove.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+          remove.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            stagedFiles.splice(idx, 1);
+            renderStagedFiles();
+            syncSendButton();
+          });
+          card.append(img, remove);
+          stagedFilesBox.append(card);
+          return;
+        }
         const chip = document.createElement("span");
         chip.className = "staged-chip";
         const label = document.createElement("span");
         label.textContent = `📎 ${file.name}`;
+        chip.append(label);
+        if (file.size) {
+          const sz = document.createElement("span");
+          sz.className = "staged-chip-size";
+          sz.textContent = formatFileSize(file.size);
+          chip.append(sz);
+        }
         const remove = document.createElement("button");
         remove.type = "button";
         remove.textContent = "×";
-        remove.setAttribute("aria-label", `移除 ${file.name}`);
+        remove.setAttribute("aria-label", L(`移除 ${file.name}`, `Remove ${file.name}`));
         remove.addEventListener("click", () => {
           stagedFiles.splice(idx, 1);
           renderStagedFiles();
+          syncSendButton();
         });
-        chip.append(label, remove);
+        chip.append(remove);
         stagedFilesBox.append(chip);
       });
     }
 
-    async function stageLocalFiles(fileList) {
-      for (const file of Array.from(fileList || [])) {
+    async function normalizePastedImageFile(file, fallbackIndex = 1) {
+      const rawType = String(file?.type || "").toLowerCase();
+      let name = String(file?.name || "").trim();
+      const extByMime = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/webp": "webp",
+        "image/gif": "gif",
+        "image/bmp": "bmp",
+      };
+      if (rawType === "image/tiff" || /\.tiff?$/i.test(name)) {
         try {
-          const res = await fetch(`/api/stage-file?name=${encodeURIComponent(file.name)}`, {
+          const url = URL.createObjectURL(file);
+          const img = await new Promise((resolve, reject) => {
+            const el = new Image();
+            el.onload = () => resolve(el);
+            el.onerror = reject;
+            el.src = url;
+          });
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          canvas.getContext("2d").drawImage(img, 0, 0);
+          URL.revokeObjectURL(url);
+          const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          if (pngBlob) {
+            const pngName = name ? name.replace(/\.tiff?$/i, ".png") : `image${fallbackIndex > 1 ? `-${fallbackIndex}` : ""}.png`;
+            return new File([pngBlob], pngName, { type: "image/png" });
+          }
+        } catch {}
+      }
+      if (!name || name === "blob") {
+        const ext = extByMime[rawType] || "png";
+        name = `image${fallbackIndex > 1 ? `-${fallbackIndex}` : ""}.${ext}`;
+      }
+      if (name !== file.name) {
+        return new File([file], name, { type: file.type || "image/png" });
+      }
+      return file;
+    }
+
+    async function stageLocalFiles(fileList) {
+      let idx = 0;
+      for (const rawFile of Array.from(fileList || [])) {
+        idx += 1;
+        try {
+          const file = isImageAttachment(rawFile)
+            ? await normalizePastedImageFile(rawFile, stagedFiles.length + idx)
+            : rawFile;
+          const mimeParam = file.type ? `&mime=${encodeURIComponent(file.type)}` : "";
+          const res = await fetch(`/api/stage-file?name=${encodeURIComponent(file.name || "image.png")}${mimeParam}`, {
             method: "POST",
             body: file,
           });
           const data = await res.json();
           if (data.ok) {
-            stagedFiles.push({ name: data.name, path: data.path, size: data.size });
+            stagedFiles.push({
+              name: data.name,
+              path: data.path,
+              size: data.size,
+              mimeType: data.mimeType || file.type || "",
+              isImage: Boolean(data.isImage || isImageAttachment(file)),
+              previewUrl: data.previewUrl || (data.isImage ? `/api/image?path=${encodeURIComponent(data.path)}` : null),
+            });
             renderStagedFiles();
-            showToast(L(`已附加 ${data.name}，发送消息即可让 Agent 上传处理`, `Attached ${data.name}. Send a message to upload and process it.`));
+            syncSendButton();
+            showToast(
+              data.isImage
+                ? L(`已粘贴图片 ${data.name} (${formatFileSize(data.size)})`, `Attached image ${data.name} (${formatFileSize(data.size)})`)
+                : L(`已附加 ${data.name}，发送消息即可让 Agent 上传处理`, `Attached ${data.name}. Send a message to upload and process it.`),
+            );
           } else {
             showToast(L(`附加失败：${data.error || "未知错误"}`, `Attach failed: ${data.error || "Unknown error"}`));
           }
@@ -9308,6 +9553,49 @@
           showToast(L(`附加失败：${err.message}`, `Attach failed: ${err.message}`));
         }
       }
+    }
+
+    window.__onNativeClipboardImage = (payload) => {
+      try {
+        if (!payload || !payload.base64) return;
+        const bin = atob(payload.base64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+        const mime = payload.mimeType || "image/png";
+        const file = new File([bytes], payload.name || "image.png", { type: mime });
+        setComposerMode("agent");
+        stageLocalFiles([file]);
+      } catch {}
+    };
+
+    function handleComposerPaste(event) {
+      const cd = event.clipboardData;
+      const extracted = [];
+      if (cd && cd.items && cd.items.length) {
+        for (const item of Array.from(cd.items)) {
+          if (item.kind === "file") {
+            const f = item.getAsFile();
+            if (f) extracted.push(f);
+          }
+        }
+      }
+      if (extracted.length === 0 && cd && cd.files && cd.files.length) {
+        for (const f of Array.from(cd.files)) extracted.push(f);
+      }
+      const plainText = cd ? String(cd.getData("text/plain") || "") : "";
+      if (extracted.length > 0) {
+        const trimmed = plainText.trim();
+        const isOnlyFilename = !trimmed || extracted.some((f) => f.name && f.name === trimmed);
+        if (isOnlyFilename) event.preventDefault();
+        setComposerMode("agent");
+        stageLocalFiles(extracted);
+        return true;
+      }
+      if (!plainText && window.webkit?.messageHandlers?.clipboardImage) {
+        window.webkit.messageHandlers.clipboardImage.postMessage({});
+        return true;
+      }
+      return false;
     }
 
     async function sendAgentMessage(promptText, overrideFiles = null, overrideApiPrompt = null) {
@@ -11517,6 +11805,19 @@
         stageLocalFiles(attachFileInput.files);
         attachFileInput.value = "";
       }
+    });
+
+    // Paste images / files directly into composer (⌘V)
+    code.addEventListener("paste", (event) => {
+      handleComposerPaste(event);
+    });
+    document.addEventListener("paste", (event) => {
+      if (event.target === code) return;
+      if (document.querySelector("dialog[open]")) return;
+      const tag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : "";
+      if (tag === "input" || tag === "textarea" || (event.target && event.target.isContentEditable)) return;
+      if (composerMode === "notebook" || composer.hidden) return;
+      handleComposerPaste(event);
     });
 
     // Drag & drop files onto composer

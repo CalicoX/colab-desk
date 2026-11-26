@@ -176,6 +176,58 @@ export function buildColabSystemRules(context = {}) {
   return lines.join("\n");
 }
 
+const IMAGE_EXT_MIME = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".bmp": "image/bmp",
+};
+
+export function inferImageMime(filePath, explicitMime = "") {
+  const ext = path.extname(String(filePath || "")).toLowerCase();
+  if (IMAGE_EXT_MIME[ext]) return IMAGE_EXT_MIME[ext];
+  const clean = String(explicitMime || "").split(";")[0].trim().toLowerCase();
+  return clean.startsWith("image/") ? clean : null;
+}
+
+export function loadImageAttachments(files = [], maxBytes = 15_000_000, maxCount = 6) {
+  if (!Array.isArray(files) || files.length === 0) return [];
+  const allowedRoots = [
+    path.resolve(UPLOAD_DIR) + path.sep,
+    path.resolve(IMAGE_DIR) + path.sep,
+  ];
+  const out = [];
+  for (const f of files) {
+    if (out.length >= maxCount) break;
+    if (!f || !f.path) continue;
+    const mimeType = inferImageMime(f.path, f.mimeType);
+    if (!mimeType) continue;
+    const resolved = path.resolve(String(f.path));
+    if (!allowedRoots.some((root) => resolved.startsWith(root))) continue;
+    try {
+      const st = fs.statSync(resolved);
+      if (!st.isFile() || st.size <= 0 || st.size > maxBytes) continue;
+      const base64 = fs.readFileSync(resolved).toString("base64");
+      out.push({ name: f.name || path.basename(resolved), path: resolved, mimeType, base64 });
+    } catch {}
+  }
+  return out;
+}
+
+export function buildOpenAiUserContent(text, files = []) {
+  const images = loadImageAttachments(files);
+  if (images.length === 0) return text;
+  return [
+    { type: "text", text },
+    ...images.map((img) => ({
+      type: "image_url",
+      image_url: { url: `data:${img.mimeType};base64,${img.base64}` },
+    })),
+  ];
+}
+
 export function formatTurnPrompt(prompt, context = {}, includeRules = true) {
   const parts = [];
   if (includeRules) {
@@ -184,8 +236,11 @@ export function formatTurnPrompt(prompt, context = {}, includeRules = true) {
     parts.push(`[当前 Colab 会话: ${context.colabSession}${context.sessionInfo?.hardware ? ` (${context.sessionInfo.hardware})` : ""}]`);
   }
   if (Array.isArray(context.files) && context.files.length > 0) {
-    const fileLines = context.files.map((f) => `- ${f.name}: ${f.path}`);
-    parts.push(`[用户附加的本地文件（可用 colab upload 上传到云端）]\n${fileLines.join("\n")}`);
+    const fileLines = context.files.map((f) => {
+      const kindTag = inferImageMime(f.path || f.name, f.mimeType) ? "[图片]" : "[文件]";
+      return `- ${kindTag} ${f.name}: ${f.path}`;
+    });
+    parts.push(`[用户附加的图片 / 本地文件（图片已随消息附带，也可用 colab upload 上传到云端）]\n${fileLines.join("\n")}`);
   }
   parts.push(`[用户消息]\n${prompt}`);
   return parts.join("\n\n");
@@ -546,7 +601,7 @@ class AcpClient {
         terminal: false,
         auth: { terminal: true },
       },
-      clientInfo: { name: "colab-desk", version: "0.5.0" },
+      clientInfo: { name: "colab-desk", version: "0.6.0" },
     });
     this.initResult = init || null;
     this.agentInfo = init?.agentInfo || null;
@@ -1655,7 +1710,8 @@ export class AgentManager {
       this.threads.set(threadKey, thread);
     }
 
-    const userContent = formatTurnPrompt(promptText, context, false);
+    const userText = formatTurnPrompt(promptText, context, false);
+    const userContent = buildOpenAiUserContent(userText, context.files);
     thread.messages.push({ role: "user", content: userContent });
     if (thread.messages.length > 30) thread.messages = thread.messages.slice(-30);
 
@@ -2099,10 +2155,28 @@ export class AgentManager {
     };
 
     try {
-      const res = await client.request("session/prompt", {
-        sessionId: thread.sessionId,
-        prompt: [{ type: "text", text: formatted }],
-      });
+      const promptBlocks = [{ type: "text", text: formatted }];
+      const supportsAcpImage = client.initResult?.agentCapabilities?.promptCapabilities?.image !== false;
+      const attachedImages = supportsAcpImage ? loadImageAttachments(context.files) : [];
+      for (const img of attachedImages) {
+        promptBlocks.push({ type: "image", data: img.base64, mimeType: img.mimeType });
+      }
+      let res;
+      try {
+        res = await client.request("session/prompt", {
+          sessionId: thread.sessionId,
+          prompt: promptBlocks,
+        });
+      } catch (imgErr) {
+        if (attachedImages.length > 0 && !(signal && signal.aborted)) {
+          res = await client.request("session/prompt", {
+            sessionId: thread.sessionId,
+            prompt: [{ type: "text", text: formatted }],
+          });
+        } else {
+          throw imgErr;
+        }
+      }
       emit({ type: "done", stopReason: res?.stopReason || "end_turn", usage: res?.usage || null });
     } catch (err) {
       if (signal && signal.aborted) {

@@ -464,7 +464,7 @@ async function handle(req, res) {
 
   // In-app Update Check
   if (req.method === "GET" && url.pathname === "/api/updates/check") {
-    let ver = "0.5.0";
+    let ver = "0.6.0";
     try {
       ver = JSON.parse(fs.readFileSync(path.join(rootDir, "../package.json"), "utf8")).version || ver;
     } catch {}
@@ -679,13 +679,44 @@ async function handle(req, res) {
 
   if (req.method === "POST" && url.pathname === "/api/stage-file") {
     const rawName = url.searchParams.get("name") || "file.bin";
-    const safeName = sanitizeFileName(rawName);
+    const reqMime = String(url.searchParams.get("mime") || req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+    let safeName = sanitizeFileName(rawName);
+    const mimeToExt = {
+      "image/png": ".png",
+      "image/jpeg": ".jpg",
+      "image/webp": ".webp",
+      "image/gif": ".gif",
+      "image/bmp": ".bmp",
+    };
+    const extToMime = {
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".webp": "image/webp",
+      ".gif": "image/gif",
+      ".bmp": "image/bmp",
+    };
+    let ext = path.extname(safeName).toLowerCase();
+    if (!ext && mimeToExt[reqMime]) {
+      safeName = `${safeName}${mimeToExt[reqMime]}`;
+      ext = mimeToExt[reqMime];
+    }
+    const mimeType = extToMime[ext] || (mimeToExt[reqMime] ? reqMime : (reqMime || "application/octet-stream"));
+    const isImage = Boolean(extToMime[ext]);
     try {
       const buf = await readRawBody(req, 50_000_000);
       fs.mkdirSync(UPLOAD_DIR, { recursive: true });
       const target = path.join(UPLOAD_DIR, `${Date.now().toString(36)}-${safeName}`);
       fs.writeFileSync(target, buf);
-      sendJson(res, 200, { ok: true, name: safeName, path: target, size: buf.length });
+      sendJson(res, 200, {
+        ok: true,
+        name: safeName,
+        path: target,
+        size: buf.length,
+        mimeType,
+        isImage,
+        previewUrl: isImage ? `/api/image?path=${encodeURIComponent(target)}` : null,
+      });
     } catch (err) {
       sendJson(res, 400, { ok: false, error: err.message });
     }
@@ -695,15 +726,26 @@ async function handle(req, res) {
   if (req.method === "GET" && url.pathname === "/api/image") {
     const requested = url.searchParams.get("path") || "";
     const resolved = path.resolve(requested);
-    const allowedRoot = path.resolve(IMAGE_DIR) + path.sep;
-    if (!resolved.startsWith(allowedRoot)) {
+    const allowedImageRoot = path.resolve(IMAGE_DIR) + path.sep;
+    const allowedUploadRoot = path.resolve(UPLOAD_DIR) + path.sep;
+    const ext = path.extname(resolved).toLowerCase();
+    const imgMimes = {
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".webp": "image/webp",
+      ".gif": "image/gif",
+      ".bmp": "image/bmp",
+    };
+    const inImageDir = resolved.startsWith(allowedImageRoot);
+    const inUploadDir = resolved.startsWith(allowedUploadRoot);
+    if ((!inImageDir && !inUploadDir) || !imgMimes[ext]) {
       sendJson(res, 403, { ok: false, error: "forbidden image path" });
       return;
     }
     try {
       const bytes = fs.readFileSync(resolved);
-      const ext = path.extname(resolved).toLowerCase();
-      const mime = ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : ext === ".webp" ? "image/webp" : "image/png";
+      const mime = imgMimes[ext];
       res.writeHead(200, {
         "content-type": mime,
         "cache-control": "no-store",

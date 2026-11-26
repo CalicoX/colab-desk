@@ -8,9 +8,11 @@ import test from "node:test";
 import {
   AgentManager,
   buildColabSystemRules,
+  buildOpenAiUserContent,
   extractAcpModels,
   fetchOpenAiModels,
   formatTurnPrompt,
+  inferImageMime,
   parseAcpSessionUpdate,
   parseAgyQuotaJson,
   parseGrokBillingPayload,
@@ -18,6 +20,7 @@ import {
   parseOpenAiJsonCompletion,
   resolveOpenAiChatEndpoints,
   resolveOpenAiModelsEndpoints,
+  UPLOAD_DIR,
 } from "../src/agent.mjs";
 import { parseWhoami } from "../src/colab-env.mjs";
 import {
@@ -620,6 +623,47 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="tunnel-mode-cf"/);
     assert.match(page, /id="tunnel-mode-ssh"/);
     assert.match(page, /tunnel-badge/);
+    assert.match(page, /\.staged-img-card/);
+    assert.match(page, /\.staged-img-remove/);
+    assert.match(page, /function handleComposerPaste\(/);
+    assert.match(page, /function openImageLightbox\(/);
+    assert.match(page, /__onNativeClipboardImage/);
+
+    // Verify image staging + /api/image preview serving (and non-image rejection)
+    const pngBytes = Buffer.from("89504e470d0a1a0a0000000d49484452", "hex");
+    const stageImgRes = await fetch(`http://127.0.0.1:${port}/api/stage-file?name=paste-test.png&mime=image/png`, {
+      method: "POST",
+      body: pngBytes,
+    }).then((r) => r.json());
+    assert.equal(stageImgRes.ok, true);
+    assert.equal(stageImgRes.isImage, true);
+    assert.equal(stageImgRes.mimeType, "image/png");
+    assert.match(stageImgRes.previewUrl, /^\/api\/image\?path=/);
+    const previewResp = await fetch(`http://127.0.0.1:${port}${stageImgRes.previewUrl}`);
+    assert.equal(previewResp.status, 200);
+    assert.equal(previewResp.headers.get("content-type"), "image/png");
+    const returnedBytes = Buffer.from(await previewResp.arrayBuffer());
+    assert.deepEqual(returnedBytes, pngBytes);
+
+    const stageTxtRes = await fetch(`http://127.0.0.1:${port}/api/stage-file?name=notes.txt&mime=text/plain`, {
+      method: "POST",
+      body: "hello",
+    }).then((r) => r.json());
+    assert.equal(stageTxtRes.ok, true);
+    assert.equal(stageTxtRes.isImage, false);
+    const forbiddenPreview = await fetch(`http://127.0.0.1:${port}/api/image?path=${encodeURIComponent(stageTxtRes.path)}`);
+    assert.equal(forbiddenPreview.status, 403);
+
+    const multimodal = buildOpenAiUserContent("describe this", [stageImgRes]);
+    assert.ok(Array.isArray(multimodal));
+    assert.equal(multimodal[0].type, "text");
+    assert.equal(multimodal[1].type, "image_url");
+    assert.match(multimodal[1].image_url.url, /^data:image\/png;base64,/);
+    assert.equal(buildOpenAiUserContent("plain", [stageTxtRes]), "plain");
+    assert.equal(inferImageMime("foo.webp"), "image/webp");
+    assert.equal(inferImageMime("foo.csv"), null);
+    try { fs.unlinkSync(stageImgRes.path); } catch {}
+    try { fs.unlinkSync(stageTxtRes.path); } catch {}
     assert.match(page, /@container\s*\(max-width:\s*268px\)/);
     assert.match(page, /id="new-chat-thread-btn"/);
     assert.match(page, /function currentTranscriptKey\(\)\s*\{\s*return activeThreadId \|\| "";\s*\}/);
@@ -1137,6 +1181,8 @@ test("mac app does not start a login shell", () => {
   assert.match(swift, /windowZoom/);
   assert.match(swift, /toggleFillScreen/);
   assert.match(swift, /visibleFrame/);
+  assert.match(swift, /clipboardImage/);
+  assert.match(swift, /NSPasteboard/);
   assert.match(plist, /com\.calicox\.colab-desk/);
   assert.match(plist, /ColabDesk/);
   assert.match(plist, /CFBundleIconFile/);

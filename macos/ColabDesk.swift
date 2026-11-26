@@ -833,6 +833,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         contentController.add(self, name: "notify")
         contentController.add(self, name: "setTheme")
         contentController.add(self, name: "openExternal")
+        contentController.add(self, name: "clipboardImage")
         config.userContentController = contentController
 
         let webView = WKWebView(frame: window.contentView?.bounds ?? .zero, configuration: config)
@@ -961,6 +962,50 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         }
         if message.name == "openExternal", let raw = message.body as? String, let url = URL(string: raw) {
             NSWorkspace.shared.open(url)
+            return
+        }
+        if message.name == "clipboardImage" {
+            let pb = NSPasteboard.general
+            var imgData: Data? = nil
+            var filename = "image.png"
+            var mime = "image/png"
+
+            if let png = pb.data(forType: .png) {
+                imgData = png
+            } else if let tiff = pb.data(forType: .tiff),
+                      let rep = NSBitmapImageRep(data: tiff),
+                      let png = rep.representation(using: .png, properties: [:]) {
+                imgData = png
+            } else if let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] {
+                let allowedExts: Set<String> = ["png", "jpg", "jpeg", "webp", "gif", "bmp"]
+                if let first = urls.first(where: { allowedExts.contains($0.pathExtension.lowercased()) }),
+                   let data = try? Data(contentsOf: first),
+                   data.count <= 25_000_000 {
+                    imgData = data
+                    filename = first.lastPathComponent
+                    let ext = first.pathExtension.lowercased()
+                    if ext == "jpg" || ext == "jpeg" { mime = "image/jpeg" }
+                    else if ext == "webp" { mime = "image/webp" }
+                    else if ext == "gif" { mime = "image/gif" }
+                    else if ext == "bmp" { mime = "image/bmp" }
+                    else { mime = "image/png" }
+                }
+            }
+
+            if let data = imgData, data.count <= 25_000_000 {
+                let payload: [String: String] = [
+                    "name": filename,
+                    "mimeType": mime,
+                    "base64": data.base64EncodedString(),
+                ]
+                if let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+                   let jsonStr = String(data: jsonData, encoding: .utf8) {
+                    webView?.evaluateJavaScript(
+                        "window.__onNativeClipboardImage && window.__onNativeClipboardImage(\(jsonStr));",
+                        completionHandler: nil
+                    )
+                }
+            }
             return
         }
     }
