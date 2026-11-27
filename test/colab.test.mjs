@@ -512,22 +512,67 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(body, /T4/);
     assert.doesNotMatch(body, /"sessions":\[\]/);
     const page = await fetch(`http://127.0.0.1:${port}/`).then((res) => res.text());
+    assert.doesNotMatch(page, /<style[\s>]/);
+    assert.doesNotMatch(page, /<script type="module">/);
+    assert.match(page, /<script type="module" src="\/js\/main\.js"><\/script>/);
+
+    // Fetch all linked modular stylesheets over HTTP and verify headers & status
+    const styleHrefs = [...page.matchAll(/<link\s+rel="stylesheet"\s+href="(\/styles\/[^"]+)"\s*\/>/g)].map((m) => m[1]);
+    assert.ok(styleHrefs.length >= 10, `expected modular stylesheets, got ${styleHrefs.length}`);
+    const styleTexts = [];
+    for (const href of styleHrefs) {
+      const r = await fetch(`http://127.0.0.1:${port}${href}`);
+      assert.equal(r.status, 200, `expected 200 for ${href}`);
+      assert.match(r.headers.get("content-type") || "", /^text\/css\b/);
+      assert.match(r.headers.get("cache-control") || "", /no-store/);
+      styleTexts.push(await r.text());
+    }
+    const allStyles = styleTexts.join("\n");
+
+    // Recursively fetch all ES modules starting from /js/main.js over HTTP and verify headers & imports
+    const moduleSources = new Map();
+    const moduleQueue = ["/js/main.js"];
+    while (moduleQueue.length > 0) {
+      const modUrl = moduleQueue.shift();
+      if (moduleSources.has(modUrl)) continue;
+      const r = await fetch(`http://127.0.0.1:${port}${modUrl}`);
+      assert.equal(r.status, 200, `expected 200 for ${modUrl}`);
+      assert.match(r.headers.get("content-type") || "", /^text\/javascript\b/);
+      assert.match(r.headers.get("cache-control") || "", /no-store/);
+      const src = await r.text();
+      moduleSources.set(modUrl, src);
+      for (const m of src.matchAll(/from\s+["'](\.[^"']+\.js)["']/g)) {
+        const nextUrl = path.posix.join(path.posix.dirname(modUrl), m[1]);
+        if (!moduleSources.has(nextUrl)) moduleQueue.push(nextUrl);
+      }
+    }
+    assert.ok(moduleSources.size >= 15, `expected modular JS graph, got ${moduleSources.size}`);
+    const allScripts = Array.from(moduleSources.values()).join("\n");
+
+    // Verify static asset traversal/dotfile/missing-file hardening
+    const missingJs = await fetch(`http://127.0.0.1:${port}/js/does-not-exist.js`);
+    assert.equal(missingJs.status, 404);
+    const dotfileCss = await fetch(`http://127.0.0.1:${port}/styles/.env`);
+    assert.equal(dotfileCss.status, 403);
+    const traversalJs = await fetch(`http://127.0.0.1:${port}/js/%2e%2e/%2e%2e/package.json`);
+    assert.ok([400, 403, 404].includes(traversalJs.status));
+
     assert.match(page, /data-region="sidebar"/);
     assert.match(page, /data-region="transcript"/);
     assert.match(page, /data-region="composer"/);
     assert.match(page, /data-region="hardware-picker"/);
     assert.match(page, /Hardware picker/);
-    assert.match(page, /from "\/desk\.mjs"/);
-    assert.match(page, /composeAction\(/);
-    assert.match(page, /showSession\(/);
-    assert.match(page, /applyNewResult\(/);
+    assert.match(allScripts, /from "\/desk\.mjs"/);
+    assert.match(allScripts, /composeAction\(/);
+    assert.match(allScripts, /showSession\(/);
+    assert.match(allScripts, /applyNewResult\(/);
     assert.match(page, /id="sidebar-toggle"/);
     assert.match(page, /id="sidebar-open"/);
     assert.match(page, /id="sidebar-resizer"/);
-    assert.match(page, /--sidebar-width/);
+    assert.match(allStyles, /--sidebar-width/);
     assert.match(page, /id="open-new-session"/);
     assert.match(page, /id="new-session-modal"/);
-    assert.match(page, /session-menu-close/);
+    assert.match(allScripts, /session-menu-close/);
     assert.doesNotMatch(page, /class="start-row"/);
     assert.match(page, /data-region="inspector"/);
     assert.match(page, /id="bar-balance"/);
@@ -565,10 +610,10 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="env-install-uv-btn"/);
     assert.match(page, /id="env-login-btn"/);
     assert.match(page, /id="rail-toggle"/);
-    assert.match(page, /is-rail-collapsed/);
+    assert.match(allStyles, /is-rail-collapsed/);
     assert.match(page, /id="setting-language"/);
     assert.match(page, /id="agy-acp-login-btn"/);
-    assert.match(page, /from "\/i18n\.mjs"/);
+    assert.match(allScripts, /from "\/i18n\.mjs"/);
     const i18nJs = await fetch(`http://127.0.0.1:${port}/i18n.mjs`).then((res) => res.text());
     assert.match(i18nJs, /resolveLanguage/);
     const acpAuthRes = await fetch(`http://127.0.0.1:${port}/api/agent/acp-auth?provider=agy`).then((res) => res.json());
@@ -603,43 +648,43 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="queue-send-btn"/);
     assert.match(page, /id="steer-send-btn"/);
     assert.match(page, /id="setting-busy-send-mode"/);
-    assert.match(page, /createDottedOrb/);
-    assert.match(page, /thought-orb/);
+    assert.match(allScripts, /createDottedOrb/);
+    assert.match(allStyles, /thought-orb/);
     assert.match(page, /id="tools-dropdown-btn"/);
     assert.match(page, /id="chat-threads-list"/);
-    assert.match(page, /#templates-modal,\s*#sync-modal\s*\{\s*height:\s*auto;\s*max-height:/);
-    assert.match(page, /chat-thread-dot/);
-    assert.match(page, /chat-thread-status/);
-    assert.match(page, /undoLastDeletedThread/);
+    assert.match(allStyles, /#templates-modal,\s*#sync-modal\s*\{\s*height:\s*auto;\s*max-height:/);
+    assert.match(allStyles, /chat-thread-dot/);
+    assert.match(allStyles, /chat-thread-status/);
+    assert.match(allScripts, /undoLastDeletedThread/);
     assert.match(page, /id="undo-toast"/);
-    assert.match(page, /\*::-webkit-scrollbar\s*\{[\s\S]*?width:\s*10px;/);
-    assert.match(page, /\*::-webkit-scrollbar-thumb\s*\{[\s\S]*?border:\s*3px solid transparent;/);
-    assert.match(page, /\*::-webkit-scrollbar-thumb:hover\s*\{[\s\S]*?border-width:\s*1px;/);
-    assert.match(page, /\.thought-collapse\s*\{[\s\S]*?grid-template-rows:\s*0fr;/);
-    assert.match(page, /\.thought-body\s*\{[\s\S]*?max-height:\s*220px;/);
-    assert.match(page, /@keyframes thoughtChunkReveal/);
-    assert.match(page, /\.thought-body\.has-fade-top/);
-    assert.match(page, /function enqueueThoughtChunk\(/);
+    assert.match(allStyles, /\*::-webkit-scrollbar\s*\{[\s\S]*?width:\s*10px;/);
+    assert.match(allStyles, /\*::-webkit-scrollbar-thumb\s*\{[\s\S]*?border:\s*3px solid transparent;/);
+    assert.match(allStyles, /\*::-webkit-scrollbar-thumb:hover\s*\{[\s\S]*?border-width:\s*1px;/);
+    assert.match(allStyles, /\.thought-collapse\s*\{[\s\S]*?grid-template-rows:\s*0fr;/);
+    assert.match(allStyles, /\.thought-body\s*\{[\s\S]*?max-height:\s*220px;/);
+    assert.match(allStyles, /@keyframes thoughtChunkReveal/);
+    assert.match(allStyles, /\.thought-body\.has-fade-top/);
+    assert.match(allScripts, /function enqueueThoughtChunk\(/);
     assert.match(page, /id="tunnel-mode-cf"/);
     assert.match(page, /id="tunnel-mode-ssh"/);
-    assert.match(page, /tunnel-badge/);
-    assert.match(page, /\.staged-img-card/);
-    assert.match(page, /\.staged-img-remove/);
-    assert.match(page, /function handleComposerPaste\(/);
-    assert.match(page, /function openImageLightbox\(/);
-    assert.match(page, /__onNativeClipboardImage/);
-    assert.match(page, /__onNativeStagedFiles/);
+    assert.match(allStyles, /tunnel-badge/);
+    assert.match(allStyles, /\.staged-img-card/);
+    assert.match(allStyles, /\.staged-img-remove/);
+    assert.match(allScripts, /function handleComposerPaste\(/);
+    assert.match(allScripts, /function openImageLightbox\(/);
+    assert.match(allScripts, /__onNativeClipboardImage/);
+    assert.match(allScripts, /__onNativeStagedFiles/);
 
-    // Guard against duplicate top-level declarations inside <script type="module"> (which crash Safari/WKWebView)
-    const scriptMatch = page.match(/<script type="module">([\s\S]*?)<\/script>/);
-    assert.ok(scriptMatch, "expected inline module script");
-    const topDecls = new Map();
-    for (const line of scriptMatch[1].split(/\r?\n/)) {
-      const m = line.match(/^    (?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/);
-      if (!m) continue;
-      const name = m[1];
-      assert.equal(topDecls.has(name), false, `duplicate top-level function declaration in public/index.html: ${name}`);
-      topDecls.set(name, true);
+    // Guard against duplicate top-level declarations inside every frontend ES module (which crash Safari/WKWebView)
+    for (const [modUrl, src] of moduleSources.entries()) {
+      const topDecls = new Map();
+      for (const line of src.split(/\r?\n/)) {
+        const m = line.match(/^(?:export\s+)?(?:async\s+)?(?:function|const|let|var|class)\s+([A-Za-z_$][\w$]*)\b/);
+        if (!m) continue;
+        const name = m[1];
+        assert.equal(topDecls.has(name), false, `duplicate top-level declaration in ${modUrl}: ${name}`);
+        topDecls.set(name, true);
+      }
     }
 
     // Verify image staging + /api/image preview serving (and non-image rejection)
@@ -677,9 +722,9 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.equal(inferImageMime("foo.csv"), null);
     try { fs.unlinkSync(stageImgRes.path); } catch {}
     try { fs.unlinkSync(stageTxtRes.path); } catch {}
-    assert.match(page, /@container\s*\(max-width:\s*268px\)/);
+    assert.match(allStyles, /@container\s*\(max-width:\s*268px\)/);
     assert.match(page, /id="new-chat-thread-btn"/);
-    assert.match(page, /function currentTranscriptKey\(\)\s*\{\s*return activeThreadId \|\| "";\s*\}/);
+    assert.match(allScripts, /function currentTranscriptKey\(\)\s*\{\s*return state\.activeThreadId \|\| "";\s*\}/);
     assert.doesNotMatch(page, /id="reset-chat"/);
     assert.doesNotMatch(page, /id="term-new-local"/);
     assert.match(page, /\/vendor\/xterm\/xterm\.js/);
@@ -702,39 +747,39 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="agent-model"/);
     assert.match(page, /id="agent-picker-btn"/);
     assert.match(page, /id="agent-picker-menu"/);
-    assert.match(page, /\.agent-picker-menu\s*\{[\s\S]*?height:\s*296px;/);
+    assert.match(allStyles, /\.agent-picker-menu\s*\{[\s\S]*?height:\s*296px;/);
     assert.match(page, /id="ap-providers-list"/);
     assert.match(page, /id="ap-models-list"/);
     assert.match(page, /id="thought-picker-btn"/);
     assert.match(page, /id="mode-notebook"/);
     assert.match(page, /id="notebook-view"/);
     assert.match(page, /id="nb-cells"/);
-    assert.match(page, /#composer\[hidden\],\s*#transcript\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/);
-    assert.match(page, /#nb-cells\s*\{[\s\S]*?gap:\s*14px;/);
+    assert.match(allStyles, /#composer\[hidden\],\s*#transcript\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/);
+    assert.match(allStyles, /#nb-cells\s*\{[\s\S]*?gap:\s*14px;/);
     assert.match(page, /id="nb-vars-toggle"/);
     assert.match(page, /id="api-fetch-models-btn"/);
     assert.match(page, /id="skin-picker-grid"/);
     assert.match(page, /id="quick-skin-btn"/);
-    assert.match(page, /data-skin="ocean"/);
-    assert.match(page, /data-skin="paper"/);
-    assert.match(page, /--toggle-on:/);
-    assert.doesNotMatch(page, /#9d68e8/);
-    assert.doesNotMatch(page, /color:\s*#dad5ff/);
-    assert.match(page, /initUniversalIconTooltips/);
+    assert.match(allStyles, /data-skin="ocean"/);
+    assert.match(allStyles, /data-skin="paper"/);
+    assert.match(allStyles, /--toggle-on:/);
+    assert.doesNotMatch(allStyles, /#9d68e8/);
+    assert.doesNotMatch(allStyles, /color:\s*#dad5ff/);
+    assert.match(allScripts, /initUniversalIconTooltips/);
     assert.match(page, /id="open-usage-modal"/);
     assert.match(page, /id="colab-cu-modal"/);
     assert.match(page, /id="open-settings-modal"/);
-    assert.match(page, /\/api\/agent\/quota/);
+    assert.match(allScripts, /\/api\/agent\/quota/);
     assert.match(page, /class="sidebar-mini"/);
-    assert.match(page, /tool-group/);
-    assert.match(page, /\/api\/store/);
-    assert.match(page, /isComposing/);
-    assert.match(page, /\.workspace\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;[\s\S]*?min-width:\s*0;[\s\S]*?overflow:\s*hidden;/);
-    assert.match(page, /\.entry\.fail\s+\.error\s*\{[\s\S]*?overflow-wrap:\s*anywhere;/);
-    assert.match(page, /\.meter-row\s*\{[^}]*grid-template-columns:\s*minmax\(78px,\s*1fr\)\s+82px\s+74px;/);
-    assert.match(page, /#transcript\s*\{[^}]*flex:\s*1\s+1\s+0;/);
-    assert.match(page, /resize:\s*none;/);
-    assert.doesNotMatch(page, /resize:\s*vertical;/);
+    assert.match(allScripts, /tool-group/);
+    assert.match(allScripts, /\/api\/store/);
+    assert.match(allScripts, /isComposing/);
+    assert.match(allStyles, /\.workspace\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;[\s\S]*?min-width:\s*0;[\s\S]*?overflow:\s*hidden;/);
+    assert.match(allStyles, /\.entry\.fail\s+\.error\s*\{[\s\S]*?overflow-wrap:\s*anywhere;/);
+    assert.match(allStyles, /\.meter-row\s*\{[^}]*grid-template-columns:\s*minmax\(78px,\s*1fr\)\s+82px\s+74px;/);
+    assert.match(allStyles, /#transcript\s*\{[^}]*flex:\s*1\s+1\s+0;/);
+    assert.match(allStyles, /resize:\s*none;/);
+    assert.doesNotMatch(allStyles, /resize:\s*vertical;/);
 
     const storeDir = fs.mkdtempSync(path.join(os.tmpdir(), "colab-desk-store-"));
     const prevStoreDir = process.env.COLAB_DESK_STATE_DIR;

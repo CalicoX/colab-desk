@@ -33,13 +33,129 @@ import { loadStore, saveStore } from "./store.mjs";
 import { TerminalManager } from "./terminal.mjs";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
-const pagePath = path.join(rootDir, "../public/index.html");
-const vendorDir = path.join(rootDir, "../public/vendor");
+const publicDir = path.resolve(rootDir, "../public");
+const pagePath = path.join(publicDir, "index.html");
 const deskPath = path.join(rootDir, "desk.mjs");
 const i18nPath = path.join(rootDir, "i18n.mjs");
 const agents = new AgentManager(path.resolve(rootDir, ".."));
 const tunnels = new TunnelManager();
 const terminals = new TerminalManager(path.resolve(rootDir, ".."));
+
+const STATIC_MIME_TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".map": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
+  ".otf": "font/otf",
+  ".txt": "text/plain; charset=utf-8",
+  ".wasm": "application/wasm",
+};
+
+const STATIC_MOUNTS = [
+  { prefix: "/styles/", dir: path.join(publicDir, "styles"), cacheControl: "no-store" },
+  { prefix: "/js/", dir: path.join(publicDir, "js"), cacheControl: "no-store" },
+  { prefix: "/assets/", dir: path.join(publicDir, "assets"), cacheControl: "no-store" },
+  { prefix: "/vendor/", dir: path.join(publicDir, "vendor"), cacheControl: "public, max-age=3600" },
+];
+
+function sendStaticError(res, isHead, status, error) {
+  const payload = JSON.stringify({ ok: false, error });
+  res.writeHead(status, {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-store",
+    "content-length": Buffer.byteLength(payload),
+  });
+  res.end(isHead ? undefined : payload);
+}
+
+function sendFileResponse(res, isHead, filePath, contentType, cacheControl) {
+  const body = fs.readFileSync(filePath);
+  res.writeHead(200, {
+    "content-type": contentType,
+    "cache-control": cacheControl,
+    "x-content-type-options": "nosniff",
+    "content-length": body.length,
+  });
+  res.end(isHead ? undefined : body);
+}
+
+function serveStaticMount(res, isHead, pathname, mount) {
+  const rawRel = pathname.slice(mount.prefix.length);
+  let decoded;
+  try {
+    decoded = decodeURIComponent(rawRel);
+  } catch {
+    sendStaticError(res, isHead, 400, "invalid path encoding");
+    return;
+  }
+  if (decoded.includes("\0")) {
+    sendStaticError(res, isHead, 400, "invalid path");
+    return;
+  }
+  if (!decoded || decoded.endsWith("/") || decoded.includes("\\")) {
+    sendStaticError(res, isHead, 403, "forbidden");
+    return;
+  }
+  const segments = decoded.split("/");
+  if (segments.some((seg) => !seg || seg === "." || seg === ".." || seg.startsWith("."))) {
+    sendStaticError(res, isHead, 403, "forbidden");
+    return;
+  }
+
+  const baseRoot = path.resolve(mount.dir);
+  const resolved = path.resolve(baseRoot, ...segments);
+  if (!resolved.startsWith(baseRoot + path.sep) || !resolved.startsWith(publicDir + path.sep)) {
+    sendStaticError(res, isHead, 403, "forbidden");
+    return;
+  }
+
+  let realPublicRoot;
+  let realBaseRoot;
+  let realFile;
+  try {
+    realPublicRoot = fs.realpathSync(publicDir);
+    realBaseRoot = fs.realpathSync(baseRoot);
+    realFile = fs.realpathSync(resolved);
+  } catch {
+    sendStaticError(res, isHead, 404, "asset not found");
+    return;
+  }
+
+  if (!realFile.startsWith(realBaseRoot + path.sep) || !realFile.startsWith(realPublicRoot + path.sep)) {
+    sendStaticError(res, isHead, 403, "forbidden");
+    return;
+  }
+  const realRelSegments = path.relative(realBaseRoot, realFile).split(path.sep);
+  if (realRelSegments.some((seg) => !seg || seg === "." || seg === ".." || seg.startsWith("."))) {
+    sendStaticError(res, isHead, 403, "forbidden");
+    return;
+  }
+
+  try {
+    const stat = fs.statSync(realFile);
+    if (!stat.isFile()) {
+      sendStaticError(res, isHead, 404, "asset not found");
+      return;
+    }
+    const ext = path.extname(realFile).toLowerCase();
+    const mime = STATIC_MIME_TYPES[ext] || "application/octet-stream";
+    sendFileResponse(res, isHead, realFile, mime, mount.cacheControl);
+  } catch {
+    sendStaticError(res, isHead, 404, "asset not found");
+  }
+}
 
 function sendSse(res, event) {
   if (res.writableEnded || res.destroyed) return;
@@ -119,61 +235,31 @@ function readBody(req) {
 
 async function handle(req, res) {
   const url = new URL(req.url || "/", "http://127.0.0.1");
+  const isStaticMethod = req.method === "GET" || req.method === "HEAD";
+  const isHead = req.method === "HEAD";
 
-  if (req.method === "GET" && url.pathname === "/") {
-    const html = fs.readFileSync(pagePath);
-    res.writeHead(200, {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "no-store",
-      "content-length": html.length,
-    });
-    res.end(html);
+  if (isStaticMethod && url.pathname === "/") {
+    sendFileResponse(res, isHead, pagePath, "text/html; charset=utf-8", "no-store");
     return;
   }
 
-  if (req.method === "GET" && url.pathname === "/desk.mjs") {
-    const body = fs.readFileSync(deskPath);
-    res.writeHead(200, {
-      "content-type": "text/javascript; charset=utf-8",
-      "cache-control": "no-store",
-      "content-length": body.length,
-    });
-    res.end(body);
+  if (isStaticMethod && url.pathname === "/desk.mjs") {
+    sendFileResponse(res, isHead, deskPath, "text/javascript; charset=utf-8", "no-store");
     return;
   }
 
-  if (req.method === "GET" && url.pathname === "/i18n.mjs") {
-    const body = fs.readFileSync(i18nPath);
-    res.writeHead(200, {
-      "content-type": "text/javascript; charset=utf-8",
-      "cache-control": "no-store",
-      "content-length": body.length,
-    });
-    res.end(body);
+  if (isStaticMethod && url.pathname === "/i18n.mjs") {
+    sendFileResponse(res, isHead, i18nPath, "text/javascript; charset=utf-8", "no-store");
     return;
   }
 
-  if (req.method === "GET" && url.pathname.startsWith("/vendor/")) {
-    const rel = url.pathname.slice("/vendor/".length);
-    const resolved = path.resolve(vendorDir, rel);
-    if (!resolved.startsWith(path.resolve(vendorDir) + path.sep)) {
-      sendJson(res, 403, { ok: false, error: "forbidden" });
-      return;
+  if (isStaticMethod) {
+    for (const mount of STATIC_MOUNTS) {
+      if (url.pathname.startsWith(mount.prefix)) {
+        serveStaticMount(res, isHead, url.pathname, mount);
+        return;
+      }
     }
-    try {
-      const body = fs.readFileSync(resolved);
-      const ext = path.extname(resolved).toLowerCase();
-      const mime = ext === ".css" ? "text/css; charset=utf-8" : "text/javascript; charset=utf-8";
-      res.writeHead(200, {
-        "content-type": mime,
-        "cache-control": "public, max-age=3600",
-        "content-length": body.length,
-      });
-      res.end(body);
-    } catch {
-      sendJson(res, 404, { ok: false, error: "asset not found" });
-    }
-    return;
   }
 
   if (req.method === "GET" && url.pathname === "/api/sessions") {
@@ -464,7 +550,7 @@ async function handle(req, res) {
 
   // In-app Update Check
   if (req.method === "GET" && url.pathname === "/api/updates/check") {
-    let ver = "0.6.3";
+    let ver = "0.6.4";
     try {
       ver = JSON.parse(fs.readFileSync(path.join(rootDir, "../package.json"), "utf8")).version || ver;
     } catch {}

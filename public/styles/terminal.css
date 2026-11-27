@@ -1,0 +1,171 @@
+/* terminal.css — Chat/Terminal/Split view switcher, workspace panes, terminal tab bar, xterm stage, and empty state. */
+
+/* ── Chat / Terminal View Switcher & Interactive PTY View ── */
+.view-switch {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+}
+:root[data-theme="light"] .view-switch { background: rgba(20, 18, 40, 0.055); }
+.view-switch[hidden] { display: none; }
+.view-switch-btn {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 540;
+  gap: 5px;
+  height: 24px;
+  padding: 0 10px;
+  transition: background 120ms ease, color 120ms ease;
+  white-space: nowrap;
+}
+.view-switch-btn:hover { color: var(--text); }
+.view-switch-btn.is-active {
+  background: var(--sidebar-active);
+  color: var(--text);
+}
+:root[data-theme="light"] .view-switch-btn.is-active {
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.term-live-dot {
+  background: var(--ok);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(127, 212, 156, 0.65);
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+}
+.term-live-dot[hidden] { display: none; }
+.workspace.is-terminal-view #transcript,
+.workspace.is-terminal-view #composer { display: none; }
+.workspace-panes {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.chat-pane {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.workspace.is-terminal-view .chat-pane { display: none; }
+#terminal-view {
+  display: none;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.workspace.is-terminal-view #terminal-view { display: flex; }
+.workspace.is-split-view .chat-pane { flex: 1 1 50%; border-right: 1px solid var(--line); }
+.workspace.is-split-view #terminal-view { display: flex; flex: 1 1 50%; }
+
+.term-bar {
+  align-items: center;
+  background: var(--sidebar);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex: none;
+  gap: 8px;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 6px 14px;
+}
+.term-tabs {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+}
+.term-tab {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  gap: 6px;
+  height: 27px;
+  padding: 0 8px 0 9px;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.term-tab:hover { background: var(--sidebar-hover); color: var(--text); }
+.term-tab.is-active {
+  background: var(--sidebar-active);
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+.term-tab-dot {
+  background: var(--ok);
+  border-radius: 50%;
+  height: 6px;
+  width: 6px;
+}
+.term-tab-dot.is-dead { background: var(--faint); }
+.term-tab-close {
+  background: transparent;
+  border: 0;
+  color: var(--faint);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.term-tab-close:hover { color: var(--danger); }
+.term-actions {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: 5px;
+}
+.term-stage {
+  background: #100e16;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 10px 12px;
+  position: relative;
+}
+:root[data-theme="light"] .term-stage { background: #fafafa; }
+#term-canvas {
+  height: 100%;
+  width: 100%;
+}
+#term-canvas .xterm { height: 100%; }
+.term-empty {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+}
+.term-empty[hidden] { display: none; }

@@ -1,0 +1,319 @@
+/* tokens.css — Design tokens, curated multi-color skins, and light theme overrides. */
+
+:root {
+  color-scheme: dark;
+  --bg: #14121b;
+  --sidebar: #1d1a27;
+  --sidebar-hover: rgba(255, 255, 255, 0.045);
+  --sidebar-active: #2a2638;
+  --rail: #1f1c29;
+  --rail-control: #2d293b;
+  --rail-control-hover: #373247;
+  --card: #211e2c;
+  --popover: #262233;
+  --line: rgba(255, 255, 255, 0.075);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --text: #eeedf6;
+  --muted: #9b98b0;
+  --faint: #706d86;
+  --indigo: #6a5ae0;
+  --indigo-2: #8273f5;
+  --bubble: #5b4ed6;
+  --chip: #292636;
+  --pill: #15131d;
+  --control: #171521;
+  --control-hover: #1d1a2a;
+  --mode-active: #2b273a;
+  --accent-soft: color-mix(in srgb, var(--indigo) 18%, transparent);
+  --accent-soft-hover: color-mix(in srgb, var(--indigo) 30%, transparent);
+  --accent-border: color-mix(in srgb, var(--indigo-2) 45%, transparent);
+  --accent-ring: color-mix(in srgb, var(--indigo-2) 28%, transparent);
+  --accent-text: color-mix(in srgb, var(--indigo-2) 65%, var(--text));
+  --toggle-on: linear-gradient(90deg, var(--indigo), var(--indigo-2));
+  --bar-track: rgba(255, 255, 255, 0.12);
+  --bar-fill: #e0deec;
+  --danger: #ff6370;
+  --send: #e23b4a;
+  --ok: #7fd49c;
+  --warn: #f0b860;
+  --mono: "SF Mono", "IBM Plex Mono", ui-monospace, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", sans-serif;
+}
+
+/* ── Curated Multi-Color Skins ── */
+:root[data-skin="obsidian"] {
+  --bg: #0c0c0e;
+  --sidebar: #131316;
+  --sidebar-active: #232329;
+  --rail: #141418;
+  --rail-control: #222228;
+  --rail-control-hover: #2d2d35;
+  --card: #18181c;
+  --popover: #1e1e24;
+  --text: #f4f4f6;
+  --muted: #9898a3;
+  --faint: #676773;
+  --indigo: #52525e;
+  --indigo-2: #d4d4dc;
+  --bubble: #3a3a44;
+  --chip: #25252c;
+  --pill: #111114;
+  --control: #131317;
+  --control-hover: #1e1e24;
+  --mode-active: #2a2a32;
+  --send: #e4e4ec;
+  --toggle-on: linear-gradient(90deg, #52525e, #a1a1b0);
+}
+:root[data-skin="obsidian"] .send { color: #111115; }
+:root[data-skin="ocean"] {
+  --bg: #0b1320;
+  --sidebar: #101b2d;
+  --sidebar-active: #1b2c47;
+  --rail: #111d30;
+  --rail-control: #1a2a42;
+  --rail-control-hover: #223654;
+  --card: #152236;
+  --popover: #192942;
+  --text: #eaf2ff;
+  --muted: #8ea5c7;
+  --faint: #5e7699;
+  --indigo: #2f9cf4;
+  --indigo-2: #52b0ff;
+  --bubble: #1d6fd6;
+  --chip: #1e314e;
+  --pill: #0d1726;
+  --control: #0f1a2b;
+  --control-hover: #172740;
+  --mode-active: #203454;
+  --send: #2f9cf4;
+}
+:root[data-skin="emerald"] {
+  --bg: #0c1613;
+  --sidebar: #11201b;
+  --sidebar-active: #1a322a;
+  --rail: #12221d;
+  --rail-control: #1b312a;
+  --rail-control-hover: #233f36;
+  --card: #152721;
+  --popover: #193028;
+  --text: #e9f7f1;
+  --muted: #8bb0a2;
+  --faint: #5c7f72;
+  --indigo: #10b981;
+  --indigo-2: #34d399;
+  --bubble: #0e9368;
+  --chip: #1e372e;
+  --pill: #0d1915;
+  --control: #0f1d18;
+  --control-hover: #172c24;
+  --mode-active: #203b31;
+  --send: #10b981;
+}
+:root[data-skin="rose"] {
+  --bg: #17141f;
+  --sidebar: #201b2b;
+  --sidebar-active: #31283f;
+  --rail: #211c2c;
+  --rail-control: #30283d;
+  --rail-control-hover: #3b314b;
+  --card: #262033;
+  --popover: #2d263d;
+  --text: #f6edf4;
+  --muted: #b39cb0;
+  --faint: #7d697c;
+  --indigo: #e46c92;
+  --indigo-2: #f089aa;
+  --bubble: #c84b76;
+  --chip: #332a42;
+  --pill: #181420;
+  --control: #1c1726;
+  --control-hover: #272034;
+  --mode-active: #372d47;
+  --send: #e46c92;
+}
+:root[data-skin="amber"] {
+  --bg: #161310;
+  --sidebar: #1f1a15;
+  --sidebar-active: #312920;
+  --rail: #201b16;
+  --rail-control: #302820;
+  --rail-control-hover: #3b3127;
+  --card: #25201a;
+  --popover: #2d261f;
+  --text: #f7f1e7;
+  --muted: #b0a28f;
+  --faint: #7c6f5e;
+  --indigo: #e09132;
+  --indigo-2: #f2aa4c;
+  --bubble: #c7771e;
+  --chip: #332b22;
+  --pill: #171310;
+  --control: #1c1712;
+  --control-hover: #272019;
+  --mode-active: #382e23;
+  --send: #e09132;
+}
+:root[data-skin="nord"] {
+  --bg: #1c222d;
+  --sidebar: #232a38;
+  --sidebar-active: #323c4e;
+  --rail: #242b3a;
+  --rail-control: #313b4d;
+  --rail-control-hover: #3c485e;
+  --card: #293141;
+  --popover: #30394b;
+  --text: #eceff4;
+  --muted: #9eb0c9;
+  --faint: #6f8099;
+  --indigo: #6aa9c9;
+  --indigo-2: #88c0d0;
+  --bubble: #4e80a8;
+  --chip: #343e52;
+  --pill: #1d232f;
+  --control: #202735;
+  --control-hover: #2c3547;
+  --mode-active: #3a465c;
+  --send: #6aa9c9;
+}
+:root[data-skin="paper"] {
+  color-scheme: light;
+  --bg: #f6f3ec;
+  --sidebar: #ede8dc;
+  --sidebar-hover: rgba(45, 36, 24, 0.055);
+  --sidebar-active: #e2dac9;
+  --rail: #efeae0;
+  --rail-control: #e4ddce;
+  --rail-control-hover: #dad1be;
+  --card: #fbf9f4;
+  --popover: #fffdf9;
+  --line: rgba(45, 36, 24, 0.11);
+  --line-strong: rgba(45, 36, 24, 0.2);
+  --text: #241f18;
+  --muted: #655b4e;
+  --faint: #8f8474;
+  --indigo: #c75c35;
+  --indigo-2: #da6e46;
+  --bubble: #c75c35;
+  --chip: #e6dfd0;
+  --pill: #f2ede2;
+  --control: #ede7da;
+  --control-hover: #e4dccb;
+  --mode-active: #ffffff;
+  --accent-text: #a54321;
+  --bar-track: rgba(45, 36, 24, 0.12);
+  --bar-fill: #4e4437;
+  --danger: #cc3a3a;
+  --send: #c75c35;
+  --ok: #267d4f;
+  --warn: #b87314;
+}
+:root[data-skin="paper"] .starter-card,
+:root[data-skin="paper"] .mode-switch,
+:root[data-skin="paper"] .agent-picker-btn,
+:root[data-skin="paper"] .thought-picker-btn,
+:root[data-skin="paper"] .pill-toggle,
+:root[data-skin="paper"] .attach-btn,
+:root[data-skin="paper"] .output,
+:root[data-skin="paper"] .entry pre,
+:root[data-skin="paper"] .code-wrap,
+:root[data-skin="paper"] .quota-card,
+:root[data-skin="paper"] .stat-box,
+:root[data-skin="paper"] .cu-raw { background-color: #ebe5d8; color: var(--text); }
+:root[data-skin="paper"] .mode-btn.is-active { background: #ffffff; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+:root[data-skin="paper"] dialog.settings-modal,
+:root[data-skin="paper"] dialog.wide-modal { background: #f7f4ed; color: var(--text); }
+:root[data-skin="paper"] .settings-sidebar { background: #ede8dc; }
+:root[data-skin="paper"] .s-card { background: #fffdf9; }
+:root[data-skin="paper"] .s-input,
+:root[data-skin="paper"] .s-select,
+:root[data-skin="paper"] .s-code-row,
+:root[data-skin="paper"] .s-log { background-color: #f1ece0; color: var(--text); }
+:root[data-skin="paper"] .s-btn { background: rgba(45, 36, 24, 0.07); color: var(--text); }
+:root[data-skin="paper"] .s-btn.is-primary { background: var(--indigo); color: #fff; }
+:root[data-skin="paper"] .host-name,
+:root[data-skin="paper"] .kv-copy,
+:root[data-skin="paper"] .kv-value.is-mono,
+:root[data-skin="paper"] .agent-prose,
+:root[data-skin="paper"] .thought-body { color: var(--text); }
+:root[data-skin="paper"] #composer { box-shadow: 0 2px 12px rgba(45, 36, 24, 0.07); }
+:root[data-skin="paper"] .nb-output { background: rgba(45, 36, 24, 0.045); }
+
+:root[data-theme="light"]:not([data-skin="paper"]) {
+  color-scheme: light;
+  --bg: #f6f6fa;
+  --sidebar: #eeedf5;
+  --sidebar-hover: rgba(20, 18, 40, 0.055);
+  --sidebar-active: #e2e0ee;
+  --rail: #f0eff7;
+  --rail-control: #e5e3f0;
+  --rail-control-hover: #dcd9eb;
+  --card: #ffffff;
+  --popover: #ffffff;
+  --line: rgba(20, 18, 40, 0.1);
+  --line-strong: rgba(20, 18, 40, 0.18);
+  --text: #1b1929;
+  --muted: #5b5870;
+  --faint: #848199;
+  --chip: #e8e6f3;
+  --pill: #f4f3fa;
+  --control: #ecebf4;
+  --control-hover: #e2e0ee;
+  --mode-active: #ffffff;
+  --accent-text: var(--indigo);
+  --bar-track: rgba(20, 18, 40, 0.12);
+  --bar-fill: #3e3a56;
+  --danger: #d93848;
+  --ok: #1f8f4e;
+  --warn: #c47d17;
+}
+:root[data-theme="light"] .starter-card,
+:root[data-theme="light"] .mode-switch,
+:root[data-theme="light"] #command,
+:root[data-theme="light"] #agent-provider,
+:root[data-theme="light"] #agent-model,
+:root[data-theme="light"] #agent-thought,
+:root[data-theme="light"] .agent-picker-btn,
+:root[data-theme="light"] .thought-picker-btn,
+:root[data-theme="light"] .pill-toggle,
+:root[data-theme="light"] .attach-btn,
+:root[data-theme="light"] .extra input[type="text"],
+:root[data-theme="light"] .extra select,
+:root[data-theme="light"] .extra .flag-check,
+:root[data-theme="light"] .staged-chip,
+:root[data-theme="light"] .output,
+:root[data-theme="light"] .entry pre,
+:root[data-theme="light"] .code-wrap,
+:root[data-theme="light"] .quota-card,
+:root[data-theme="light"] .stat-box,
+:root[data-theme="light"] .cu-raw,
+:root[data-theme="light"] .modal-cmd {
+  background-color: #ecebf4;
+  color: var(--text);
+}
+:root[data-theme="light"] .mode-btn.is-active { background: #ffffff; color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+:root[data-theme="light"] .starter-card:hover { background: #e4e2f0; }
+:root[data-theme="light"] dialog.settings-modal,
+:root[data-theme="light"] dialog.wide-modal { background: #f7f7fb; color: var(--text); }
+:root[data-theme="light"] .settings-sidebar { background: #efeff6; }
+:root[data-theme="light"] .s-card { background: #ffffff; }
+:root[data-theme="light"] .s-input,
+:root[data-theme="light"] .s-select,
+:root[data-theme="light"] .s-code-row,
+:root[data-theme="light"] .s-log { background-color: #f2f1f8; color: var(--text); }
+:root[data-theme="light"] .s-btn { background: rgba(20, 18, 40, 0.06); color: var(--text); }
+:root[data-theme="light"] .s-btn:hover:not(:disabled) { background: rgba(20, 18, 40, 0.11); }
+:root[data-theme="light"] .s-btn.is-primary { background: var(--indigo); color: #fff; }
+:root[data-theme="light"] .host-name,
+:root[data-theme="light"] .kv-copy,
+:root[data-theme="light"] .kv-value.is-mono,
+:root[data-theme="light"] .agent-prose,
+:root[data-theme="light"] .tool-group-summary,
+:root[data-theme="light"] .thought-body { color: var(--text); }
+:root[data-theme="light"] .welcome-session-cta { background: rgba(91, 78, 214, 0.1); color: var(--text); }
+:root[data-theme="light"] .empty-cta { background: rgba(91, 78, 214, 0.12); color: var(--indigo); }
+:root[data-theme="light"] #composer { box-shadow: 0 2px 12px rgba(20, 18, 40, 0.07); }
+:root[data-theme="light"] .icon-btn:hover:not(:disabled),
+:root[data-theme="light"] .icon-btn.is-active,
+:root[data-theme="light"] .sidebar-foot-btn:hover,
+:root[data-theme="light"] .rail-row-btn:hover:not(:disabled) { background: rgba(20, 18, 40, 0.07); }
+:root[data-theme="light"] .s-toggle-track { background: rgba(20, 18, 40, 0.18); }

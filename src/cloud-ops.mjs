@@ -564,7 +564,7 @@ export function compareSemver(a, b) {
   return 0;
 }
 
-export async function checkForUpdates(currentVersion = "0.6.3") {
+export async function checkForUpdates(currentVersion = "0.6.4") {
   const repo = "CalicoX/colab-desk";
   const latestWebUrl = `https://github.com/${repo}/releases/latest`;
   const releasesFallbackUrl = `https://github.com/${repo}/releases`;
