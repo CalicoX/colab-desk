@@ -1,37 +1,14 @@
 import { closeDialog, dom, openDialog } from "./dom.js";
-import { saveJsonStorage, state } from "./state.js";
+import { state } from "./state.js";
 import { L, formatCompactNum, formatResetCountdown, tr } from "./utils.js";
-import { scheduleStoreSync } from "./store.js";
-import { renderInspector } from "./sessions.js";
+import { emit, on } from "./events.js";
+import { refreshAgentQuota } from "./usage-stats.js";
+import { mountModalTemplate } from "./templates/mount.js";
+import { AGENT_USAGE_MODAL_HTML, COLAB_CU_MODAL_HTML } from "./templates/modals.js";
 
-export function recordAgentUsage(providerId, providerName, usage, costUsd, ctxUsed, ctxSize) {
-  const inp = Number(usage?.inputTokens ?? usage?.input_tokens ?? 0) || 0;
-  const out = Number(usage?.outputTokens ?? usage?.output_tokens ?? 0) || 0;
-  const tht = Number(usage?.thoughtTokens ?? usage?.reasoning_tokens ?? 0) || 0;
-  const cac = Number(usage?.cachedReadTokens ?? usage?.cache_read_input_tokens ?? 0) || 0;
-  const cost = Number(costUsd || 0) || 0;
-
-  state.agentUsageStats.turns += 1;
-  state.agentUsageStats.inputTokens += inp;
-  state.agentUsageStats.outputTokens += out;
-  state.agentUsageStats.thoughtTokens += tht;
-  state.agentUsageStats.cachedTokens += cac;
-  state.agentUsageStats.costUsd += cost;
-  if (ctxUsed != null) state.agentUsageStats.lastContextUsed = ctxUsed;
-  if (ctxSize != null) state.agentUsageStats.lastContextSize = ctxSize;
-
-  const pKey = providerId || "unknown";
-  const prev = state.agentUsageStats.byProvider[pKey] || { name: providerName || pKey, turns: 0, tokens: 0, costUsd: 0 };
-  prev.name = providerName || prev.name;
-  prev.turns += 1;
-  prev.tokens += inp + out;
-  prev.costUsd += cost;
-  state.agentUsageStats.byProvider[pKey] = prev;
-
-  saveJsonStorage("colab-desk.agent-usage-stats", state.agentUsageStats);
-  renderUsageBadge();
-  scheduleStoreSync();
-}
+let cuModalMounted = false;
+let usageModalMounted = false;
+let usageEventsBound = false;
 
 export function shortBucketLabel(b) {
   const g = /claude|gpt|3p/i.test(`${b.group} ${b.id}`) ? "Claude & GPT" : "Gemini";
@@ -41,18 +18,6 @@ export function shortBucketLabel(b) {
       ? L("每周", "Weekly")
       : (b.name || "");
   return `${g} · ${w}`;
-}
-
-export function renderUsageBadge() {
-  const buckets = state.latestAgentQuota?.agy?.buckets;
-  if (Array.isArray(buckets) && buckets.length > 0) {
-    const primary = buckets.find((b) => b.id === "gemini-5h") || buckets[0];
-    if (primary && primary.remainingPct != null) {
-      dom.sidebarUsageBadge.textContent = `${primary.remainingPct}%`;
-      return;
-    }
-  }
-  dom.sidebarUsageBadge.textContent = "—";
 }
 
 export function renderQuotaBarsCard(title, providerKey, subtitle, contentBuilder) {
@@ -76,7 +41,28 @@ export function renderQuotaBarsCard(title, providerKey, subtitle, contentBuilder
   return section;
 }
 
+function ensureUsageModalMounted() {
+  if (usageModalMounted) return;
+  usageModalMounted = true;
+  mountModalTemplate("agent-usage-modal", AGENT_USAGE_MODAL_HTML);
+  document.querySelector("#close-usage-modal").addEventListener("click", () => closeDialog(dom.usageModal));
+  document.querySelector("#done-usage-modal").addEventListener("click", () => closeDialog(dom.usageModal));
+  document.querySelector("#refresh-agent-quota").addEventListener("click", () => refreshAgentQuota(true));
+  dom.usageModal.addEventListener("click", (e) => { if (e.target === dom.usageModal) closeDialog(dom.usageModal); });
+}
+
+function ensureCuModalMounted() {
+  if (cuModalMounted) return;
+  cuModalMounted = true;
+  mountModalTemplate("colab-cu-modal", COLAB_CU_MODAL_HTML);
+  document.querySelector("#close-cu-modal").addEventListener("click", () => closeDialog(dom.cuModal));
+  document.querySelector("#done-cu-modal").addEventListener("click", () => closeDialog(dom.cuModal));
+  document.querySelector("#refresh-cu-modal").addEventListener("click", refreshColabCuModal);
+  dom.cuModal.addEventListener("click", (e) => { if (e.target === dom.cuModal) closeDialog(dom.cuModal); });
+}
+
 export function renderUsageModal() {
+  ensureUsageModalMounted();
   const s = state.agentUsageStats;
   const total = s.inputTokens + s.outputTokens;
   const costPart = s.costUsd > 0 ? ` · $${s.costUsd.toFixed(4)}` : "";
@@ -142,7 +128,7 @@ export function renderUsageModal() {
     ),
   );
 
-  // 2. Grok Real Plan Quota (live billing API / statusline cache)
+  // 2. Grok Real Plan Quota
   const grok = state.latestAgentQuota.grok || {};
   const grokLocal = s.byProvider?.grok;
   const grokSub = !grok.available
@@ -202,7 +188,7 @@ export function renderUsageModal() {
     }),
   );
 
-  // 3. OpenCode Usage (30d + Lifetime + Top Models)
+  // 3. OpenCode Usage
   const oc = state.latestAgentQuota.opencode || {};
   dom.agentQuotaBody.append(
     renderQuotaBarsCard(
@@ -250,30 +236,16 @@ export function renderUsageModal() {
   );
 }
 
-export async function refreshAgentQuota(force = false) {
-  const btn = document.querySelector("#refresh-agent-quota");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = L("查询中…", "Checking…");
-  }
-  try {
-    const res = await fetch(`/api/agent/quota${force ? "?refresh=1" : ""}`);
-    const json = await res.json();
-    if (json.ok && json.quota) {
-      state.latestAgentQuota = json.quota;
-      renderUsageBadge();
-      if (dom.usageModal.open) renderUsageModal();
-    }
-  } catch {}
-  finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = tr("modal.usage.refresh");
-    }
-  }
+export function openAgentUsageModal() {
+  initUsageModals();
+  renderUsageModal();
+  openDialog(dom.usageModal);
+  refreshAgentQuota(false);
 }
 
 export async function openColabCuModal() {
+  initUsageModals();
+  ensureCuModalMounted();
   openDialog(dom.cuModal);
   dom.cuRawEl.textContent = L("正在查询 colab usage…", "Querying colab usage…");
   if (state.usageInfo) paintCuModal(state.usageInfo, null);
@@ -308,7 +280,7 @@ export async function refreshColabCuModal() {
     if (data.ok) {
       if (data.state && data.state.usage) {
         state.usageInfo = data.state.usage;
-        renderInspector();
+        emit("sessions:render-inspector");
       }
       paintCuModal(state.usageInfo, (data.stdout || "").trim() || L("无输出", "(no output)"));
     } else {
@@ -322,19 +294,12 @@ export async function refreshColabCuModal() {
 }
 
 export function initUsageModals() {
-  document.querySelector("#quick-usage").addEventListener("click", openColabCuModal);
-  document.querySelector("#close-cu-modal").addEventListener("click", () => closeDialog(dom.cuModal));
-  document.querySelector("#done-cu-modal").addEventListener("click", () => closeDialog(dom.cuModal));
-  document.querySelector("#refresh-cu-modal").addEventListener("click", refreshColabCuModal);
-  dom.cuModal.addEventListener("click", (e) => { if (e.target === dom.cuModal) closeDialog(dom.cuModal); });
-
-  document.querySelector("#open-usage-modal").addEventListener("click", () => {
-    renderUsageModal();
-    openDialog(dom.usageModal);
-    refreshAgentQuota(false);
+  if (usageEventsBound) return;
+  usageEventsBound = true;
+  on("usage:quota-updated", () => {
+    if (usageModalMounted && dom.usageModal?.open) renderUsageModal();
   });
-  document.querySelector("#close-usage-modal").addEventListener("click", () => closeDialog(dom.usageModal));
-  document.querySelector("#done-usage-modal").addEventListener("click", () => closeDialog(dom.usageModal));
-  document.querySelector("#refresh-agent-quota").addEventListener("click", () => refreshAgentQuota(true));
-  dom.usageModal.addEventListener("click", (e) => { if (e.target === dom.usageModal) closeDialog(dom.usageModal); });
+  on("language:changed", () => {
+    if (usageModalMounted && dom.usageModal?.open) renderUsageModal();
+  });
 }

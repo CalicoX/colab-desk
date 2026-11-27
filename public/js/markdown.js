@@ -1,8 +1,6 @@
 import { state } from "./state.js";
 import { L, escapeHtml, showToast, tr } from "./utils.js";
-import { addNotebookCell } from "./notebook.js";
-import { setComposerMode } from "./composer.js";
-import { callAction } from "./sessions.js";
+import { callRegistered, emit } from "./events.js";
 
 /* ── Safe Markdown + Plot Image Renderer ── */
 export function renderInlineMarkdown(line) {
@@ -104,9 +102,7 @@ export function renderMarkdownInto(container, markdown) {
       const finalCode = ["bash", "sh", "shell", "zsh"].includes(lang)
         ? src.split("\n").map((l) => (l.trim() && !l.trim().startsWith("#") ? `!${l}` : l)).join("\n")
         : src;
-      addNotebookCell("code", finalCode);
-      setComposerMode("notebook");
-      showToast(L("已插入到 Notebook 单元格", "Inserted into Notebook cell"));
+      emit("notebook:insert-code", { code: finalCode });
     });
   });
   container.querySelectorAll(".code-run").forEach((btn) => {
@@ -124,9 +120,9 @@ export function renderMarkdownInto(container, markdown) {
       btn.textContent = L("运行中…", "Running…");
       try {
         if (isShell) {
-          await callAction({ type: "ssh", session: state.selected, command: src }, `ssh ${state.selected}`, state.selected);
+          await callRegistered("sessions:callAction", { type: "ssh", session: state.selected, command: src }, `ssh ${state.selected}`, state.selected);
         } else {
-          await callAction({ type: "exec", session: state.selected, code: src }, `exec ${state.selected}`, state.selected);
+          await callRegistered("sessions:callAction", { type: "exec", session: state.selected, code: src }, `exec ${state.selected}`, state.selected);
         }
       } finally {
         btn.disabled = false;

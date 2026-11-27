@@ -15,12 +15,21 @@ icon_out="$stage/Contents/Resources/AppIcon.icns"
 rm -rf "$stage"
 mkdir -p "$stage/Contents/MacOS" "$server"
 
+shopt -s nullglob
+swift_sources=("$root"/macos/*.swift)
+shopt -u nullglob
+if [[ ${#swift_sources[@]} -eq 0 ]]; then
+  echo "No Swift source files found under $root/macos" >&2
+  exit 1
+fi
+
 swiftc -O -parse-as-library \
   -file-prefix-map "$root=." \
   -target "${arch}-apple-macos12.0" \
   -framework Cocoa \
   -framework WebKit \
-  "$root/macos/ColabDesk.swift" \
+  -framework UserNotifications \
+  "${swift_sources[@]}" \
   -o "$stage/Contents/MacOS/ColabDesk"
 strip -x "$stage/Contents/MacOS/ColabDesk" || true
 

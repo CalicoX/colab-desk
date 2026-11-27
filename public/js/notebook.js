@@ -1,9 +1,8 @@
 import { dom } from "./dom.js";
 import { loadJsonStorage, saveJsonStorage, state } from "./state.js";
 import { L, escapeHtml, showToast, tr } from "./utils.js";
+import { emit, on } from "./events.js";
 import { renderMarkdownInto } from "./markdown.js";
-import { setComposerMode } from "./composer.js";
-import { sendAgentMessage } from "./agent.js";
 
 /* ── Native Colab Notebook Workbench ── */
 export function defaultNotebookState() {
@@ -257,8 +256,8 @@ export function fixNotebookCellWithAgent(idx) {
   const promptText = state.activeLang === "en"
     ? `Please fix this Notebook cell #${idx + 1} error and provide the corrected Python code:\n\n\`\`\`python\n${cell.source}\n\`\`\`\n\nError output:\n\`\`\`\n${cell.stderr}\n\`\`\``
     : `请帮我修复 Notebook 第 ${idx + 1} 个单元格的报错，并给出修正后的 Python 代码：\n\n\`\`\`python\n${cell.source}\n\`\`\`\n\n报错信息：\n\`\`\`\n${cell.stderr}\n\`\`\``;
-  setComposerMode("agent");
-  sendAgentMessage(promptText);
+  emit("composer:set-mode", "agent");
+  emit("agent:send", { promptText });
 }
 
 export async function runCellAiEdit(idx, instruction, inputEl, goBtn) {
@@ -396,7 +395,7 @@ export async function openCloudIpynb(presetPath = "") {
     };
     persistNotebookState();
     renderNotebook();
-    setComposerMode("notebook");
+    emit("composer:set-mode", "notebook");
     showToast(L(`已打开云端 ${notebookState.name}`, `Opened ${notebookState.name}`));
   } catch (err) {
     showToast(`${L("打开失败：", "Open failed: ")}${err?.message || String(err)}`);
@@ -724,6 +723,9 @@ export function renderNotebook() {
 }
 
 export function initNotebook() {
+  on("language:changed", () => {
+    if (state.composerMode === "notebook") renderNotebook();
+  });
   if (dom.nbTitleInput) {
     dom.nbTitleInput.addEventListener("change", () => {
       notebookState.name = dom.nbTitleInput.value.trim() || "untitled.ipynb";

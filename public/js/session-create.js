@@ -3,7 +3,7 @@ import { t } from "/i18n.mjs";
 import { dom } from "./dom.js";
 import { currentTranscriptKey, desk, state } from "./state.js";
 import { sendDesktopNotification, showToast, tr } from "./utils.js";
-import { runBootstrapOnSession } from "./settings.js";
+import { emit, on } from "./events.js";
 import { renderChatThreads, setBusy } from "./threads.js";
 import { renderTranscript } from "./transcript.js";
 import {
@@ -17,6 +17,10 @@ import {
   selectSession,
   syncHardwareChips,
 } from "./sessions.js";
+import { mountModalTemplate } from "./templates/mount.js";
+import { NEW_SESSION_MODAL_HTML } from "./templates/modals.js";
+
+let sessionCreateInitialized = false;
 
 export function paintNew(applied) {
   const stay = applied.view;
@@ -100,7 +104,7 @@ export async function resolveAgentSessionCreate(status, outputText = "") {
     refreshUsageSilently();
     const bc = state.bootstrapConfig;
     if (bc.autoMountDrive || bc.enableHfTransfer || bc.hfCacheToDrive || bc.autoInstallUv || (bc.autoInjectEnv && state.envVars.length > 0) || (bc.customScript || "").trim()) {
-      runBootstrapOnSession(targetName, true);
+      emit("settings:bootstrap", { session: targetName, silent: true });
     }
     const isEn = state.activeLang === "en";
     const titleText = isEn ? "Colab GPU Ready!" : "🎉 抢到 Colab 节点啦！";
@@ -224,11 +228,11 @@ export async function completeSessionCreate({ name, hwLabel, result, elapsedSec,
     sessionNames: names,
   }));
   if (result.ok) {
-    dom.sessionNameInput.value = "";
+    if (dom.sessionNameInput) dom.sessionNameInput.value = "";
     refreshUsageSilently();
     const bc = state.bootstrapConfig;
     if (bc.autoMountDrive || bc.enableHfTransfer || bc.hfCacheToDrive || bc.autoInstallUv || (bc.autoInjectEnv && state.envVars.length > 0) || (bc.customScript || "").trim()) {
-      runBootstrapOnSession(name, true);
+      emit("settings:bootstrap", { session: name, silent: true });
     }
     if (fromBg) {
       const isEn = state.activeLang === "en";
@@ -350,6 +354,7 @@ export function startBgSnipe({ name, hw, hwLabel, existingController = null, exi
 }
 
 export function openNewSessionModal() {
+  initSessionCreate();
   closeSessionMenu();
   closeSplitMenu();
   dom.modalError.hidden = true;
@@ -397,6 +402,15 @@ export function describeCreateLog(lines, hwLabel, elapsedSec) {
 }
 
 export function initSessionCreate() {
+  if (sessionCreateInitialized) return;
+  sessionCreateInitialized = true;
+  mountModalTemplate("new-session-modal", NEW_SESSION_MODAL_HTML);
+  on("language:changed", renderSnipeBanner);
+  on("session-create:sync-hardware", () => {
+    if (dom.highMemInput) dom.highMemInput.checked = state.defaultHighMem;
+    syncHardwareChips();
+  });
+
   dom.bgSnipeBtn.addEventListener("click", () => {
     if (state.activeCreate && !state.activeCreate.handedOff) {
       const ref = state.activeCreate;
@@ -560,8 +574,4 @@ export function initSessionCreate() {
   dom.modal.addEventListener("click", (event) => { if (event.target === dom.modal) closeNewSessionModal(); });
   dom.sessionNameInput.addEventListener("input", () => { dom.modalError.hidden = true; dom.modalCmd.textContent = buildNewPreview(); });
   document.querySelector("#hardware-picker").addEventListener("change", syncHardwareChips);
-
-  document.querySelector("#open-new-session").addEventListener("click", openNewSessionModal);
-  document.querySelector("#mini-new-session").addEventListener("click", openNewSessionModal);
-  document.querySelector("#welcome-create-btn").addEventListener("click", openNewSessionModal);
 }

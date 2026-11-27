@@ -1,8 +1,7 @@
 import { dom } from "./dom.js";
 import { currentSessionObject, state } from "./state.js";
 import { showToast } from "./utils.js";
-import { setComposerMode } from "./composer.js";
-import { sendAgentMessage } from "./agent.js";
+import { emit, on } from "./events.js";
 
 /* ── Interactive PTY Terminal (xterm.js + WebSocket) ── */
 let xtermInst = null;
@@ -308,9 +307,7 @@ export function grabTerminalTail(maxLines = 50) {
 }
 
 export function initTerminal() {
-  dom.viewChatBtn.addEventListener("click", () => setWorkspaceView("chat"));
-  if (dom.viewSplitBtn) dom.viewSplitBtn.addEventListener("click", () => setWorkspaceView("split"));
-  dom.viewTermBtn.addEventListener("click", () => setWorkspaceView("terminal"));
+  on("theme:changed", (mode) => syncTerminalTheme(mode));
   if (dom.termSendAgentBtn) {
     dom.termSendAgentBtn.addEventListener("click", () => {
       const tail = grabTerminalTail(50);
@@ -319,11 +316,11 @@ export function initTerminal() {
         return;
       }
       if (state.activeWorkspaceView === "terminal") setWorkspaceView("split");
-      setComposerMode("agent");
+      emit("composer:set-mode", "agent");
       const prompt = state.activeLang === "en"
         ? `Please inspect this terminal output from Colab VM \`${state.selected || ""}\` and help diagnose or fix any error:\n\n\`\`\`text\n${tail}\n\`\`\``
         : `帮我排查当前 Colab 终端（\`${state.selected || ""}\`）的这段输出/报错，并给出修复方案：\n\n\`\`\`text\n${tail}\n\`\`\``;
-      sendAgentMessage(prompt);
+      emit("agent:send", { promptText: prompt });
     });
   }
   dom.termNewColabBtn.addEventListener("click", () => createTerminalTab());

@@ -1,17 +1,9 @@
 import { resolveLanguage } from "/i18n.mjs";
 import { dom } from "./dom.js";
-import { SKINS, currentTranscriptKey, state } from "./state.js";
-import { showToast, tr } from "./utils.js";
+import { SKINS, state } from "./state.js";
+import { applyI18nToTree, showToast, tr } from "./utils.js";
+import { emit } from "./events.js";
 import { scheduleStoreSync } from "./store.js";
-import { syncTerminalTheme } from "./terminal.js";
-import { renderUsageModal } from "./usage.js";
-import { syncApprovalToggle, syncBusyModeToggle, syncComposer } from "./composer.js";
-import { renderComposerQueue, renderChatThreads, syncSendButton } from "./threads.js";
-import { renderInspector, renderSessions, syncRailToggleUi } from "./sessions.js";
-import { renderSnipeBanner } from "./session-create.js";
-import { renderGpuTelemetry, renderRunnerSidebar, renderTunnels } from "./cloud-tools.js";
-import { renderTranscript } from "./transcript.js";
-import { paintAcpAuthStatus, paintEnvCheck, renderSettingsModal } from "./settings.js";
 
 const systemLightMq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
 
@@ -44,16 +36,22 @@ export function renderSkinGrid() {
   }
 }
 
+export function syncLanguageOptionLabel() {
+  const sysLang = navigator.language || navigator.languages?.[0] || "en";
+  const detectedLabel = resolveLanguage("auto", sysLang) === "en" ? "English" : "简体中文";
+  if (dom.optLangAuto) dom.optLangAuto.textContent = tr("settings.general.langAuto", { detected: detectedLabel });
+  if (dom.settingLanguage) dom.settingLanguage.value = state.languagePref;
+}
+
 export function applySkin(nextSkin = state.skinPref, persist = false) {
   const valid = SKINS.some((s) => s.id === nextSkin) ? nextSkin : "amethyst";
   state.skinPref = valid;
   if (valid === "amethyst") delete document.documentElement.dataset.skin;
   else document.documentElement.dataset.skin = valid;
-  if (valid === "paper") {
-    syncTerminalTheme("light");
-  } else {
-    syncTerminalTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
-  }
+  const terminalMode = valid === "paper"
+    ? "light"
+    : (document.documentElement.dataset.theme === "light" ? "light" : "dark");
+  emit("theme:changed", terminalMode);
   renderSkinGrid();
   if (persist) {
     try { localStorage.setItem("colab-desk.skin", state.skinPref); } catch {}
@@ -68,7 +66,7 @@ export function applyTheme(pref = state.themePref, persist = false) {
     : state.themePref;
   document.documentElement.dataset.theme = resolved;
   if (dom.settingTheme) dom.settingTheme.value = state.themePref;
-  syncTerminalTheme(resolved);
+  emit("theme:changed", resolved);
   if (window.webkit?.messageHandlers?.setTheme) {
     try { window.webkit.messageHandlers.setTheme.postMessage(state.themePref); } catch {}
   }
@@ -83,51 +81,17 @@ export function applyLanguage(pref = state.languagePref, persist = false) {
   const sysLang = navigator.language || navigator.languages?.[0] || "en";
   state.activeLang = resolveLanguage(state.languagePref, sysLang);
   document.documentElement.lang = state.activeLang === "en" ? "en" : "zh-CN";
-  const detectedLabel = resolveLanguage("auto", sysLang) === "en" ? "English" : "简体中文";
-  if (dom.optLangAuto) dom.optLangAuto.textContent = tr("settings.general.langAuto", { detected: detectedLabel });
-  if (dom.settingLanguage) dom.settingLanguage.value = state.languagePref;
-
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    el.textContent = tr(el.dataset.i18n);
-  });
-  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
-    el.setAttribute("placeholder", tr(el.dataset.i18nPlaceholder));
-  });
-  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
-    el.setAttribute("title", tr(el.dataset.i18nTitle));
-  });
-  document.querySelectorAll("[data-i18n-label]").forEach((el) => {
-    el.setAttribute("label", tr(el.dataset.i18nLabel));
-  });
-  document.querySelectorAll("[data-starter-key]").forEach((btn) => {
-    btn.dataset.starter = tr(btn.dataset.starterKey);
-  });
+  syncLanguageOptionLabel();
+  applyI18nToTree(document);
 
   if (dom.settingsCrumbTab) dom.settingsCrumbTab.textContent = tr(`settings.tab.${state.activeSettingsTab}`);
-  syncRailToggleUi();
   if (!state.selected) {
     dom.title.textContent = tr("ws.noSessionTitle");
     dom.crumbName.textContent = tr("ws.unselected");
     dom.meta.textContent = tr("ws.noSessionMeta");
   }
-  syncBusyModeToggle(false);
-  syncApprovalToggle(false);
-  syncSendButton();
-  renderComposerQueue();
-  renderSessions();
-  renderChatThreads();
   renderSkinGrid();
-  renderInspector();
-  renderGpuTelemetry(state.latestGpuInfo);
-  renderTunnels();
-  renderTranscript(currentTranscriptKey());
-  renderSnipeBanner();
-  renderRunnerSidebar();
-  if (dom.usageModal && dom.usageModal.open) renderUsageModal();
-  syncComposer();
-  if (state.latestEnvCheck) paintEnvCheck(state.latestEnvCheck);
-  if (state.latestAcpAuth) paintAcpAuthStatus(state.latestAcpAuth);
-  if (dom.settingsModal && dom.settingsModal.open) renderSettingsModal();
+  emit("language:changed", state.activeLang);
 
   if (persist) {
     try { localStorage.setItem("colab-desk.language", state.languagePref); } catch {}

@@ -10,6 +10,25 @@ export function L(zh, en) {
   return state.activeLang === "en" ? en : zh;
 }
 
+export function applyI18nToTree(root = document) {
+  if (!root || typeof root.querySelectorAll !== "function") return;
+  root.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = tr(el.dataset.i18n);
+  });
+  root.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    el.setAttribute("placeholder", tr(el.dataset.i18nPlaceholder));
+  });
+  root.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.setAttribute("title", tr(el.dataset.i18nTitle));
+  });
+  root.querySelectorAll("[data-i18n-label]").forEach((el) => {
+    el.setAttribute("label", tr(el.dataset.i18nLabel));
+  });
+  root.querySelectorAll("[data-starter-key]").forEach((btn) => {
+    btn.dataset.starter = tr(btn.dataset.starterKey);
+  });
+}
+
 export function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")

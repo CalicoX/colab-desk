@@ -9,11 +9,11 @@ import {
   state,
 } from "./state.js";
 import { L, escapeHtml, openExternalUrl, showToast, tr } from "./utils.js";
+import { emit, on } from "./events.js";
 import { flushStoreToDisk, persistDeskHistory, scheduleStoreSync } from "./store.js";
-import { applyLanguage, applyTheme } from "./theme.js";
-import { refreshAgentQuota } from "./usage.js";
-import { initProviders, loadProviderModels } from "./agent.js";
-import { setComposerMode, syncApprovalToggle, syncBusyModeToggle, syncComposer } from "./composer.js";
+import { applyLanguage, applyTheme, renderSkinGrid, syncLanguageOptionLabel } from "./theme.js";
+import { refreshAgentQuota } from "./usage-stats.js";
+import { initProviders, loadProviderModels } from "./agent-pickers.js";
 import { renderChatThreads, renderComposerQueue } from "./threads.js";
 import { renderTranscript } from "./transcript.js";
 import {
@@ -23,8 +23,11 @@ import {
   renderInspector,
   setRailCollapsed,
   setSidebarCollapsed,
-  syncHardwareChips,
 } from "./sessions.js";
+import { mountModalTemplate } from "./templates/mount.js";
+import { SETTINGS_MODAL_HTML } from "./templates/settings-modal.js";
+
+let settingsInitialized = false;
 
 export function paintAcpAuthStatus(status) {
   state.latestAcpAuth = status;
@@ -111,6 +114,7 @@ export function selectSettingsTab(tabId) {
 }
 
 export function openSettings(tabId = "general") {
+  initSettings();
   dom.settingsSearchInput.value = "";
   filterSettingsRows("");
   renderSettingsModal();
@@ -149,6 +153,22 @@ export function filterSettingsRows(query) {
 
 export function paintEnvCheck(env) {
   state.latestEnvCheck = env;
+  if (!env) return;
+
+  const needsSetup = !env.colabInstalled || !env.loggedIn;
+  if (dom.navColabDot) {
+    dom.navColabDot.hidden = false;
+    dom.navColabDot.className = `settings-nav-dot ${needsSetup ? "is-warn" : "is-ok"}`;
+  }
+  if (dom.envAlertBanner) {
+    dom.envAlertBanner.hidden = !needsSetup;
+    if (!env.colabInstalled) {
+      dom.envAlertText.textContent = tr("ws.envBannerMissingCli");
+    } else if (!env.loggedIn) {
+      dom.envAlertText.textContent = tr("ws.envBannerNeedLogin");
+    }
+  }
+
   const cliDesc = document.querySelector("#env-cli-desc");
   const cliBadge = document.querySelector("#env-cli-badge");
   const authDesc = document.querySelector("#env-auth-desc");
@@ -157,8 +177,8 @@ export function paintEnvCheck(env) {
   const installUvBtn = document.querySelector("#env-install-uv-btn");
   const installPipBtn = document.querySelector("#env-install-pip-btn");
   const loginBtn = document.querySelector("#env-login-btn");
+  if (!cliDesc || !cliBadge) return;
 
-  if (!env) return;
   if (env.colabInstalled) {
     cliBadge.textContent = env.colabVersion ? `v${env.colabVersion}` : (state.activeLang === "en" ? "Installed" : "已安装");
     cliBadge.className = "s-badge is-ok";
@@ -195,16 +215,6 @@ export function paintEnvCheck(env) {
   installUvBtn.disabled = !env.hasUv;
   installPipBtn.disabled = !env.hasPip;
   loginBtn.disabled = !env.colabInstalled;
-
-  const needsSetup = !env.colabInstalled || !env.loggedIn;
-  dom.navColabDot.hidden = false;
-  dom.navColabDot.className = `settings-nav-dot ${needsSetup ? "is-warn" : "is-ok"}`;
-  dom.envAlertBanner.hidden = !needsSetup;
-  if (!env.colabInstalled) {
-    dom.envAlertText.textContent = tr("ws.envBannerMissingCli");
-  } else if (!env.loggedIn) {
-    dom.envAlertText.textContent = tr("ws.envBannerNeedLogin");
-  }
 }
 
 export async function checkColabEnv() {
@@ -330,6 +340,8 @@ export async function runBootstrapOnSession(targetSession, silent = false) {
 }
 
 export function renderSettingsModal() {
+  syncLanguageOptionLabel();
+  renderSkinGrid();
   if (dom.settingLanguage) dom.settingLanguage.value = state.languagePref;
   if (dom.settingTheme) dom.settingTheme.value = state.themePref;
   if (dom.settingRailOpen) dom.settingRailOpen.checked = !dom.app.classList.contains("is-rail-collapsed");
@@ -417,8 +429,18 @@ export async function triggerColabInstall(method) {
 }
 
 export function initSettings() {
-  document.querySelector("#open-settings-modal").addEventListener("click", () => openSettings("general"));
-  document.querySelector("#env-alert-btn").addEventListener("click", () => openSettings("colab"));
+  if (settingsInitialized) return;
+  settingsInitialized = true;
+  mountModalTemplate("settings-modal", SETTINGS_MODAL_HTML);
+  syncLanguageOptionLabel();
+  renderSkinGrid();
+
+  on("language:changed", () => {
+    if (state.latestEnvCheck) paintEnvCheck(state.latestEnvCheck);
+    if (state.latestAcpAuth) paintAcpAuthStatus(state.latestAcpAuth);
+    if (dom.settingsModal?.open) renderSettingsModal();
+  });
+
   document.querySelector("#close-settings-modal").addEventListener("click", () => closeDialog(dom.settingsModal));
   dom.settingsModal.addEventListener("click", (e) => { if (e.target === dom.settingsModal) closeDialog(dom.settingsModal); });
 
@@ -444,16 +466,16 @@ export function initSettings() {
     state.keepThoughtOpen = false;
     state.gpuAutoPoll = true;
     state.defaultHighMem = true;
-    dom.highMemInput.checked = true;
+    emit("session-create:sync-hardware");
     state.busySendMode = "queue";
-    syncBusyModeToggle(false);
+    emit("composer:sync-busy-mode", false);
     applySidebarWidth(DEFAULT_SIDEBAR_WIDTH, false);
     setSidebarCollapsed(false, false);
     setRailCollapsed(false, false);
     applyLanguage("auto", false);
-    syncApprovalToggle(false);
-    syncBusyModeToggle(false);
-    setComposerMode("agent", false);
+    emit("composer:sync-approval", false);
+    emit("composer:sync-busy-mode", false);
+    emit("composer:set-mode", { mode: "agent", sync: false });
     renderSettingsModal();
     flushStoreToDisk();
     showToast(tr("toast.defaultsRestored"));
@@ -532,15 +554,15 @@ export function initSettings() {
   dom.settingEnterSend.addEventListener("change", () => {
     state.enterToSend = dom.settingEnterSend.checked;
     try { localStorage.setItem("colab-desk.enter-to-send", state.enterToSend ? "1" : "0"); } catch {}
-    syncComposer();
+    emit("composer:sync");
     scheduleStoreSync();
   });
   dom.settingTheme.addEventListener("change", () => applyTheme(dom.settingTheme.value, true));
   dom.settingApproval.addEventListener("change", () => {
     state.approvalMode = dom.settingApproval.value === "ask" ? "ask" : "auto";
-    syncApprovalToggle();
+    emit("composer:sync-approval", true);
   });
-  dom.settingMode.addEventListener("change", () => setComposerMode(dom.settingMode.value));
+  dom.settingMode.addEventListener("change", () => emit("composer:set-mode", dom.settingMode.value));
   dom.settingKeepThought.addEventListener("change", () => {
     state.keepThoughtOpen = dom.settingKeepThought.checked;
     try { localStorage.setItem("colab-desk.keep-thought", state.keepThoughtOpen ? "1" : "0"); } catch {}
@@ -769,7 +791,6 @@ export function initSettings() {
 
   document.querySelector("#env-inject-now-btn").addEventListener("click", () => runBootstrapOnSession(state.selected, false));
   document.querySelector("#boot-run-now-btn").addEventListener("click", () => runBootstrapOnSession(state.selected, false));
-  dom.inspectorBootstrapBtn.addEventListener("click", () => runBootstrapOnSession(state.selected, false));
 
   const syncBootstrapSettings = () => {
     state.bootstrapConfig = {
@@ -792,13 +813,12 @@ export function initSettings() {
   });
   dom.settingDefaultHighMem.addEventListener("change", () => {
     state.defaultHighMem = dom.settingDefaultHighMem.checked;
-    dom.highMemInput.checked = state.defaultHighMem;
-    syncHardwareChips();
+    emit("session-create:sync-hardware");
     scheduleStoreSync();
   });
   dom.settingBusySendMode.addEventListener("change", () => {
     state.busySendMode = dom.settingBusySendMode.value === "steer" ? "steer" : "queue";
-    syncBusyModeToggle(true);
+    emit("composer:sync-busy-mode", true);
   });
 
   // In-app Check for Updates

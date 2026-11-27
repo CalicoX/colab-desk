@@ -1,9 +1,9 @@
 import { closeDialog, dom, openDialog } from "./dom.js";
 import { state } from "./state.js";
 import { escapeHtml, formatFileSize, showToast, tr } from "./utils.js";
-import { setComposerMode } from "./composer.js";
-import { sendAgentMessage } from "./agent.js";
-import { callAction } from "./sessions.js";
+import { callRegistered, emit } from "./events.js";
+import { mountModalTemplate } from "./templates/mount.js";
+import { FILES_MODAL_HTML } from "./templates/modals.js";
 
 /* ── Cloud File Explorer ── */
 export function updateFilesBatchBar() {
@@ -222,11 +222,11 @@ export async function previewRemote(item) {
   askBtn.textContent = tr("files.askAgent");
   askBtn.addEventListener("click", () => {
     closeDialog(dom.filesModal);
-    setComposerMode("agent");
+    emit("composer:set-mode", "agent");
     const prompt = state.activeLang === "en"
       ? `Inspect and analyze the remote file \`${item.path}\` on the current Colab session.`
       : `帮我查看并分析当前 Colab 会话中的云端文件 \`${item.path}\`。`;
-    sendAgentMessage(prompt);
+    emit("agent:send", { promptText: prompt });
   });
   const dlBtn = document.createElement("button");
   dlBtn.type = "button";
@@ -305,11 +305,17 @@ export async function uploadToRemote(fileList) {
 }
 
 export function openFilesModal(dir = "/content") {
+  initFiles();
   openDialog(dom.filesModal);
   loadRemoteDir(dir);
 }
 
+let filesInitialized = false;
+
 export function initFiles() {
+  if (filesInitialized) return;
+  filesInitialized = true;
+  mountModalTemplate("files-modal", FILES_MODAL_HTML);
   document.querySelector("#close-files-modal").addEventListener("click", () => closeDialog(dom.filesModal));
   dom.filesModal.addEventListener("click", (e) => { if (e.target === dom.filesModal) closeDialog(dom.filesModal); });
   document.querySelector("#files-go-content").addEventListener("click", () => loadRemoteDir("/content"));
@@ -362,7 +368,7 @@ export function initFiles() {
     if (!state.selected) return;
     dom.filesMountDriveBtn.disabled = true;
     dom.filesStatusNote.textContent = state.activeLang === "en" ? "Mounting Google Drive…" : "正在挂载 Google Drive…";
-    await callAction({ type: "drivemount", session: state.selected }, `drivemount ${state.selected}`, state.selected);
+    await callRegistered("sessions:callAction", { type: "drivemount", session: state.selected }, `drivemount ${state.selected}`, state.selected);
     dom.filesMountDriveBtn.disabled = false;
     loadRemoteDir("/content/drive/MyDrive");
   });

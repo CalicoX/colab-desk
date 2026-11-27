@@ -1,12 +1,10 @@
 import { dom } from "./dom.js";
 import { currentTranscriptKey, desk, state } from "./state.js";
 import { L, autoGrowCode, isImageAttachment, showToast, tr } from "./utils.js";
+import { emit, on } from "./events.js";
 import { flushStoreToDisk, persistDeskHistory, scheduleStoreSync } from "./store.js";
-import { renderStagedFiles, sendAgentMessage } from "./agent.js";
+import { renderStagedFiles } from "./agent-attachments.js";
 import { renderTranscript } from "./transcript.js";
-import { renderInspector, renderSessions } from "./sessions.js";
-import { renderTunnels } from "./cloud-tools.js";
-import { syncBusyModeToggle } from "./composer.js";
 
 export function deriveThreadTitle(entries, fallback = "") {
   if (Array.isArray(entries)) {
@@ -83,9 +81,8 @@ export function openChatThread(threadId) {
   state.activeThreadId = target.id;
   if (target.sessionName && state.sessions.some((s) => s.name === target.sessionName) && state.selected !== target.sessionName) {
     state.selected = target.sessionName;
-    renderSessions();
-    renderInspector();
-    renderTunnels();
+    emit("sessions:render-all");
+    emit("cloud:render-tunnels");
   }
   renderChatThreads();
   renderTranscript(state.activeThreadId);
@@ -98,12 +95,11 @@ export async function createNewChatThread() {
     state.stopReasonKind = "stop";
     state.activeAgentController.abort();
   }
-  // Drop any lingering empty placeholder threads and return cleanly to the New Chat screen
   state.chatThreads = state.chatThreads.filter((tItem) => Array.isArray(desk.bySession[tItem.id]) && desk.bySession[tItem.id].length > 0);
   state.activeThreadId = null;
   renderChatThreads();
   renderTranscript("");
-  renderInspector();
+  emit("sessions:render-inspector");
   renderComposerQueue();
   persistDeskHistory();
   try {
@@ -183,7 +179,7 @@ export function undoLastDeletedThread() {
   state.activeThreadId = snap.thread.id;
   renderChatThreads();
   renderTranscript(state.activeThreadId);
-  renderInspector();
+  emit("sessions:render-inspector");
   renderComposerQueue();
   persistDeskHistory();
   flushStoreToDisk();
@@ -218,7 +214,7 @@ export function deleteChatThread(threadId) {
   }
   renderChatThreads();
   renderTranscript(currentTranscriptKey());
-  renderInspector();
+  emit("sessions:render-inspector");
   renderComposerQueue();
   persistDeskHistory();
   flushStoreToDisk();
@@ -510,7 +506,7 @@ export function steerAgentMessage(promptText, files = []) {
   } else {
     const unfinished = state.pendingUnfinishedTasks.get(key) || [];
     const apiPrompt = unfinished.length ? buildSteerContinuationPrompt(promptText, unfinished) : promptText;
-    sendAgentMessage(promptText, Array.isArray(files) ? files : [], apiPrompt);
+    emit("agent:send", { promptText, files: Array.isArray(files) ? files : [], apiPrompt });
   }
 }
 
@@ -553,17 +549,24 @@ export function initThreadsAndQueue() {
 
   dom.busyModeToggle.addEventListener("click", () => {
     state.busySendMode = state.busySendMode === "steer" ? "queue" : "steer";
-    syncBusyModeToggle(true);
+    emit("composer:sync-busy-mode", true);
   });
   dom.queueSendBtn.addEventListener("click", () => {
     const draft = consumeComposerDraft();
     if (!draft) return;
     if (state.activeAgentController) enqueueAgentMessage(draft.promptText, draft.files);
-    else sendAgentMessage(draft.promptText, draft.files);
+    else emit("agent:send", { promptText: draft.promptText, files: draft.files });
   });
   dom.steerSendBtn.addEventListener("click", () => {
     const draft = consumeComposerDraft();
     if (!draft) return;
     steerAgentMessage(draft.promptText, draft.files);
+  });
+
+  on("composer:sync-send", syncSendButton);
+  on("language:changed", () => {
+    syncSendButton();
+    renderComposerQueue();
+    renderChatThreads();
   });
 }

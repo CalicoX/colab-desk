@@ -529,7 +529,7 @@ test("http session list is the parsed fixture and the page has the three regions
     }
     const allStyles = styleTexts.join("\n");
 
-    // Recursively fetch all ES modules starting from /js/main.js over HTTP and verify headers & imports
+    // Recursively fetch all ES modules (static + dynamic imports) starting from /js/main.js over HTTP and verify headers & imports
     const moduleSources = new Map();
     const moduleQueue = ["/js/main.js"];
     while (moduleQueue.length > 0) {
@@ -541,13 +541,18 @@ test("http session list is the parsed fixture and the page has the three regions
       assert.match(r.headers.get("cache-control") || "", /no-store/);
       const src = await r.text();
       moduleSources.set(modUrl, src);
-      for (const m of src.matchAll(/from\s+["'](\.[^"']+\.js)["']/g)) {
+      for (const m of src.matchAll(/(?:from\s+|import\()\s*["'](\.[^"']+\.js)["']/g)) {
         const nextUrl = path.posix.join(path.posix.dirname(modUrl), m[1]);
         if (!moduleSources.has(nextUrl)) moduleQueue.push(nextUrl);
       }
     }
-    assert.ok(moduleSources.size >= 15, `expected modular JS graph, got ${moduleSources.size}`);
+    assert.ok(moduleSources.size >= 25, `expected modular JS graph (including lazy + template modules), got ${moduleSources.size}`);
     const allScripts = Array.from(moduleSources.values()).join("\n");
+    const templateHtml = Array.from(moduleSources.entries())
+      .filter(([u]) => u.startsWith("/js/templates/"))
+      .map(([, s]) => s)
+      .join("\n");
+    const allMarkup = `${page}\n${templateHtml}`;
 
     // Verify static asset traversal/dotfile/missing-file hardening
     const missingJs = await fetch(`http://127.0.0.1:${port}/js/does-not-exist.js`);
@@ -560,8 +565,8 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /data-region="sidebar"/);
     assert.match(page, /data-region="transcript"/);
     assert.match(page, /data-region="composer"/);
-    assert.match(page, /data-region="hardware-picker"/);
-    assert.match(page, /Hardware picker/);
+    assert.match(allMarkup, /data-region="hardware-picker"/);
+    assert.match(allMarkup, /Hardware picker/);
     assert.match(allScripts, /from "\/desk\.mjs"/);
     assert.match(allScripts, /composeAction\(/);
     assert.match(allScripts, /showSession\(/);
@@ -571,7 +576,7 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="sidebar-resizer"/);
     assert.match(allStyles, /--sidebar-width/);
     assert.match(page, /id="open-new-session"/);
-    assert.match(page, /id="new-session-modal"/);
+    assert.match(allMarkup, /id="new-session-modal"/);
     assert.match(allScripts, /session-menu-close/);
     assert.doesNotMatch(page, /class="start-row"/);
     assert.match(page, /data-region="inspector"/);
@@ -580,7 +585,7 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="bar-uptime"/);
     // Hardware picker lives inside the new-session modal, not the right rail
     const railBlock = page.match(/<aside id="rail"[\s\S]*?<\/aside>/)?.[0] || "";
-    const modalBlock = page.match(/<dialog id="new-session-modal"[\s\S]*?<\/dialog>/)?.[0] || "";
+    const modalBlock = allMarkup.match(/<dialog id="new-session-modal"[\s\S]*?<\/dialog>/)?.[0] || "";
     assert.doesNotMatch(railBlock, /data-region="hardware-picker"/);
     assert.match(modalBlock, /data-region="hardware-picker"/);
 
@@ -604,24 +609,24 @@ test("http session list is the parsed fixture and the page has the three regions
     const envRes = await fetch(`http://127.0.0.1:${port}/api/env/check`).then((res) => res.json());
     assert.equal(envRes.ok, true);
     assert.equal(typeof envRes.env.colabInstalled, "boolean");
-    assert.match(page, /class="settings-shell"/);
-    assert.match(page, /data-settings-tab="colab"/);
-    assert.match(page, /data-settings-tab="providers"/);
-    assert.match(page, /id="env-install-uv-btn"/);
-    assert.match(page, /id="env-login-btn"/);
+    assert.match(allMarkup, /class="settings-shell"/);
+    assert.match(allMarkup, /data-settings-tab="colab"/);
+    assert.match(allMarkup, /data-settings-tab="providers"/);
+    assert.match(allMarkup, /id="env-install-uv-btn"/);
+    assert.match(allMarkup, /id="env-login-btn"/);
     assert.match(page, /id="rail-toggle"/);
     assert.match(allStyles, /is-rail-collapsed/);
-    assert.match(page, /id="setting-language"/);
-    assert.match(page, /id="agy-acp-login-btn"/);
+    assert.match(allMarkup, /id="setting-language"/);
+    assert.match(allMarkup, /id="agy-acp-login-btn"/);
     assert.match(allScripts, /from "\/i18n\.mjs"/);
     const i18nJs = await fetch(`http://127.0.0.1:${port}/i18n.mjs`).then((res) => res.text());
     assert.match(i18nJs, /resolveLanguage/);
     const acpAuthRes = await fetch(`http://127.0.0.1:${port}/api/agent/acp-auth?provider=agy`).then((res) => res.json());
     assert.equal(typeof acpAuthRes.installed, "boolean");
     assert.equal(typeof acpAuthRes.authenticated, "boolean");
-    assert.match(page, /id="files-modal"/);
-    assert.match(page, /id="templates-modal"/);
-    assert.match(page, /id="setting-theme"/);
+    assert.match(allMarkup, /id="files-modal"/);
+    assert.match(allMarkup, /id="templates-modal"/);
+    assert.match(allMarkup, /id="setting-theme"/);
     assert.match(page, /id="agent-thought"/);
     assert.match(page, /id="gpu-section"/);
     assert.match(page, /id="tunnels-section"/);
@@ -631,23 +636,23 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(page, /id="view-term-btn"/);
     assert.match(page, /id="terminal-view"/);
     assert.match(page, /id="term-send-agent"/);
-    assert.match(page, /id="runner-modal"/);
-    assert.match(page, /id="sync-modal"/);
-    assert.match(page, /id="cmd-palette-modal"/);
-    assert.match(page, /id="env-vars-list"/);
-    assert.match(page, /id="boot-hf-transfer"/);
-    assert.match(page, /id="files-mode-gallery"/);
-    assert.match(page, /id="check-updates-btn"/);
-    assert.match(page, /id="bg-snipe-btn"/);
+    assert.match(allMarkup, /id="runner-modal"/);
+    assert.match(allMarkup, /id="sync-modal"/);
+    assert.match(allMarkup, /id="cmd-palette-modal"/);
+    assert.match(allMarkup, /id="env-vars-list"/);
+    assert.match(allMarkup, /id="boot-hf-transfer"/);
+    assert.match(allMarkup, /id="files-mode-gallery"/);
+    assert.match(allMarkup, /id="check-updates-btn"/);
+    assert.match(allMarkup, /id="bg-snipe-btn"/);
     assert.match(page, /id="snipe-banner"/);
     assert.match(page, /id="snipe-takeover-btn"/);
-    assert.match(page, /id="setting-default-high-mem"[^>]*checked/);
-    assert.match(page, /id="high-mem"[^>]*checked/);
+    assert.match(allMarkup, /id="setting-default-high-mem"[^>]*checked/);
+    assert.match(allMarkup, /id="high-mem"[^>]*checked/);
     assert.match(page, /id="composer-queue"/);
     assert.match(page, /id="busy-mode-toggle"/);
     assert.match(page, /id="queue-send-btn"/);
     assert.match(page, /id="steer-send-btn"/);
-    assert.match(page, /id="setting-busy-send-mode"/);
+    assert.match(allMarkup, /id="setting-busy-send-mode"/);
     assert.match(allScripts, /createDottedOrb/);
     assert.match(allStyles, /thought-orb/);
     assert.match(page, /id="tools-dropdown-btn"/);
@@ -725,8 +730,8 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(allStyles, /@container\s*\(max-width:\s*268px\)/);
     assert.match(page, /id="new-chat-thread-btn"/);
     assert.match(allScripts, /function currentTranscriptKey\(\)\s*\{\s*return state\.activeThreadId \|\| "";\s*\}/);
-    assert.doesNotMatch(page, /id="reset-chat"/);
-    assert.doesNotMatch(page, /id="term-new-local"/);
+    assert.doesNotMatch(allMarkup, /id="reset-chat"/);
+    assert.doesNotMatch(allMarkup, /id="term-new-local"/);
     assert.match(page, /\/vendor\/xterm\/xterm\.js/);
     const xtermAsset = await fetch(`http://127.0.0.1:${port}/vendor/xterm/xterm.js`);
     assert.equal(xtermAsset.status, 200);
@@ -757,8 +762,8 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(allStyles, /#composer\[hidden\],\s*#transcript\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/);
     assert.match(allStyles, /#nb-cells\s*\{[\s\S]*?gap:\s*14px;/);
     assert.match(page, /id="nb-vars-toggle"/);
-    assert.match(page, /id="api-fetch-models-btn"/);
-    assert.match(page, /id="skin-picker-grid"/);
+    assert.match(allMarkup, /id="api-fetch-models-btn"/);
+    assert.match(allMarkup, /id="skin-picker-grid"/);
     assert.match(page, /id="quick-skin-btn"/);
     assert.match(allStyles, /data-skin="ocean"/);
     assert.match(allStyles, /data-skin="paper"/);
@@ -767,7 +772,7 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.doesNotMatch(allStyles, /color:\s*#dad5ff/);
     assert.match(allScripts, /initUniversalIconTooltips/);
     assert.match(page, /id="open-usage-modal"/);
-    assert.match(page, /id="colab-cu-modal"/);
+    assert.match(allMarkup, /id="colab-cu-modal"/);
     assert.match(page, /id="open-settings-modal"/);
     assert.match(allScripts, /\/api\/agent\/quota/);
     assert.match(page, /class="sidebar-mini"/);
@@ -816,7 +821,7 @@ test("http session list is the parsed fixture and the page has the three regions
     assert.match(deskSource, /export function composeAction/);
     assert.match(deskSource, /export function showSession/);
     for (const name of ["T4", "L4", "G4", "H100", "A100", "v5e1", "v6e1", "high-mem"]) {
-      assert.match(page, new RegExp(name));
+      assert.match(allMarkup, new RegExp(name));
     }
 
     process.env.COLAB_FAKE_FAIL = "status";
@@ -888,12 +893,16 @@ test("real entry returns the same session list on two launches", async () => {
   const bin = installFake(dir);
   const bodies = [];
   let page = "";
+  let modalsJs = "";
   for (let i = 0; i < 2; i += 1) {
     const { child, url } = await startEntry(bin);
     try {
       const response = await fetch(`${url}/api/sessions`);
       bodies.push(await response.text());
-      if (i === 0) page = await fetch(url).then((res) => res.text());
+      if (i === 0) {
+        page = await fetch(url).then((res) => res.text());
+        modalsJs = await fetch(`${url}/js/templates/modals.js`).then((res) => res.text());
+      }
     } finally {
       await stopEntry(child);
     }
@@ -905,7 +914,8 @@ test("real entry returns the same session list on two launches", async () => {
   assert.match(page, /data-region="sidebar"/);
   assert.match(page, /data-region="transcript"/);
   assert.match(page, /data-region="composer"/);
-  assert.match(page, /data-region="hardware-picker"/);
+  assert.match(page, /data-region="inspector"/);
+  assert.match(modalsJs, /data-region="hardware-picker"/);
 });
 
 test("agent parsers handle ACP updates, model catalogs, and Grok NDJSON events", () => {
@@ -1042,8 +1052,13 @@ test("agent parsers handle ACP updates, model catalogs, and Grok NDJSON events",
   assert.match(summarizeColabError(richTraceback, "zh-CN"), /稍后再试/);
   assert.equal(isRetryableColabError(richTraceback), true);
   assert.equal(isRetryableColabError("TooManyAssignmentsError: limit reached"), false);
-  const agentSource = fs.readFileSync(path.join(root, "src/agent.mjs"), "utf8");
-  assert.match(agentSource, /bypassPermissions/);
+  const agentSources = [
+    fs.readFileSync(path.join(root, "src/agent.mjs"), "utf8"),
+    ...fs.readdirSync(path.join(root, "src/agent"))
+      .filter((f) => f.endsWith(".mjs"))
+      .map((f) => fs.readFileSync(path.join(root, "src/agent", f), "utf8")),
+  ].join("\n");
+  assert.match(agentSources, /bypassPermissions/);
   const spec = parseColabNewSpec('{"command":"colab new -s A100 --gpu A100 --high-mem"}');
   assert.deepEqual(spec, { name: "A100", hw: { gpu: "A100", tpu: null, highMem: true }, hwLabel: "A100 + high-mem" });
   const grokTc = parseGrokEvent({
@@ -1226,11 +1241,18 @@ test("gateway /v1/models discovery and .ipynb parse/serialize round-trip work cl
 
 test("mac app does not start a login shell", () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
-  const swift = fs.readFileSync(path.join(root, "macos/ColabDesk.swift"), "utf8");
+  const swiftFiles = fs.readdirSync(path.join(root, "macos"))
+    .filter((f) => f.endsWith(".swift"))
+    .sort();
+  assert.ok(swiftFiles.length >= 1, "expected macos/*.swift source files");
+  const swift = swiftFiles
+    .map((f) => fs.readFileSync(path.join(root, "macos", f), "utf8"))
+    .join("\n");
   const plist = fs.readFileSync(path.join(root, "macos/Info.plist"), "utf8");
   assert.match(plist, new RegExp(`<key>CFBundleShortVersionString</key>\\s*<string>${pkg.version.replace(/\./g, "\\.")}</string>`));
   assert.match(plist, new RegExp(`<key>CFBundleVersion</key>\\s*<string>${pkg.version.replace(/\./g, "\\.")}</string>`));
   assert.doesNotMatch(swift, /zsh -lic|\/bin\/zsh/);
+  assert.doesNotMatch(swift, /NSToolbar|SecItemCopyMatching|SecItemAdd|SecKeychain/);
   assert.match(swift, /SIGTERM/);
   assert.match(swift, /WKWebView/);
   assert.match(swift, /WKUIDelegate/);

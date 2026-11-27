@@ -2,8 +2,8 @@ import { composeAction } from "/desk.mjs";
 import { dom } from "./dom.js";
 import { state } from "./state.js";
 import { L, autoGrowCode, parseHardware, tr } from "./utils.js";
+import { emit, on } from "./events.js";
 import { scheduleStoreSync } from "./store.js";
-import { renderNotebook } from "./notebook.js";
 import {
   consumeComposerDraft,
   enqueueAgentMessage,
@@ -31,7 +31,7 @@ export function setComposerMode(nextMode, sync = true) {
   if (dom.composer) dom.composer.hidden = isNotebook;
   dom.agentControls.hidden = !isAgent;
   dom.cliControls.hidden = !isCli;
-  if (isNotebook) renderNotebook();
+  if (isNotebook) emit("notebook:activate");
   try { localStorage.setItem("colab-desk.composer-mode", state.composerMode); } catch {}
   if (sync) scheduleStoreSync();
   syncComposer();
@@ -170,6 +170,20 @@ export function closeToolsDropdown() {
 }
 
 export function initComposer() {
+  on("composer:set-mode", (payload) => {
+    if (payload && typeof payload === "object") setComposerMode(payload.mode, payload.sync);
+    else setComposerMode(payload);
+  });
+  on("composer:sync-busy-mode", (sync) => syncBusyModeToggle(sync));
+  on("composer:sync-approval", (sync) => syncApprovalToggle(sync));
+  on("composer:sync", syncComposer);
+  on("composer:close-tools-dropdown", closeToolsDropdown);
+  on("language:changed", () => {
+    syncBusyModeToggle(false);
+    syncApprovalToggle(false);
+    syncComposer();
+  });
+
   dom.toolsDropdownBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     const opening = dom.toolsDropdownMenu.hidden;

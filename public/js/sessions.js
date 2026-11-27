@@ -22,14 +22,10 @@ import {
   showToast,
   tr,
 } from "./utils.js";
+import { emit, on, registerAction } from "./events.js";
 import { persistDeskHistory, scheduleStoreSync } from "./store.js";
-import { setComposerMode } from "./composer.js";
 import { ensureActiveThread, renderChatThreads, renderComposerQueue, setBusy } from "./threads.js";
 import { renderTranscript } from "./transcript.js";
-import { openNewSessionModal } from "./session-create.js";
-import { openFilesModal } from "./files.js";
-import { refreshGpuTelemetry, renderTunnels } from "./cloud-tools.js";
-import { setWorkspaceView } from "./terminal.js";
 
 let guardActionHandler = null;
 
@@ -39,11 +35,12 @@ export function modalHardwareValue() {
 }
 
 export function hardware() {
-  return parseHardware(modalHardwareValue(), dom.highMemInput.checked);
+  const highMem = dom.highMemInput ? dom.highMemInput.checked : state.defaultHighMem;
+  return parseHardware(modalHardwareValue(), highMem);
 }
 
 export function buildNewPreview() {
-  const name = dom.sessionNameInput.value.trim() || "<name>";
+  const name = dom.sessionNameInput?.value.trim() || "<name>";
   const hw = hardware();
   const parts = ["colab", "new", "-s", name];
   if (hw.gpu) parts.push("--gpu", hw.gpu);
@@ -57,8 +54,12 @@ export function syncHardwareChips() {
   document.querySelectorAll('input[name="hardware"]').forEach((input) => {
     input.parentElement.classList.toggle("is-selected", input.checked);
   });
-  dom.highMemNote.hidden = !(dom.highMemInput.checked && SINGLE_SHAPE.has(current));
-  dom.modalCmd.textContent = buildNewPreview();
+  if (dom.highMemNote && dom.highMemInput) {
+    dom.highMemNote.hidden = !(dom.highMemInput.checked && SINGLE_SHAPE.has(current));
+  }
+  if (dom.modalCmd) {
+    dom.modalCmd.textContent = buildNewPreview();
+  }
 }
 
 export function setSidebarCollapsed(collapsed, sync = true) {
@@ -130,7 +131,7 @@ export function renderInspector() {
   dom.inspectorHost.textContent = hasSession ? session.name : tr("rail.disconnected");
   if (dom.viewSwitchEl) dom.viewSwitchEl.hidden = !hasSession;
   if (!hasSession && (state.activeWorkspaceView === "terminal" || state.activeWorkspaceView === "split")) {
-    setWorkspaceView("chat");
+    emit("terminal:set-view", "chat");
   }
   dom.inspectorLs.disabled = !hasSession;
   dom.inspectorRestart.disabled = !hasSession;
@@ -294,7 +295,7 @@ export function renderSessions() {
       btn.type = "button";
       btn.className = "empty-cta";
       btn.textContent = tr("sidebar.newSessionBtn");
-      btn.addEventListener("click", openNewSessionModal);
+      btn.addEventListener("click", () => emit("ui:open-new-session"));
       box.append(btn);
     }
     dom.sessionItems.append(box);
@@ -476,11 +477,11 @@ export function selectSession(name, options = {}) {
   renderChatThreads();
   renderTranscript(currentTranscriptKey());
   renderInspector();
-  renderTunnels();
+  emit("cloud:render-tunnels");
   renderComposerQueue();
   if (!options.skipStatusFetch) {
     refreshStatusSilently(name);
-    refreshGpuTelemetry(true);
+    emit("cloud:refresh-gpu", true);
   }
 }
 
@@ -559,7 +560,7 @@ export async function refreshSessions(prefer) {
 }
 
 export async function runUrlAndCopy() {
-  if (!state.selected) { openNewSessionModal(); return; }
+  if (!state.selected) { emit("ui:open-new-session"); return; }
   const res = await callAction({ type: "url", session: state.selected }, `url ${state.selected}`, state.selected);
   if (res.ok && res.stdout) {
     const match = res.stdout.match(/https?:\/\/\S+/);
@@ -620,6 +621,21 @@ export function applySidebarWidth(px, persist = true) {
 }
 
 export function initSessionsAndLayout() {
+  registerAction("sessions:callAction", callAction);
+  registerAction("sessions:refresh", refreshSessions);
+
+  on("sessions:render-all", () => {
+    renderSessions();
+    renderInspector();
+  });
+  on("sessions:render-inspector", renderInspector);
+  on("language:changed", () => {
+    syncRailToggleUi();
+    renderSessions();
+    renderInspector();
+    renderTranscript(currentTranscriptKey());
+  });
+
   dom.sidebarToggle.addEventListener("click", () => setSidebarCollapsed(true));
   dom.sidebarOpen.addEventListener("click", () => setSidebarCollapsed(false));
   dom.railToggle.addEventListener("click", toggleRail);
@@ -655,14 +671,14 @@ export function initSessionsAndLayout() {
     btn.addEventListener("click", async () => {
       closeSplitMenu();
       const type = btn.dataset.inspectorCmd;
-      if (!state.selected) { openNewSessionModal(); return; }
+      if (!state.selected) { emit("ui:open-new-session"); return; }
       if (type === "url") await runUrlAndCopy();
       else await callAction({ type, session: state.selected }, `${type} ${state.selected}`, state.selected);
     });
   });
   dom.inspectorLs.addEventListener("click", () => {
     if (!state.selected) return;
-    openFilesModal("/content");
+    emit("ui:open-files", "/content");
   });
 
   dom.guardAlertDismiss.addEventListener("click", () => { dom.guardAlertBanner.hidden = true; });
@@ -672,7 +688,7 @@ export function initSessionsAndLayout() {
   });
 
   dom.inspectorQuickInstall.addEventListener("click", () => {
-    setComposerMode("agent");
+    emit("composer:set-mode", "agent");
     dom.code.value = tr("rail.installPrompt");
     autoGrowCode();
     dom.code.focus();

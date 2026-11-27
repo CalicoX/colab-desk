@@ -10,7 +10,7 @@ import {
   tr,
 } from "./utils.js";
 import { renderMarkdownInto } from "./markdown.js";
-import { openSettings } from "./settings.js";
+import { emit } from "./events.js";
 
 const thoughtDomMap = new WeakMap();
 const thoughtStreamMap = new WeakMap();
@@ -436,7 +436,7 @@ export function renderTranscript(key) {
           authBtn.className = "s-btn is-primary";
           authBtn.style.alignSelf = "flex-start";
           authBtn.textContent = tr("agent.authRequiredAction");
-          authBtn.addEventListener("click", () => openSettings("providers"));
+          authBtn.addEventListener("click", () => emit("ui:open-settings", "providers"));
           block.append(authBtn);
         }
       }

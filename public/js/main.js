@@ -1,3 +1,4 @@
+import { dom } from "./dom.js";
 import {
   MIN_SIDEBAR_WIDTH,
   SKINS,
@@ -5,13 +6,14 @@ import {
   currentTranscriptKey,
   state,
 } from "./state.js";
+import { tr } from "./utils.js";
 import { hydrateFromLocalDisk, restoreDeskHistory } from "./store.js";
 import { applyLanguage, applySkin, applyTheme, initThemeAndSkin } from "./theme.js";
-import { initUsageModals, refreshAgentQuota, renderUsageBadge } from "./usage.js";
-import { checkColabEnv, initSettings } from "./settings.js";
+import { refreshAgentQuota, renderUsageBadge } from "./usage-stats.js";
 import { initThreadsAndQueue, migrateLegacyThreads, renderChatThreads } from "./threads.js";
 import { renderTranscript } from "./transcript.js";
-import { initAgentControls, initProviders } from "./agent.js";
+import { initProviders } from "./agent-pickers.js";
+import { initAgentControls } from "./agent.js";
 import {
   applySidebarWidth,
   checkCostAndIdleGuards,
@@ -20,37 +22,47 @@ import {
   renderInspector,
   setRailCollapsed,
   setSidebarCollapsed,
-  syncHardwareChips,
   syncNavButtons,
 } from "./sessions.js";
-import { initSessionCreate } from "./session-create.js";
-import { initNotebook } from "./notebook.js";
 import { initComposer, setComposerMode, syncApprovalToggle, syncBusyModeToggle } from "./composer.js";
-import { initFiles } from "./files.js";
 import {
-  initCloudTools,
+  initCloudRail,
   refreshGpuTelemetry,
   refreshTunnels,
   renderTunnels,
   syncTunnelModeUi,
-} from "./cloud-tools.js";
-import { initTerminal } from "./terminal.js";
-import { initPaletteAndShortcuts } from "./palette.js";
+} from "./cloud-rail.js";
+import { initGlobalShortcutsAndBridges } from "./shortcuts.js";
+import { initLazyTriggers } from "./lazy.js";
 
-// Wire all interactive event listeners & bridges
+// Lightweight startup Colab environment banner check (without eagerly loading settings.js)
+async function checkColabEnvBanner() {
+  try {
+    const res = await fetch("/api/env/check");
+    const data = await res.json();
+    if (!data.ok || !data.env) return;
+    state.latestEnvCheck = data.env;
+    const needsSetup = !data.env.colabInstalled || !data.env.loggedIn;
+    if (dom.envAlertBanner) {
+      dom.envAlertBanner.hidden = !needsSetup;
+      if (!data.env.colabInstalled) {
+        dom.envAlertText.textContent = tr("ws.envBannerMissingCli");
+      } else if (!data.env.loggedIn) {
+        dom.envAlertText.textContent = tr("ws.envBannerNeedLogin");
+      }
+    }
+  } catch {}
+}
+
+// Wire eager app-shell listeners, native WKWebView bridges, and lazy feature triggers
 initThemeAndSkin();
-initUsageModals();
-initSettings();
 initThreadsAndQueue();
 initAgentControls();
 initSessionsAndLayout();
-initSessionCreate();
-initNotebook();
 initComposer();
-initFiles();
-initCloudTools();
-initTerminal();
-initPaletteAndShortcuts();
+initCloudRail();
+initGlobalShortcutsAndBridges();
+initLazyTriggers();
 
 // Periodic background timers
 setInterval(() => {
@@ -93,7 +105,6 @@ applyTheme(state.themePref, false);
 applySkin(state.skinPref, false);
 applyLanguage(state.languagePref, false);
 renderUsageBadge();
-syncHardwareChips();
 syncApprovalToggle(false);
 syncBusyModeToggle(false);
 setComposerMode(state.composerMode, false);
@@ -102,15 +113,42 @@ renderInspector();
 syncTunnelModeUi();
 renderTunnels();
 
-hydrateFromLocalDisk().then(() => {
+hydrateFromLocalDisk().then((data) => {
+  const settings = data?.settings;
+  if (data?.usageStats) renderUsageBadge();
+  if (settings && typeof settings === "object") {
+    if (typeof settings.sidebarWidth === "number" && settings.sidebarWidth >= MIN_SIDEBAR_WIDTH) {
+      applySidebarWidth(settings.sidebarWidth, false);
+    }
+    if (typeof settings.sidebarCollapsed === "boolean") {
+      setSidebarCollapsed(settings.sidebarCollapsed, false);
+    }
+    if (typeof settings.railCollapsed === "boolean") {
+      setRailCollapsed(settings.railCollapsed, false);
+    }
+    if (settings.themePref === "system" || settings.themePref === "dark" || settings.themePref === "light") {
+      applyTheme(settings.themePref, false);
+    }
+    if (typeof settings.skinPref === "string" && settings.skinPref) {
+      applySkin(settings.skinPref, false);
+    }
+    if (settings.languagePref === "auto" || settings.languagePref === "zh-CN" || settings.languagePref === "en") {
+      applyLanguage(settings.languagePref, false);
+    }
+    syncApprovalToggle(false);
+    syncBusyModeToggle(false);
+    setComposerMode(state.composerMode, false);
+  }
+
   migrateLegacyThreads();
   renderChatThreads();
   renderTranscript(currentTranscriptKey());
+  renderInspector();
   initProviders();
   refreshSessions(null).then(() => {
     refreshGpuTelemetry(true);
     refreshTunnels();
   });
   refreshAgentQuota(false);
-  checkColabEnv();
+  checkColabEnvBanner();
 });

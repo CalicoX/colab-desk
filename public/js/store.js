@@ -1,17 +1,11 @@
 import { dom } from "./dom.js";
 import {
-  currentTranscriptKey,
   desk,
   emptyAgentUsageStats,
   loadJsonStorage,
   saveJsonStorage,
   state,
 } from "./state.js";
-import { applyLanguage, applySkin, applyTheme } from "./theme.js";
-import { renderUsageBadge } from "./usage.js";
-import { setComposerMode, syncApprovalToggle, syncBusyModeToggle } from "./composer.js";
-import { applySidebarWidth, renderInspector, setRailCollapsed, setSidebarCollapsed } from "./sessions.js";
-import { renderTranscript } from "./transcript.js";
 
 let storeSyncTimer = null;
 
@@ -51,7 +45,7 @@ export function buildSerializableSettings() {
     busySendMode: state.busySendMode,
     chatThreads: state.chatThreads,
     activeThreadId: state.activeThreadId,
-    provider: dom.agentProviderSelect.value || "agy",
+    provider: dom.agentProviderSelect?.value || "agy",
     modelsByProvider: state.savedModelsByProvider,
     thoughtByProvider: state.savedThoughtByProvider,
     sidebarCollapsed: dom.app.classList.contains("is-sidebar-collapsed"),
@@ -98,14 +92,13 @@ export async function hydrateFromLocalDisk() {
   try {
     const res = await fetch("/api/store");
     const json = await res.json();
-    if (!json.ok || !json.data) return;
+    if (!json.ok || !json.data) return null;
     const { history, usageStats, settings } = json.data;
     if (history && Object.keys(history).length > 0) {
       restoreDeskHistory(history);
     }
     if (usageStats && typeof usageStats === "object") {
       state.agentUsageStats = { ...emptyAgentUsageStats(), ...usageStats };
-      renderUsageBadge();
     }
     if (settings && typeof settings === "object") {
       if (settings.composerMode === "cli" || settings.composerMode === "agent" || settings.composerMode === "notebook") {
@@ -141,11 +134,10 @@ export async function hydrateFromLocalDisk() {
       if (typeof settings.gpuAutoPoll === "boolean") state.gpuAutoPoll = settings.gpuAutoPoll;
       if (typeof settings.defaultHighMem === "boolean") {
         state.defaultHighMem = settings.defaultHighMem;
-        dom.highMemInput.checked = state.defaultHighMem;
+        if (dom.highMemInput) dom.highMemInput.checked = state.defaultHighMem;
       }
       if (settings.busySendMode === "queue" || settings.busySendMode === "steer") {
         state.busySendMode = settings.busySendMode;
-        syncBusyModeToggle(false);
       }
       if (Array.isArray(settings.chatThreads)) {
         state.chatThreads = settings.chatThreads.filter((x) => x && typeof x.id === "string");
@@ -158,32 +150,12 @@ export async function hydrateFromLocalDisk() {
       if (settings.thoughtByProvider && typeof settings.thoughtByProvider === "object") {
         Object.assign(state.savedThoughtByProvider, settings.thoughtByProvider);
       }
-      if (typeof settings.sidebarWidth === "number" && settings.sidebarWidth >= 210) {
-        applySidebarWidth(settings.sidebarWidth, false);
-      }
-      if (typeof settings.sidebarCollapsed === "boolean") {
-        setSidebarCollapsed(settings.sidebarCollapsed, false);
-      }
-      if (typeof settings.railCollapsed === "boolean") {
-        setRailCollapsed(settings.railCollapsed, false);
-      }
-      if (settings.themePref === "system" || settings.themePref === "dark" || settings.themePref === "light") {
-        applyTheme(settings.themePref, false);
-      }
-      if (typeof settings.skinPref === "string" && settings.skinPref) {
-        applySkin(settings.skinPref, false);
-      }
-      if (settings.languagePref === "auto" || settings.languagePref === "zh-CN" || settings.languagePref === "en") {
-        applyLanguage(settings.languagePref, false);
-      }
       if (settings.provider) {
         try { localStorage.setItem("colab-desk.agent-provider", settings.provider); } catch {}
       }
-      syncApprovalToggle(false);
-      syncBusyModeToggle(false);
-      setComposerMode(state.composerMode, false);
     }
-    renderTranscript(currentTranscriptKey());
-    renderInspector();
-  } catch {}
+    return json.data;
+  } catch {
+    return null;
+  }
 }
