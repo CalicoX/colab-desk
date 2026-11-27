@@ -45,7 +45,7 @@ export class McpStdioClient {
     await this.request("initialize", {
       protocolVersion: "2024-11-05",
       capabilities: {},
-      clientInfo: { name: "colab-desk", version: "0.8.0" },
+      clientInfo: { name: "colab-desk", version: "0.8.1" },
     });
     this.notify("notifications/initialized", {});
   }
@@ -147,7 +147,7 @@ export class McpHttpClient {
   request(method, params, t) { return this._post({ jsonrpc: "2.0", id: this.nextId++, method, params }, t); }
 
   async start() {
-    await this.request("initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "colab-desk", version: "0.8.0" } });
+    await this.request("initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "colab-desk", version: "0.8.1" } });
     await this._post({ jsonrpc: "2.0", method: "notifications/initialized", params: {} }).catch(() => {});
     this.running = true;
   }

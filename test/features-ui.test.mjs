@@ -211,6 +211,111 @@ describe("Colab Desk feature-wave UI suite", { skip: !chromeBin && "No Chrome/Ch
     await cdp.waitFor(`document.querySelector("#nbx-diff-modal")?.hidden === true`, { label: "notebook diff modal closed" });
   });
 
+  test("prompt template picker menu is hidden initially and toggles on click", async () => {
+    const initial = await cdp.eval(`(() => {
+      const btn = document.querySelector("#agentx-tpl-picker-btn");
+      const menu = document.querySelector("#agentx-tpl-picker-menu");
+      return {
+        hasBtn: !!btn,
+        hasMenu: !!menu,
+        hidden: menu?.hidden ?? null,
+        display: menu ? getComputedStyle(menu).display : null,
+      };
+    })()`);
+    assert.equal(initial.hasBtn, true, "#agentx-tpl-picker-btn should be mounted");
+    assert.equal(initial.hasMenu, true, "#agentx-tpl-picker-menu should be mounted");
+    assert.equal(initial.hidden, true, "#agentx-tpl-picker-menu should have hidden attribute initially");
+    assert.equal(initial.display, "none", "#agentx-tpl-picker-menu computed display must be 'none' initially");
+
+    await cdp.eval(`document.querySelector("#agentx-tpl-picker-btn").click()`);
+    await cdp.waitFor(`(() => {
+      const m = document.querySelector("#agentx-tpl-picker-menu");
+      return !!(m && !m.hidden && getComputedStyle(m).display !== "none");
+    })()`, { label: "template picker menu open" });
+    const openedDisplay = await cdp.eval(`getComputedStyle(document.querySelector("#agentx-tpl-picker-menu")).display`);
+    assert.notEqual(openedDisplay, "none", "#agentx-tpl-picker-menu should be visible after clicking toggle button");
+
+    await cdp.eval(`document.querySelector("#agentx-tpl-picker-btn").click()`);
+    await cdp.waitFor(`(() => {
+      const m = document.querySelector("#agentx-tpl-picker-menu");
+      return !!(m && m.hidden && getComputedStyle(m).display === "none");
+    })()`, { label: "template picker menu closed" });
+    const closedDisplay = await cdp.eval(`getComputedStyle(document.querySelector("#agentx-tpl-picker-menu")).display`);
+    assert.equal(closedDisplay, "none", "#agentx-tpl-picker-menu should hide again on second click");
+  });
+
+  test("sidebar filter icon button and multi-level dropdown open, select, and clear cleanly", async () => {
+    const initial = await cdp.eval(`(() => {
+      const btn = document.querySelector("#agentx-filter-btn");
+      const menu = document.querySelector("#agentx-filter-menu");
+      const strip = document.querySelector("#agentx-sidebar-filters");
+      return {
+        hasBtn: !!btn,
+        hasMenu: !!menu,
+        menuHidden: menu?.hidden ?? null,
+        menuDisplay: menu ? getComputedStyle(menu).display : null,
+        stripHidden: strip?.hidden ?? null,
+        stripDisplay: strip ? getComputedStyle(strip).display : null,
+      };
+    })()`);
+    assert.equal(initial.hasBtn, true, "#agentx-filter-btn should be mounted in Chats header");
+    assert.equal(initial.hasMenu, true, "#agentx-filter-menu should be mounted");
+    assert.equal(initial.menuHidden, true, "#agentx-filter-menu should be hidden initially");
+    assert.equal(initial.menuDisplay, "none", "#agentx-filter-menu computed display must be 'none' initially");
+    assert.equal(initial.stripHidden, true, "#agentx-sidebar-filters should be hidden when no filter is active");
+    assert.equal(initial.stripDisplay, "none", "#agentx-sidebar-filters computed display must be 'none' initially");
+
+    // Open level-1 filter popover
+    await cdp.eval(`document.querySelector("#agentx-filter-btn").click()`);
+    await cdp.waitFor(`(() => {
+      const m = document.querySelector("#agentx-filter-menu");
+      return !!(m && !m.hidden && getComputedStyle(m).display !== "none");
+    })()`, { label: "filter menu open" });
+
+    // Open level-2 Provider submenu and check it is visible and not clipped off-viewport
+    await cdp.eval(`document.querySelector('#agentx-filter-menu [data-filter-group="provider"] .agentx-fm-row').click()`);
+    await cdp.waitFor(`(() => {
+      const s = document.querySelector('#agentx-filter-menu [data-filter-group="provider"] .agentx-fm-submenu');
+      return !!(s && !s.hidden && getComputedStyle(s).display !== "none");
+    })()`, { label: "provider submenu open" });
+    const subRect = await cdp.eval(`(() => {
+      const r = document.querySelector('#agentx-filter-menu [data-filter-group="provider"] .agentx-fm-submenu').getBoundingClientRect();
+      return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, vw: window.innerWidth, vh: window.innerHeight };
+    })()`);
+    assert.ok(subRect.left >= 0 && subRect.right <= subRect.vw, `submenu should stay within viewport horizontally: ${JSON.stringify(subRect)}`);
+    assert.ok(subRect.top >= 0 && subRect.bottom <= subRect.vh, `submenu should stay within viewport vertically: ${JSON.stringify(subRect)}`);
+
+    // Select AGY provider -> menu closes, badge shows "1", active filter strip appears
+    await cdp.eval(`document.querySelector('#agentx-filter-menu [data-filter-provider="agy"]').click()`);
+    await cdp.waitFor(`(() => {
+      const m = document.querySelector("#agentx-filter-menu");
+      const b = document.querySelector("#agentx-filter-badge");
+      return !!(m && m.hidden && b && !b.hidden && b.textContent === "1");
+    })()`, { label: "provider filter applied" });
+    const activeState = await cdp.eval(`({
+      btnActive: document.querySelector("#agentx-filter-btn").classList.contains("is-active"),
+      stripHidden: document.querySelector("#agentx-sidebar-filters").hidden,
+      chipCount: document.querySelectorAll("#agentx-sidebar-filters .agentx-filter-chip").length,
+    })`);
+    assert.equal(activeState.btnActive, true, "filter button should have is-active class");
+    assert.equal(activeState.stripHidden, false, "active filter pill strip should appear");
+    assert.equal(activeState.chipCount, 1, "one active filter chip should be rendered");
+
+    // Clear filter via strip clear button -> badge & strip hide cleanly
+    await cdp.eval(`document.querySelector("#agentx-filter-clear-btn").click()`);
+    await cdp.waitFor(`(() => {
+      const b = document.querySelector("#agentx-filter-badge");
+      const s = document.querySelector("#agentx-sidebar-filters");
+      return !!(b && b.hidden && s && s.hidden && getComputedStyle(s).display === "none");
+    })()`, { label: "filters cleared" });
+
+    // Open menu and verify Escape closes it
+    await cdp.eval(`document.querySelector("#agentx-filter-btn").click()`);
+    await cdp.waitFor(`!document.querySelector("#agentx-filter-menu")?.hidden`, { label: "filter menu reopened" });
+    await cdp.eval(`document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))`);
+    await cdp.waitFor(`document.querySelector("#agentx-filter-menu")?.hidden === true`, { label: "filter menu closed by Escape" });
+  });
+
   test("zero page errors, console errors, and failed requests", async () => {
     await new Promise((r) => setTimeout(r, 300));
     assert.deepEqual(pageErrors, [], JSON.stringify(pageErrors, null, 2));

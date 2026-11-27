@@ -67,6 +67,8 @@ export const AGENTX_STRINGS = {
     "agentx.tpl.deletedToast": "已删除提示词模板",
 
     "agentx.search.filterToggle": "筛选对话",
+    "agentx.search.filterProvider": "服务商",
+    "agentx.search.filterDate": "时间范围",
     "agentx.search.providerAll": "全部引擎",
     "agentx.search.providerApi": "自定义 API",
     "agentx.search.dateAll": "全部时间",
@@ -74,6 +76,7 @@ export const AGENTX_STRINGS = {
     "agentx.search.date7d": "最近 7 天",
     "agentx.search.date30d": "最近 30 天",
     "agentx.search.clear": "清除",
+    "agentx.search.clearFilters": "清除筛选",
     "agentx.search.matchesCount": "{count} 条匹配",
     "agentx.search.inThreadPlaceholder": "在当前对话中查找… (Enter 下一个)",
     "agentx.search.prev": "上一条",
@@ -151,6 +154,8 @@ export const AGENTX_STRINGS = {
     "agentx.tpl.deletedToast": "Prompt template deleted",
 
     "agentx.search.filterToggle": "Filter chats",
+    "agentx.search.filterProvider": "Provider",
+    "agentx.search.filterDate": "Time",
     "agentx.search.providerAll": "All providers",
     "agentx.search.providerApi": "Custom API",
     "agentx.search.dateAll": "Any time",
@@ -158,6 +163,7 @@ export const AGENTX_STRINGS = {
     "agentx.search.date7d": "Past 7 days",
     "agentx.search.date30d": "Past 30 days",
     "agentx.search.clear": "Clear",
+    "agentx.search.clearFilters": "Clear filters",
     "agentx.search.matchesCount": "{count} matches",
     "agentx.search.inThreadPlaceholder": "Find in this chat… (Enter for next)",
     "agentx.search.prev": "Previous",

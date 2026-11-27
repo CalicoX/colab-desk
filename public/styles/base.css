@@ -39,6 +39,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 button, input, select, textarea { font-family: inherit; }
+[hidden] { display: none !important; }
 .shell { height: 100%; overflow: hidden; width: 100%; background: var(--bg); }
 .app {
   --sidebar-width: 272px;

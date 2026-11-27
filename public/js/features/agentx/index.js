@@ -716,108 +716,372 @@ export async function init(api) {
     tplPickerMenu.append(div, manageBtn);
   }
 
-  // ── 4. Sidebar Full-Text Search Filters ──
+  // ── 4. Sidebar Full-Text Search Filters (Compact Icon + Multi-level Popover) ──
   let filterBar = null;
-  let filterMetaEl = null;
+  let filterBtn = null;
+  let filterBadgeEl = null;
+  let filterMenu = null;
+  let filterLastMeta = { total: 0, hasFilter: false };
+  let selectedDateRangeMs = 0;
+
   function mountSidebarSearchFilters() {
-    if (!dom.chatThreadsListEl || document.getElementById("agentx-sidebar-filters")) return;
+    if (!dom.chatThreadsListEl || document.getElementById("agentx-filter-btn")) return;
+
+    const chatsHead = dom.newChatThreadBtn?.closest(".sidebar-section-head")
+      || dom.chatThreadsListEl.previousElementSibling;
+
+    const btn = document.createElement("button");
+    btn.id = "agentx-filter-btn";
+    btn.type = "button";
+    btn.className = "agentx-filter-icon-btn";
+    btn.setAttribute("aria-haspopup", "menu");
+    btn.setAttribute("aria-expanded", "false");
+    btn.title = t("agentx.search.filterToggle");
+    btn.setAttribute("aria-label", t("agentx.search.filterToggle"));
+    btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>`;
+    const badge = document.createElement("span");
+    badge.id = "agentx-filter-badge";
+    badge.className = "agentx-filter-badge";
+    badge.hidden = true;
+    btn.append(badge);
+    filterBtn = btn;
+    filterBadgeEl = badge;
+
+    if (chatsHead && dom.newChatThreadBtn && chatsHead.contains(dom.newChatThreadBtn)) {
+      const actions = document.createElement("div");
+      actions.className = "agentx-chats-head-actions";
+      chatsHead.insertBefore(actions, dom.newChatThreadBtn);
+      actions.append(btn, dom.newChatThreadBtn);
+    } else if (chatsHead) {
+      chatsHead.append(btn);
+    }
+
+    // Compact active-filter pill strip (hidden when no filter/search active)
     const bar = document.createElement("div");
     bar.id = "agentx-sidebar-filters";
     bar.className = "agentx-sidebar-filters";
     bar.hidden = true;
     filterBar = bar;
+    dom.chatThreadsListEl.parentElement.insertBefore(bar, dom.chatThreadsListEl);
 
-    const provSel = document.createElement("select");
-    provSel.className = "agentx-mini-select";
-    provSel.setAttribute("aria-label", "Provider filter");
+    // Floating multi-level popover menu (mounted on body to avoid sidebar overflow clipping)
+    const menu = document.createElement("div");
+    menu.id = "agentx-filter-menu";
+    menu.className = "agentx-filter-menu";
+    menu.setAttribute("role", "menu");
+    menu.hidden = true;
+    document.body.append(menu);
+    filterMenu = menu;
 
-    const dateSel = document.createElement("select");
-    dateSel.className = "agentx-mini-select";
-    dateSel.setAttribute("aria-label", "Date filter");
+    const providerOptions = () => [
+      ["", t("agentx.search.providerAll")],
+      ["agy", "AGY"],
+      ["grok", "Grok"],
+      ["opencode", "OpenCode"],
+      ["api", t("agentx.search.providerApi")],
+    ];
+    const dateOptions = () => [
+      ["0", t("agentx.search.dateAll")],
+      ["86400000", t("agentx.search.date24h")],
+      ["604800000", t("agentx.search.date7d")],
+      ["2592000000", t("agentx.search.date30d")],
+    ];
 
-    const meta = document.createElement("span");
-    meta.className = "agentx-filter-meta";
-    filterMetaEl = meta;
+    const activeFilterCount = () => (state.agentxSearchFilters.provider ? 1 : 0) + (selectedDateRangeMs > 0 ? 1 : 0);
 
-    const clearBtn = document.createElement("button");
-    clearBtn.type = "button";
-    clearBtn.className = "agentx-mini-btn";
+    const providerLabel = (val) => providerOptions().find(([v]) => v === val)?.[1] || t("agentx.search.providerAll");
+    const dateLabel = (ms) => dateOptions().find(([v]) => Number(v) === Number(ms))?.[1] || t("agentx.search.dateAll");
 
-    function syncFilterOptions() {
-      const curProv = provSel.value;
-      const curDate = dateSel.value;
-      provSel.replaceChildren();
-      for (const [val, label] of [
-        ["", t("agentx.search.providerAll")],
-        ["agy", "AGY"],
-        ["grok", "Grok"],
-        ["opencode", "OpenCode"],
-        ["api", t("agentx.search.providerApi")],
-      ]) {
-        const o = document.createElement("option");
-        o.value = val;
-        o.textContent = label;
-        provSel.append(o);
+    const closeFilterMenu = () => {
+      if (!filterMenu || filterMenu.hidden) return;
+      filterMenu.hidden = true;
+      filterBtn?.setAttribute("aria-expanded", "false");
+    };
+
+    const positionFilterMenu = () => {
+      if (!filterBtn || !filterMenu) return;
+      const rect = filterBtn.getBoundingClientRect();
+      const menuW = Math.max(filterMenu.offsetWidth || 200, 196);
+      let left = rect.left;
+      if (left + menuW > window.innerWidth - 8) left = Math.max(8, window.innerWidth - menuW - 8);
+      if (left < 8) left = 8;
+      let top = rect.bottom + 5;
+      const menuH = filterMenu.offsetHeight || 120;
+      if (top + menuH > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - menuH - 5);
       }
-      provSel.value = curProv;
+      filterMenu.style.left = `${Math.round(left)}px`;
+      filterMenu.style.top = `${Math.round(top)}px`;
+      // Check whether level-2 submenus have room to fly out to the right
+      const flipLeft = (left + menuW + 170) > window.innerWidth - 8;
+      filterMenu.classList.toggle("is-flip-left", flipLeft);
+    };
 
-      dateSel.replaceChildren();
-      for (const [val, label] of [
-        ["0", t("agentx.search.dateAll")],
-        ["86400000", t("agentx.search.date24h")],
-        ["604800000", t("agentx.search.date7d")],
-        ["2592000000", t("agentx.search.date30d")],
-      ]) {
-        const o = document.createElement("option");
-        o.value = val;
-        o.textContent = label;
-        dateSel.append(o);
+    const syncFilterUi = () => {
+      const count = activeFilterCount();
+      if (filterBtn) {
+        filterBtn.classList.toggle("is-active", count > 0);
+        filterBtn.title = t("agentx.search.filterToggle");
+        filterBtn.setAttribute("aria-label", t("agentx.search.filterToggle"));
       }
-      dateSel.value = curDate || "0";
-      clearBtn.textContent = t("agentx.search.clear");
-    }
-    syncFilterOptions();
+      if (filterBadgeEl) {
+        filterBadgeEl.textContent = count > 0 ? String(count) : "";
+        filterBadgeEl.hidden = count === 0;
+      }
 
-    const applyFilters = () => {
-      const rangeMs = Number(dateSel.value || 0);
+      const hasText = Boolean(dom.filter?.value?.trim());
+      const showStrip = count > 0 || hasText;
+      if (filterBar) {
+        filterBar.hidden = !showStrip;
+        filterBar.replaceChildren();
+        if (showStrip) {
+          if (state.agentxSearchFilters.provider) {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "agentx-filter-chip";
+            chip.textContent = `${providerLabel(state.agentxSearchFilters.provider)} ×`;
+            chip.addEventListener("click", () => {
+              state.agentxSearchFilters = { ...state.agentxSearchFilters, provider: "" };
+              applyAndRefresh();
+            });
+            filterBar.append(chip);
+          }
+          if (selectedDateRangeMs > 0) {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "agentx-filter-chip";
+            chip.textContent = `${dateLabel(selectedDateRangeMs)} ×`;
+            chip.addEventListener("click", () => {
+              selectedDateRangeMs = 0;
+              state.agentxSearchFilters = { ...state.agentxSearchFilters, sinceMs: 0 };
+              applyAndRefresh();
+            });
+            filterBar.append(chip);
+          }
+          const meta = document.createElement("span");
+          meta.className = "agentx-filter-meta";
+          meta.textContent = filterLastMeta.hasFilter
+            ? t("agentx.search.matchesCount", { count: filterLastMeta.total || 0 })
+            : "";
+          filterBar.append(meta);
+
+          const clearBtn = document.createElement("button");
+          clearBtn.id = "agentx-filter-clear-btn";
+          clearBtn.type = "button";
+          clearBtn.className = "agentx-filter-clear-x";
+          clearBtn.textContent = "×";
+          clearBtn.title = t("agentx.search.clearFilters");
+          clearBtn.setAttribute("aria-label", t("agentx.search.clearFilters"));
+          clearBtn.addEventListener("click", clearAllFilters);
+          filterBar.append(clearBtn);
+        }
+      }
+    };
+
+    const applyAndRefresh = () => {
       state.agentxSearchFilters = {
-        provider: provSel.value || "",
-        sinceMs: rangeMs > 0 ? Date.now() - rangeMs : 0,
+        provider: state.agentxSearchFilters.provider || "",
+        sinceMs: selectedDateRangeMs > 0 ? Date.now() - selectedDateRangeMs : 0,
       };
       renderChatThreads(true);
+      syncFilterUi();
     };
-    provSel.addEventListener("change", applyFilters);
-    dateSel.addEventListener("change", applyFilters);
-    clearBtn.addEventListener("click", () => {
-      provSel.value = "";
-      dateSel.value = "0";
+
+    const clearAllFilters = () => {
+      selectedDateRangeMs = 0;
       if (dom.filter) dom.filter.value = "";
       state.agentxSearchFilters = { provider: "", sinceMs: 0 };
-      bar.hidden = true;
+      closeFilterMenu();
       renderChatThreads(true);
+      syncFilterUi();
+    };
+
+    const renderFilterMenu = () => {
+      if (!filterMenu) return;
+      filterMenu.replaceChildren();
+      const curProv = state.agentxSearchFilters.provider || "";
+      const curDate = String(selectedDateRangeMs || 0);
+      const categories = [];
+
+      const buildCategory = (groupId, titleText, currentText, isCustom, options, activeVal, onSelect) => {
+        const cat = document.createElement("div");
+        cat.className = "agentx-fm-cat";
+        cat.dataset.filterGroup = groupId;
+
+        const trigger = document.createElement("button");
+        trigger.type = "button";
+        trigger.className = "agentx-fm-row";
+        trigger.setAttribute("role", "menuitem");
+        trigger.setAttribute("aria-haspopup", "menu");
+        trigger.setAttribute("aria-expanded", "false");
+
+        const lbl = document.createElement("span");
+        lbl.className = "agentx-fm-label";
+        lbl.textContent = titleText;
+
+        const val = document.createElement("span");
+        val.className = `agentx-fm-val${isCustom ? " is-active" : ""}`;
+        val.textContent = currentText;
+
+        const chev = document.createElement("span");
+        chev.className = "agentx-fm-chev";
+        chev.textContent = "▸";
+
+        trigger.append(lbl, val, chev);
+
+        const sub = document.createElement("div");
+        sub.className = "agentx-fm-submenu";
+        sub.setAttribute("role", "menu");
+        sub.hidden = true;
+
+        for (const [optVal, optLabel] of options) {
+          const isSel = optVal === activeVal;
+          const item = document.createElement("button");
+          item.type = "button";
+          item.className = `agentx-fm-opt${isSel ? " is-selected" : ""}`;
+          item.setAttribute("role", "menuitemradio");
+          item.setAttribute("aria-checked", String(isSel));
+          item.dataset[groupId === "provider" ? "filterProvider" : "filterDate"] = optVal;
+
+          const chk = document.createElement("span");
+          chk.className = "agentx-fm-check";
+          chk.textContent = isSel ? "✓" : "";
+          const txt = document.createElement("span");
+          txt.textContent = optLabel;
+          item.append(chk, txt);
+
+          item.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            onSelect(optVal);
+            closeFilterMenu();
+          });
+          sub.append(item);
+        }
+
+        const setSubOpen = (open) => {
+          for (const other of categories) {
+            if (other.cat !== cat) {
+              other.cat.classList.remove("is-sub-open");
+              other.sub.hidden = true;
+              other.trigger.setAttribute("aria-expanded", "false");
+            }
+          }
+          cat.classList.toggle("is-sub-open", open);
+          sub.hidden = !open;
+          trigger.setAttribute("aria-expanded", String(open));
+        };
+
+        cat.addEventListener("mouseenter", () => setSubOpen(true));
+        trigger.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          setSubOpen(sub.hidden);
+        });
+
+        categories.push({ cat, sub, trigger });
+        cat.append(trigger, sub);
+        return cat;
+      };
+
+      filterMenu.append(
+        buildCategory(
+          "provider",
+          t("agentx.search.filterProvider"),
+          providerLabel(curProv),
+          Boolean(curProv),
+          providerOptions(),
+          curProv,
+          (val) => {
+            state.agentxSearchFilters = { ...state.agentxSearchFilters, provider: val };
+            applyAndRefresh();
+          },
+        ),
+        buildCategory(
+          "date",
+          t("agentx.search.filterDate"),
+          dateLabel(selectedDateRangeMs),
+          selectedDateRangeMs > 0,
+          dateOptions(),
+          curDate,
+          (val) => {
+            selectedDateRangeMs = Number(val || 0);
+            applyAndRefresh();
+          },
+        ),
+      );
+
+      if (activeFilterCount() > 0 || dom.filter?.value?.trim()) {
+        const div = document.createElement("div");
+        div.className = "agentx-fm-divider";
+        const foot = document.createElement("div");
+        foot.className = "agentx-fm-foot";
+        const clearItem = document.createElement("button");
+        clearItem.type = "button";
+        clearItem.className = "agentx-fm-clear";
+        clearItem.setAttribute("role", "menuitem");
+        clearItem.textContent = t("agentx.search.clearFilters");
+        clearItem.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          clearAllFilters();
+        });
+        foot.append(clearItem);
+        if (filterLastMeta.hasFilter) {
+          const cnt = document.createElement("span");
+          cnt.className = "agentx-fm-count";
+          cnt.textContent = t("agentx.search.matchesCount", { count: filterLastMeta.total || 0 });
+          foot.append(cnt);
+        }
+        filterMenu.append(div, foot);
+      }
+    };
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const willOpen = filterMenu.hidden;
+      if (willOpen) {
+        renderFilterMenu();
+        filterMenu.hidden = false;
+        btn.setAttribute("aria-expanded", "true");
+        positionFilterMenu();
+      } else {
+        closeFilterMenu();
+      }
     });
 
-    bar.append(provSel, dateSel, meta, clearBtn);
-    dom.chatThreadsListEl.parentElement.insertBefore(bar, dom.chatThreadsListEl);
+    document.addEventListener("click", (e) => {
+      if (!filterMenu.hidden && !filterMenu.contains(e.target) && !btn.contains(e.target)) {
+        closeFilterMenu();
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !filterMenu.hidden) {
+        e.stopPropagation();
+        closeFilterMenu();
+        btn.focus();
+      }
+    });
+    window.addEventListener("resize", () => {
+      if (!filterMenu.hidden) positionFilterMenu();
+    });
+    dom.chatThreadsListEl.closest(".session-list")?.addEventListener("scroll", () => {
+      if (!filterMenu.hidden) closeFilterMenu();
+    });
 
     if (dom.filter) {
       dom.filter.addEventListener("input", () => {
-        const hasText = Boolean(dom.filter.value.trim());
-        const hasExtra = Boolean(state.agentxSearchFilters.provider || state.agentxSearchFilters.sinceMs);
-        bar.hidden = !hasText && !hasExtra;
         renderChatThreads(true);
-      });
-      dom.filter.addEventListener("focus", () => {
-        if (state.chatThreads.length > 0) bar.hidden = false;
+        syncFilterUi();
       });
     }
 
     api.on("threads:search-meta", ({ total, hasFilter } = {}) => {
-      if (filterMetaEl) {
-        filterMetaEl.textContent = hasFilter ? t("agentx.search.matchesCount", { count: total || 0 }) : "";
-      }
+      filterLastMeta = { total: total || 0, hasFilter: Boolean(hasFilter) };
+      syncFilterUi();
     });
-    api.on("language:changed", syncFilterOptions);
+    api.on("language:changed", () => {
+      syncFilterUi();
+      if (!filterMenu.hidden) renderFilterMenu();
+    });
+    syncFilterUi();
   }
 
   // ── 5. In-Thread Search Bar (⌘F) ──
