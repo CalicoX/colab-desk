@@ -243,7 +243,7 @@ export async function sendAgentMessage(promptText, overrideFiles = null, overrid
           }
         } else if (ev.type === "error") {
           entry.ok = false;
-          entry.error = ev.error || "Agent 执行出错";
+          entry.error = ev.error || L("Agent 执行出错", "Agent execution error");
           if (ev.authRequired) entry.authRequired = true;
         }
         scheduleRender();
@@ -265,7 +265,7 @@ export async function sendAgentMessage(promptText, overrideFiles = null, overrid
       entry.text = entry.text ? `${entry.text}\n\n${abortNote}` : abortNote;
     } else {
       entry.ok = false;
-      entry.error = (err && err.message) || "连接 Agent 失败";
+      entry.error = (err && err.message) || L("连接 Agent 失败", "Failed to connect to Agent");
     }
   } finally {
     clearInterval(thinkTimer);

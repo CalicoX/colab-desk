@@ -3,7 +3,7 @@ export const NEW_SESSION_MODAL_HTML = `
     <form id="new-session-form" class="modal-form" method="dialog">
       <div class="modal-head">
         <h3 id="new-session-title" data-i18n="modal.newSession.title">新建会话</h3>
-        <button id="close-new-session" class="icon-btn" type="button" aria-label="关闭弹窗" title="关闭">
+        <button id="close-new-session" class="icon-btn" type="button" aria-label="Close" data-i18n-title="modal.close" title="关闭">
           <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-close" /></svg>
         </button>
       </div>
@@ -57,7 +57,7 @@ export const NEW_SESSION_MODAL_HTML = `
               <option value="v5e1">v5e1 (TPU)</option>
               <option value="cpu">CPU</option>
             </select>
-            <label class="snipe-add-hm"><input id="snipe-add-highmem" type="checkbox" checked /> <span>high-mem</span></label>
+            <label class="snipe-add-hm"><input id="snipe-add-highmem" type="checkbox" checked /> <span data-i18n="modal.newSession.highMemShort">高内存</span></label>
             <button id="snipe-add-target-btn" class="recipe-mini-btn" type="button" data-i18n="recipes.addTarget">添加</button>
           </div>
           <div class="snipe-params-grid">

@@ -77,7 +77,7 @@ export function createJobModals(api, { onSubmit, onCancel, onRerun, getJobById }
         return;
       }
       if (!code.trim()) {
-        errEl.textContent = "Script is empty";
+        errEl.textContent = api.state?.activeLang === "en" ? "Script is empty" : "脚本内容不能为空";
         errEl.hidden = false;
         return;
       }

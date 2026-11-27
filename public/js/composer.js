@@ -266,7 +266,9 @@ export function initComposer() {
     if (composed.action.type === "run") {
       dom.title.textContent = composed.action.script;
       dom.crumbName.textContent = "run";
-      dom.meta.textContent = composed.action.keep ? "新机器（完成后保留会话）" : "新机器，不占用当前会话";
+      dom.meta.textContent = composed.action.keep
+        ? L("新机器（完成后保留会话）", "New runtime (kept after finish)")
+        : L("新机器，不占用当前会话", "Ephemeral runtime (separate from current session)");
     }
     await callAction(composed.action, dom.command.value, key);
   });

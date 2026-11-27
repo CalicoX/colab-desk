@@ -1,6 +1,6 @@
 import { dom } from "./dom.js";
 import { currentSessionObject, desk, state } from "./state.js";
-import { escapeHtml, hardwareKind, openExternalUrl, showToast, tr } from "./utils.js";
+import { L, escapeHtml, hardwareKind, openExternalUrl, showToast, tr } from "./utils.js";
 import { on } from "./events.js";
 
 /* ── Inspector Right Rail: Live GPU Telemetry, Port Tunnels & Session Export ── */
@@ -74,7 +74,7 @@ export function renderGpuTelemetry(info) {
       killBtn.className = "s-btn is-danger";
       killBtn.style.padding = "1px 6px";
       killBtn.style.fontSize = "11px";
-      killBtn.textContent = "Kill";
+      killBtn.textContent = L("终止", "Kill");
       killBtn.addEventListener("click", async () => {
         killBtn.disabled = true;
         await fetch("/api/gpu/kill", {
@@ -82,7 +82,7 @@ export function renderGpuTelemetry(info) {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ session: state.selected, pid: proc.pid }),
         });
-        showToast(`Killed PID ${proc.pid}`);
+        showToast(L(`已终止进程 PID ${proc.pid}`, `Killed PID ${proc.pid}`));
         setTimeout(() => refreshGpuTelemetry(false), 800);
       });
       row.append(nameEl, memEl, killBtn);

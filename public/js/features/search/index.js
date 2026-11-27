@@ -252,6 +252,7 @@ export async function init(api) {
     elInput = document.createElement("input");
     elInput.type = "search";
     elInput.className = "search-query-input";
+    elInput.dataset.i18nPlaceholder = "search.placeholder";
     elInput.placeholder = t("search.placeholder");
     elInput.addEventListener("input", scheduleQuery);
     elInput.addEventListener("keydown", (e) => {
@@ -393,5 +394,11 @@ export async function init(api) {
   });
 
   api.on("search:open", openModal);
+  api.on("language:changed", () => {
+    if (dialog) {
+      syncSessionDropdown();
+      if (dialog.open) renderResults(results.length, results.length);
+    }
+  });
   window.__colabDeskSearch = { open: openModal, close: closeModal };
 }

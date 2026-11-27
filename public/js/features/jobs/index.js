@@ -277,7 +277,7 @@ export async function init(api) {
   // Command palette: Run as background job
   api.registerCommand({
     id: "jobs.runBackground",
-    title: api.tr("jobs.cmdRunBg"),
+    title: () => api.tr("jobs.cmdRunBg"),
     run: () => modals.openSubmitModal(),
   });
 
@@ -294,7 +294,7 @@ export async function init(api) {
   // React to session or language changes
   api.on("session:changed", () => renderRail());
   api.on("sessions:updated", () => renderRail());
-  api.on("lang:changed", () => {
+  api.on("language:changed", () => {
     renderRail();
     settingsPane.refreshLabels();
   });

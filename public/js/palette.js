@@ -1,6 +1,6 @@
 import { closeDialog, dom, openDialog } from "./dom.js";
 import { state } from "./state.js";
-import { L, escapeHtml } from "./utils.js";
+import { L, escapeHtml, tr } from "./utils.js";
 import { callRegistered, emit } from "./events.js";
 import { applyLanguage, applyTheme } from "./theme.js";
 import { selectSession, toggleRail, toggleSidebar } from "./sessions.js";
@@ -38,7 +38,17 @@ export function buildPaletteCommands() {
   const extraCommands = callRegistered("features:get-commands") || [];
   for (const cmd of extraCommands) {
     if (!cmd || typeof cmd.run !== "function") continue;
-    const label = typeof cmd.title === "function" ? cmd.title() : String(cmd.title || cmd.id || "");
+    let label = "";
+    if (typeof cmd.title === "function") {
+      label = String(cmd.title() || "");
+    } else if (cmd.title && typeof cmd.title === "object") {
+      label = String(state.activeLang === "en" ? (cmd.title.en || cmd.title["zh-CN"] || "") : (cmd.title["zh-CN"] || cmd.title.en || ""));
+    } else if (typeof cmd.title === "string" && cmd.title) {
+      const translated = tr(cmd.title);
+      label = translated || cmd.title;
+    } else {
+      label = String(cmd.id || "");
+    }
     if (!label) continue;
     cmds.push({ label, kbd: cmd.kbd || "", run: cmd.run });
   }

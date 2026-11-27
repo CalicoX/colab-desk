@@ -200,20 +200,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 
-    private func installMainMenu() {
+    func installMainMenu(isChinese: Bool? = nil) {
+        let zh = isChinese ?? (Locale.preferredLanguages.first?.lowercased().hasPrefix("zh") ?? false)
         let main = NSMenu()
 
         let appItem = NSMenuItem()
         main.addItem(appItem)
         let appMenu = NSMenu(title: "Colab Desk")
         appMenu.addItem(
-            withTitle: "New Session…",
+            withTitle: zh ? "新建会话…" : "New Session…",
             action: #selector(openNewSessionFromMenu(_:)),
             keyEquivalent: "n"
         )
         appMenu.addItem(.separator())
         appMenu.addItem(
-            withTitle: "Quit Colab Desk",
+            withTitle: zh ? "退出 Colab Desk" : "Quit Colab Desk",
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         )
@@ -221,41 +222,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let editItem = NSMenuItem()
         main.addItem(editItem)
-        let edit = NSMenu(title: "Edit")
-        edit.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
-        edit.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        let pasteItem = edit.addItem(withTitle: "Paste", action: #selector(pasteFromMenu(_:)), keyEquivalent: "v")
+        let edit = NSMenu(title: zh ? "编辑" : "Edit")
+        edit.addItem(withTitle: zh ? "剪切" : "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        edit.addItem(withTitle: zh ? "拷贝" : "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        let pasteItem = edit.addItem(withTitle: zh ? "粘贴" : "Paste", action: #selector(pasteFromMenu(_:)), keyEquivalent: "v")
         pasteItem.target = self
-        edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        edit.addItem(withTitle: zh ? "全选" : "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         editItem.submenu = edit
 
         let viewItem = NSMenuItem()
         main.addItem(viewItem)
-        let viewMenu = NSMenu(title: "View")
+        let viewMenu = NSMenu(title: zh ? "显示" : "View")
         viewMenu.addItem(
-            withTitle: "Toggle Sidebar",
+            withTitle: zh ? "切换侧边栏" : "Toggle Sidebar",
             action: #selector(toggleSidebarFromMenu(_:)),
             keyEquivalent: "b"
         )
         viewMenu.addItem(
-            withTitle: "Toggle Inspector",
+            withTitle: zh ? "切换右侧面板" : "Toggle Inspector",
             action: #selector(toggleInspectorFromMenu(_:)),
             keyEquivalent: "."
         )
         viewMenu.addItem(
-            withTitle: "Toggle Terminal",
+            withTitle: zh ? "切换终端" : "Toggle Terminal",
             action: #selector(toggleTerminalFromMenu(_:)),
             keyEquivalent: "j"
         )
         viewMenu.addItem(.separator())
         viewMenu.addItem(
-            withTitle: "Command Palette…",
+            withTitle: zh ? "命令面板…" : "Command Palette…",
             action: #selector(openCommandPaletteFromMenu(_:)),
             keyEquivalent: "k"
         )
         viewMenu.addItem(.separator())
         let fillItem = NSMenuItem(
-            title: "Fill Screen",
+            title: zh ? "铺满屏幕" : "Fill Screen",
             action: #selector(toggleFillScreenFromMenu(_:)),
             keyEquivalent: "m"
         )

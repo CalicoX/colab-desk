@@ -486,7 +486,7 @@ export async function init(api) {
   // ---- Palette Commands ----
   api.registerCommand({
     id: "guard.toggleHeartbeat",
-    title: "guard.cmdToggleHb",
+    title: () => api.tr("guard.cmdToggleHb"),
     run: async () => {
       const sess = api.getSession();
       if (!sess) return;
@@ -502,7 +502,7 @@ export async function init(api) {
 
   api.registerCommand({
     id: "guard.sampleCu",
-    title: "guard.cmdSampleCu",
+    title: () => api.tr("guard.cmdSampleCu"),
     run: async () => {
       const res = await api.fetchJson("/api/guard/sample-cu", { method: "POST" }).catch(() => null);
       if (res && res.history) {
@@ -515,7 +515,7 @@ export async function init(api) {
 
   api.registerCommand({
     id: "guard.rebuild",
-    title: "guard.cmdRebuild",
+    title: () => api.tr("guard.cmdRebuild"),
     run: async () => {
       const lost = findLostSession();
       if (lost) await rebuildSession(lost);

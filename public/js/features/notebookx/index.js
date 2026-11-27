@@ -594,7 +594,7 @@ export async function init(api) {
   if (typeof api.registerCommand === "function") {
     api.registerCommand({
       id: "notebookx.diff",
-      title: t("notebookx.cmdDiff"),
+      title: () => t("notebookx.cmdDiff"),
       run: () => {
         api.emit?.("composer:set-mode", "notebook");
         openDiffModal("last-saved");
@@ -602,7 +602,7 @@ export async function init(api) {
     });
     api.registerCommand({
       id: "notebookx.git",
-      title: t("notebookx.cmdGit"),
+      title: () => t("notebookx.cmdGit"),
       run: () => {
         api.emit?.("composer:set-mode", "notebook");
         toggleGitDrawer();

@@ -294,7 +294,7 @@ export function createRecipesModal(api, callbacks) {
     const hmCb = document.createElement("input");
     hmCb.type = "checkbox";
     hmCb.checked = true;
-    hmLabel.append(hmCb, textEl("span", "", "high-mem"));
+    hmLabel.append(hmCb, textEl("span", "", tr("modal.newSession.highMemShort")));
     const addBtn = makeBtn(tr("recipes.addTarget"), "recipe-mini-btn", () => {
       syncDraftFromForm();
       draft.snipe.targets.push(accelToTarget(addSel.value, hmCb.checked));
@@ -484,7 +484,7 @@ export function createRecipesModal(api, callbacks) {
     hmCb.id = "rcp-highmem";
     hmCb.type = "checkbox";
     hmCb.checked = Boolean(draft.hardware?.highMem);
-    hmLabel.append(hmCb, textEl("span", "", "high-mem"));
+    hmLabel.append(hmCb, textEl("span", "", tr("modal.newSession.highMemShort")));
     row.append(sel, hmLabel);
     wrap.appendChild(row);
     return wrap;

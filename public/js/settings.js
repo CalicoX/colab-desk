@@ -408,7 +408,10 @@ export async function triggerColabInstall(method) {
   uvBtn.disabled = true;
   pipBtn.disabled = true;
   logEl.hidden = false;
-  logEl.textContent = `正在通过 ${method} 安装 google-colab-cli，请稍候…`;
+  logEl.textContent = L(
+    `正在通过 ${method} 安装 google-colab-cli，请稍候…`,
+    `Installing google-colab-cli via ${method}…`,
+  );
   try {
     const res = await fetch("/api/env/install", {
       method: "POST",
@@ -417,12 +420,12 @@ export async function triggerColabInstall(method) {
     });
     const data = await res.json();
     logEl.textContent = data.ok
-      ? `安装成功（${data.command}）\n${data.output || ""}`.trim()
-      : `安装失败：${data.error || "未知错误"}\n${data.output || ""}`.trim();
+      ? L(`安装成功（${data.command}）\n${data.output || ""}`, `Installed (${data.command})\n${data.output || ""}`).trim()
+      : L(`安装失败：${data.error || "未知错误"}\n${data.output || ""}`, `Install failed: ${data.error || "Unknown error"}\n${data.output || ""}`).trim();
     if (data.env) paintEnvCheck(data.env);
     if (data.ok) refreshSessions(state.selected);
   } catch (err) {
-    logEl.textContent = `安装出错：${err.message}`;
+    logEl.textContent = L(`安装出错：${err.message}`, `Install error: ${err.message}`);
   } finally {
     if (state.latestEnvCheck) paintEnvCheck(state.latestEnvCheck);
   }
@@ -600,7 +603,7 @@ export function initSettings() {
   document.querySelector("#api-save-btn").addEventListener("click", async () => {
     const nextProf = {
       id: state.editingApiProfileId || `p-${Date.now().toString(36)}`,
-      label: dom.apiLabelInput.value.trim() || "自定义 API",
+      label: dom.apiLabelInput.value.trim() || L("自定义 API", "Custom API"),
       baseUrl: dom.apiBaseUrlInput.value.trim(),
       apiKey: dom.apiKeyInput.value.trim(),
       model: dom.apiModelInput.value.trim(),
@@ -682,7 +685,7 @@ export function initSettings() {
   document.querySelector("#api-test-btn").addEventListener("click", async () => {
     const btn = document.querySelector("#api-test-btn");
     btn.disabled = true;
-    dom.apiTestStatus.textContent = "正在测试连接…";
+    dom.apiTestStatus.textContent = L("正在测试连接…", "Testing connection…");
     try {
       const res = await fetch("/api/agent/test-api", {
         method: "POST",
@@ -694,9 +697,11 @@ export function initSettings() {
         }),
       });
       const data = await res.json();
-      dom.apiTestStatus.textContent = data.ok ? `连接成功（${data.model}）` : `连接失败：${data.error}`;
+      dom.apiTestStatus.textContent = data.ok
+        ? L(`连接成功（${data.model}）`, `Connected (${data.model})`)
+        : L(`连接失败：${data.error}`, `Connection failed: ${data.error}`);
     } catch (err) {
-      dom.apiTestStatus.textContent = `测试失败：${err.message}`;
+      dom.apiTestStatus.textContent = L(`测试失败：${err.message}`, `Test failed: ${err.message}`);
     } finally {
       btn.disabled = false;
     }
@@ -709,7 +714,7 @@ export function initSettings() {
       try {
         await navigator.clipboard.writeText(btn.dataset.copyCmd || "");
         const old = btn.textContent;
-        btn.textContent = "已复制";
+        btn.textContent = tr("settings.colab.copied");
         setTimeout(() => { btn.textContent = old; }, 1400);
       } catch {}
     });
@@ -722,22 +727,25 @@ export function initSettings() {
     const btn = document.querySelector("#env-login-btn");
     const logEl = document.querySelector("#env-login-log");
     btn.disabled = true;
-    btn.textContent = "等待浏览器完成登录…";
+    btn.textContent = L("等待浏览器完成登录…", "Waiting for browser login…");
     logEl.hidden = false;
-    logEl.textContent = "已触发 colab --auth=oauth2 sessions，请在弹出的浏览器窗口中完成 Google 登录授权…";
+    logEl.textContent = L(
+      "已触发 colab --auth=oauth2 sessions，请在弹出的浏览器窗口中完成 Google 登录授权…",
+      "Started colab --auth=oauth2 sessions — complete Google OAuth sign-in in the browser window…",
+    );
     try {
       const res = await fetch("/api/env/login", { method: "POST" });
       const data = await res.json();
       logEl.textContent = data.ok
-        ? `登录成功！\n${data.output || ""}`.trim()
-        : `登录未完成：${data.error || ""}\n${data.output || ""}`.trim();
+        ? L(`登录成功！\n${data.output || ""}`, `Signed in!\n${data.output || ""}`).trim()
+        : L(`登录未完成：${data.error || ""}\n${data.output || ""}`, `Sign-in incomplete: ${data.error || ""}\n${data.output || ""}`).trim();
       if (data.env) paintEnvCheck(data.env);
       if (data.ok) refreshSessions(state.selected);
     } catch (err) {
-      logEl.textContent = `登录出错：${err.message}`;
+      logEl.textContent = L(`登录出错：${err.message}`, `Sign-in error: ${err.message}`);
     } finally {
       btn.disabled = false;
-      btn.textContent = "浏览器 OAuth 登录";
+      btn.textContent = tr("settings.colab.loginBtn");
     }
   });
 

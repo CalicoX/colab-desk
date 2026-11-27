@@ -302,10 +302,10 @@
                 </div>
 
                 <div id="busy-send-actions" class="busy-send-actions" hidden>
-                  <button id="queue-send-btn" class="busy-pill-btn" type="button" data-i18n-title="composer.queueTitle" title="加入待发送队列，当前回合结束后自动发送">排队</button>
-                  <button id="steer-send-btn" class="busy-pill-btn is-steer" type="button" data-i18n-title="composer.steerTitle" title="立即中断当前回合，改按这条新指令执行">⚡ 转向</button>
+                  <button id="queue-send-btn" class="busy-pill-btn" type="button" data-i18n="composer.queueBtn" data-i18n-title="composer.queueTitle" title="加入待发送队列，当前回合结束后自动发送">排队</button>
+                  <button id="steer-send-btn" class="busy-pill-btn is-steer" type="button" data-i18n="composer.steerBtn" data-i18n-title="composer.steerTitle" title="立即中断当前回合，改按这条新指令执行">⚡ 转向</button>
                 </div>
-                <button id="send-btn" class="send" type="submit" aria-label="Submit" title="发送 (⌘Enter)">↑</button>
+                <button id="send-btn" class="send" type="submit" aria-label="Submit" data-i18n-title="composer.sendTitle" title="发送 (⌘Enter)">↑</button>
               </div>
             </form>
 
@@ -330,7 +330,7 @@
               </div>
               <div id="nb-vars-drawer" class="nb-vars-drawer" hidden>
                 <div class="nb-vars-head">
-                  <span id="nb-vars-title">内核变量监视器 (Kernel Variables)</span>
+                  <span id="nb-vars-title" data-i18n="nb.varsTitle">内核变量监视器</span>
                   <button id="nb-vars-refresh" class="nb-btn" type="button" data-i18n="nb.varsRefresh">刷新变量</button>
                 </div>
                 <div id="nb-vars-body"></div>
@@ -465,12 +465,12 @@
 
         <div class="inspector-section">
           <div class="meter-list">
-            <div class="meter-row" title="账户剩余计算单元 (colab usage)">
+            <div class="meter-row" data-i18n-title="rail.cuTip" title="账户剩余计算单元 (colab usage)">
               <span class="meter-label" data-i18n="rail.balance">剩余计算单元</span>
               <div class="meter-track"><div id="bar-balance" class="meter-fill is-ok" style="width: 0%"></div></div>
               <span id="val-balance" class="meter-value is-muted">—</span>
             </div>
-            <div class="meter-row" title="当前每小时消耗速率 (CU/hr)">
+            <div class="meter-row" data-i18n-title="rail.rateTip" title="当前每小时消耗速率 (CU/hr)">
               <span class="meter-label" data-i18n="rail.rate">消耗速率</span>
               <div class="meter-track">
                 <div id="bar-rate" class="meter-fill is-warn" style="width: 0%"></div>
@@ -479,7 +479,7 @@
               </div>
               <span id="val-rate" class="meter-value is-muted">—</span>
             </div>
-            <div class="meter-row" title="本次连接时长（参考 12h 上限）">
+            <div class="meter-row" data-i18n-title="rail.uptimeTip" title="本次连接时长（参考 12h 上限）">
               <span class="meter-label" data-i18n="rail.uptime">连接时长</span>
               <div class="meter-track">
                 <div id="bar-uptime" class="meter-fill is-accent" style="width: 0%"></div>
@@ -487,7 +487,7 @@
               </div>
               <span id="val-uptime" class="meter-value is-muted">—</span>
             </div>
-            <div class="meter-row" title="按当前速率估算的本次消耗 / 活跃实例">
+            <div class="meter-row" data-i18n-title="rail.activeTip" title="按当前速率估算的本次消耗 / 活跃实例">
               <span id="label-est" class="meter-label" data-i18n="rail.active">活跃实例</span>
               <div class="meter-track"><div id="bar-est" class="meter-fill" style="width: 0%"></div></div>
               <span id="val-est" class="meter-value is-muted">—</span>
@@ -519,8 +519,8 @@
             </div>
           </div>
           <div class="tunnel-mode-switch" role="tablist" aria-label="Tunnel mode">
-            <button id="tunnel-mode-cf" class="tunnel-mode-btn is-active" type="button" data-tunnel-mode="cloudflared" data-i18n="rail.tunnelModeCf" title="在 Colab VM 上建立 Cloudflare 临时公网 HTTPS 隧道 (*.trycloudflare.com)">CF 公网</button>
-            <button id="tunnel-mode-ssh" class="tunnel-mode-btn" type="button" data-tunnel-mode="ssh" data-i18n="rail.tunnelModeSsh" title="通过 colab ssh 建立本地 127.0.0.1 端口转发">SSH 本地</button>
+            <button id="tunnel-mode-cf" class="tunnel-mode-btn is-active" type="button" data-tunnel-mode="cloudflared" data-i18n="rail.tunnelModeCf" data-i18n-title="rail.tunnelModeCfTip" title="在 Colab VM 上建立 Cloudflare 临时公网 HTTPS 隧道 (*.trycloudflare.com)">CF 公网</button>
+            <button id="tunnel-mode-ssh" class="tunnel-mode-btn" type="button" data-tunnel-mode="ssh" data-i18n="rail.tunnelModeSsh" data-i18n-title="rail.tunnelModeSshTip" title="通过 colab ssh 建立本地 127.0.0.1 端口转发">SSH 本地</button>
           </div>
           <div id="detected-ports-box" class="detected-ports" hidden></div>
           <div class="rail-chip-row" id="tunnel-presets">
@@ -539,7 +539,7 @@
         </div>
 
         <div class="inspector-section">
-          <div class="meter-row" title="当前会话的对话与命令记录数">
+          <div class="meter-row" data-i18n-title="rail.historyTip" title="当前会话的对话与命令记录数">
             <span class="meter-label" data-i18n="rail.history">会话记录</span>
             <div class="meter-track"><div id="bar-activity" class="meter-fill" style="width: 0%"></div></div>
             <span id="val-activity" class="meter-value is-muted">0 条</span>

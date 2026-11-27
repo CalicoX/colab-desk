@@ -201,10 +201,10 @@ export const SETTINGS_MODAL_HTML = `
                   </div>
                   <div class="s-actions" style="width:100%;align-items:center;">
                     <select id="agy-acp-method" class="s-select" aria-label="Antigravity ACP 认证方式">
-                      <option value="oauth-personal">Log in with Google (oauth-personal)</option>
-                      <option value="oauth-business">Log in with Gemini Enterprise (oauth-business)</option>
-                      <option value="agent-platform">Agent Platform / ADC (agent-platform)</option>
-                      <option value="gemini-api-key">Gemini API Key (gemini-api-key)</option>
+                      <option value="oauth-personal" data-i18n="settings.providers.acpMethodPersonal">使用 Google 账号登录 (oauth-personal)</option>
+                      <option value="oauth-business" data-i18n="settings.providers.acpMethodBusiness">使用 Gemini Enterprise 登录 (oauth-business)</option>
+                      <option value="agent-platform" data-i18n="settings.providers.acpMethodPlatform">Agent Platform / ADC (agent-platform)</option>
+                      <option value="gemini-api-key" data-i18n="settings.providers.acpMethodApiKey">Gemini API Key (gemini-api-key)</option>
                     </select>
                     <button id="agy-acp-login-btn" class="s-btn is-primary" type="button" data-i18n="settings.providers.acpLogin">Antigravity ACP 登录</button>
                     <button id="agy-acp-logout-btn" class="s-btn is-danger" type="button" hidden data-i18n="settings.providers.acpLogout">退出登录</button>
@@ -501,7 +501,7 @@ export const SETTINGS_MODAL_HTML = `
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.8.1</span>
+                    <span class="s-title">Colab Desk 0.8.2</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -514,7 +514,7 @@ export const SETTINGS_MODAL_HTML = `
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.8.1（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.8.2（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>

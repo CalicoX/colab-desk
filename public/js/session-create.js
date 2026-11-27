@@ -401,6 +401,7 @@ export function closeNewSessionModal(keepOngoing = false) {
 }
 
 export function describeCreateLog(lines, hwLabel, elapsedSec) {
+  const isEn = state.activeLang === "en";
   const joined = lines.join("\n");
   const retryMatch = [...joined.matchAll(/Assignment request failed; retrying in (\d+)s/g)].pop();
   const has503 = /503 Service Unavailable|503\b/.test(joined);
@@ -408,13 +409,25 @@ export function describeCreateLog(lines, hwLabel, elapsedSec) {
   if (retryMatch) {
     return {
       warn: true,
-      text: `Google Colab 返回 ${has503 ? "503（当前节点繁忙）" : "临时错误"}，${retryMatch[1]}s 后自动重试（已等待 ${elapsedSec}s）。可点「转后台抢卡」继续自动抢，抢到会发系统通知。`,
+      text: isEn
+        ? `Google Colab returned ${has503 ? "503 (node busy)" : "a temporary error"}; retrying in ${retryMatch[1]}s (waited ${elapsedSec}s). Click "Snipe in Background" to keep retrying automatically.`
+        : `Google Colab 返回 ${has503 ? "503（当前节点繁忙）" : "临时错误"}，${retryMatch[1]}s 后自动重试（已等待 ${elapsedSec}s）。可点「转后台抢卡」继续自动抢，抢到会发系统通知。`,
     };
   }
   if (has400) {
-    return { warn: true, text: `Google Colab 返回 400（当前账号可能无该规格配额），等待 CLI 返回结果（${elapsedSec}s）…` };
+    return {
+      warn: true,
+      text: isEn
+        ? `Google Colab returned 400 (account may lack quota for this tier), waiting for CLI (${elapsedSec}s)…`
+        : `Google Colab 返回 400（当前账号可能无该规格配额），等待 CLI 返回结果（${elapsedSec}s）…`,
+    };
   }
-  return { warn: false, text: `正在向 Google Colab 申请 ${hwLabel} 节点（${elapsedSec}s）…` };
+  return {
+    warn: false,
+    text: isEn
+      ? `Requesting ${hwLabel} runtime from Google Colab (${elapsedSec}s)…`
+      : `正在向 Google Colab 申请 ${hwLabel} 节点（${elapsedSec}s）…`,
+  };
 }
 
 export function initSessionCreate() {
@@ -534,7 +547,7 @@ export function initSessionCreate() {
     const paintProgress = () => {
       if (createRef.handedOff) return;
       const sec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-      dom.startSessionBtn.textContent = `创建中 ${sec}s`;
+      dom.startSessionBtn.textContent = state.activeLang === "en" ? `Creating ${sec}s` : `创建中 ${sec}s`;
       const info = describeCreateLog(latestLines, hwLabel, sec);
       dom.modalStatus.textContent = info.text;
       dom.modalStatus.className = info.warn ? "modal-status is-warn" : "modal-status";

@@ -59,6 +59,10 @@ extension AppDelegate: WKScriptMessageHandler, UNUserNotificationCenterDelegate 
             }
             return
         }
+        if message.name == "setLanguage", let lang = message.body as? String {
+            installMainMenu(isChinese: lang != "en")
+            return
+        }
         if message.name == "openExternal", let raw = message.body as? String, let url = URL(string: raw) {
             NSWorkspace.shared.open(url)
             return

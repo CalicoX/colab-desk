@@ -542,6 +542,7 @@ export async function init(api) {
     const stopOk = document.createElement("button");
     stopOk.type = "button";
     stopOk.className = "fleet-btn is-danger";
+    stopOk.dataset.i18n = "fleet.confirm";
     stopOk.textContent = t("fleet.confirm");
     stopOk.addEventListener("click", () => {
       elStopBox.hidden = true;
@@ -553,6 +554,7 @@ export async function init(api) {
     const stopNo = document.createElement("button");
     stopNo.type = "button";
     stopNo.className = "fleet-btn";
+    stopNo.dataset.i18n = "fleet.cancel";
     stopNo.textContent = t("fleet.cancel");
     stopNo.addEventListener("click", () => {
       pendingStopConfirm = false;
@@ -568,14 +570,17 @@ export async function init(api) {
     elPushLocal = document.createElement("input");
     elPushLocal.className = "fleet-input";
     elPushLocal.style.flex = "1";
+    elPushLocal.dataset.i18nPlaceholder = "fleet.pushLocal";
     elPushLocal.placeholder = t("fleet.pushLocal");
     elPushRemote = document.createElement("input");
     elPushRemote.className = "fleet-input";
     elPushRemote.style.flex = "1";
+    elPushRemote.dataset.i18nPlaceholder = "fleet.pushRemote";
     elPushRemote.placeholder = t("fleet.pushRemote");
     const pushGo = document.createElement("button");
     pushGo.type = "button";
     pushGo.className = "fleet-btn is-primary";
+    pushGo.dataset.i18n = "fleet.pushRun";
     pushGo.textContent = t("fleet.pushRun");
     pushGo.addEventListener("click", () => {
       const localDir = elPushLocal.value.trim();
@@ -605,10 +610,12 @@ export async function init(api) {
     const tabSsh = document.createElement("button");
     tabSsh.type = "button";
     tabSsh.className = "fleet-mode-tab is-active";
+    tabSsh.dataset.i18n = "fleet.modeSsh";
     tabSsh.textContent = t("fleet.modeSsh");
     const tabExec = document.createElement("button");
     tabExec.type = "button";
     tabExec.className = "fleet-mode-tab";
+    tabExec.dataset.i18n = "fleet.modeExec";
     tabExec.textContent = t("fleet.modeExec");
     tabSsh.addEventListener("click", () => {
       mode = "ssh";
@@ -625,6 +632,7 @@ export async function init(api) {
 
     elCmd = document.createElement("textarea");
     elCmd.className = "fleet-textarea";
+    elCmd.dataset.i18nPlaceholder = "fleet.cmdPlaceholder";
     elCmd.placeholder = t("fleet.cmdPlaceholder");
 
     elDangerBox = document.createElement("div");
@@ -636,6 +644,7 @@ export async function init(api) {
     const dangerNo = document.createElement("button");
     dangerNo.type = "button";
     dangerNo.className = "fleet-btn";
+    dangerNo.dataset.i18n = "fleet.cancel";
     dangerNo.textContent = t("fleet.cancel");
     dangerNo.addEventListener("click", () => {
       pendingDangerPayload = null;
@@ -644,6 +653,7 @@ export async function init(api) {
     const dangerYes = document.createElement("button");
     dangerYes.type = "button";
     dangerYes.className = "fleet-btn is-danger";
+    dangerYes.dataset.i18n = "fleet.dangerConfirm";
     dangerYes.textContent = t("fleet.dangerConfirm");
     dangerYes.addEventListener("click", () => {
       if (pendingDangerPayload) submitBroadcast(true);
@@ -658,6 +668,7 @@ export async function init(api) {
     const toLabel = document.createElement("label");
     toLabel.style.fontSize = "12px";
     toLabel.style.color = "var(--muted)";
+    toLabel.dataset.i18n = "fleet.timeoutLabel";
     toLabel.textContent = t("fleet.timeoutLabel");
     elTimeout = document.createElement("input");
     elTimeout.type = "number";
@@ -673,6 +684,7 @@ export async function init(api) {
     btnCancel = document.createElement("button");
     btnCancel.type = "button";
     btnCancel.className = "fleet-btn is-danger";
+    btnCancel.dataset.i18n = "fleet.cancelAll";
     btnCancel.textContent = t("fleet.cancelAll");
     btnCancel.disabled = true;
     btnCancel.addEventListener("click", async () => {
@@ -689,6 +701,7 @@ export async function init(api) {
     btnRerun = document.createElement("button");
     btnRerun.type = "button";
     btnRerun.className = "fleet-btn";
+    btnRerun.dataset.i18n = "fleet.rerunFailed";
     btnRerun.textContent = t("fleet.rerunFailed");
     btnRerun.disabled = true;
     btnRerun.addEventListener("click", async () => {
@@ -707,6 +720,7 @@ export async function init(api) {
     btnRun = document.createElement("button");
     btnRun.type = "button";
     btnRun.className = "fleet-btn is-primary";
+    btnRun.dataset.i18n = "fleet.runBroadcast";
     btnRun.textContent = t("fleet.runBroadcast");
     btnRun.addEventListener("click", () => submitBroadcast(false));
     cRight.append(btnCancel, btnRerun, btnRun);
@@ -807,5 +821,12 @@ export async function init(api) {
   });
 
   api.on("fleet:open", openModal);
+  api.on("language:changed", () => {
+    if (dialog) {
+      renderCards();
+      renderOutputs();
+      syncSelectionUi();
+    }
+  });
   window.__colabDeskFleet = { open: openModal, close: closeModal };
 }

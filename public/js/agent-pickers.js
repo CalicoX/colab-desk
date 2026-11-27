@@ -1,7 +1,7 @@
 import { dom } from "./dom.js";
 import { saveJsonStorage, state } from "./state.js";
 import { L, tr } from "./utils.js";
-import { emit } from "./events.js";
+import { emit, on } from "./events.js";
 import { scheduleStoreSync } from "./store.js";
 
 /* ── Agent Provider, Model & Thinking Level Pickers ── */
@@ -17,7 +17,7 @@ export function syncAgentPickerLabel() {
   const pid = dom.agentProviderSelect.value || "agy";
   const snap = state.providerListSnapshot.find((p) => p.id === pid);
   const selProvOpt = dom.agentProviderSelect.options[dom.agentProviderSelect.selectedIndex];
-  const provName = snap?.label || selProvOpt?.textContent?.replace(/\s*\(未安装\)$/, "") || pid;
+  const provName = snap?.label || selProvOpt?.textContent?.replace(/\s*\((?:未安装|Not installed)\)$/, "") || pid;
   const selModelOpt = dom.agentModelSelect.options[dom.agentModelSelect.selectedIndex];
   const modelName = selModelOpt?.textContent || dom.agentModelSelect.value || tr("composer.defaultModel");
   if (dom.agentPickerDot) {
@@ -396,7 +396,7 @@ export async function initProviders() {
     for (const p of data.providers) {
       const opt = document.createElement("option");
       opt.value = p.id;
-      opt.textContent = p.available ? p.label : `${p.label} (未安装)`;
+      opt.textContent = p.available ? p.label : `${p.label} (${tr("settings.providers.notInstalled")})`;
       if (p.id === savedProvider && p.available) chosen = p.id;
       dom.agentProviderSelect.append(opt);
       if (p.models && p.models.length > 0) {
@@ -458,6 +458,24 @@ export function initAgentPickers() {
     if (dom.agentPickerWrap && !dom.agentPickerWrap.contains(ev.target)) closeAgentPicker();
     if (dom.thoughtPickerWrap && !dom.thoughtPickerWrap.contains(ev.target)) closeThoughtPicker();
   });
+  on("language:changed", () => {
+    for (const opt of Array.from(dom.agentProviderSelect.options)) {
+      const snap = state.providerListSnapshot.find((p) => p.id === opt.value);
+      if (snap) {
+        opt.textContent = snap.available ? snap.label : `${snap.label} (${tr("settings.providers.notInstalled")})`;
+      }
+    }
+    const curPid = dom.agentProviderSelect.value;
+    if (curPid && state.providerModelsCache[curPid]) {
+      renderModelOptions(curPid, state.providerModelsCache[curPid]);
+    } else {
+      syncAgentPickerLabel();
+      syncThoughtPickerLabel();
+    }
+    if (dom.agentPickerMenu && !dom.agentPickerMenu.hidden) renderAgentPickerMenu();
+    if (dom.thoughtPickerMenu && !dom.thoughtPickerMenu.hidden) renderThoughtPickerMenu();
+  });
+
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape") {
       closeAgentPicker();

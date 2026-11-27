@@ -1353,3 +1353,24 @@ test("static crawler: feature modules, styles, 0 import cycles, and no duplicate
     assert.match(fs.readFileSync(idx, "utf8"), /export\s+(?:async\s+)?function\s+init\b/, `${idx} must export init`);
   }
 });
+
+test("i18n parity and language:changed event wiring across frontend", async () => {
+  const { TRANSLATIONS } = await import("../src/i18n.mjs");
+  const zhKeys = Object.keys(TRANSLATIONS["zh-CN"]).sort();
+  const enKeys = Object.keys(TRANSLATIONS.en).sort();
+  assert.deepEqual(zhKeys, enKeys, "zh-CN and en translation keys must match exactly");
+
+  const root = path.resolve(import.meta.dirname, "..");
+  const walkJs = (dir, out = []) => {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) walkJs(full, out);
+      else if (ent.name.endsWith(".js")) out.push(full);
+    }
+    return out;
+  };
+  for (const file of walkJs(path.join(root, "public/js"))) {
+    const src = fs.readFileSync(file, "utf8");
+    assert.doesNotMatch(src, /["'](?:lang:changed|ui:language-changed)["']/, `${file} must listen to "language:changed"`);
+  }
+});

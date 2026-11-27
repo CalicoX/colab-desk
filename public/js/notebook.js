@@ -56,7 +56,10 @@ export function defaultNotebookState() {
       {
         id: "nb-cell-intro",
         type: "markdown",
-        source: "## Colab Desk Notebook\n使用官方 `colab exec` 持久内核：变量与显存跨单元格保留。按 `Shift+Enter` 运行当前格并跳到下一格。",
+        source: L(
+          "## Colab Desk 笔记本\n使用官方 `colab exec` 持久内核：变量与显存跨单元格保留。按 `Shift+Enter` 运行当前格并跳到下一格。",
+          "## Colab Desk Notebook\nPowered by the official `colab exec` persistent kernel: variables and VRAM persist across cells. Press `Shift+Enter` to run a cell and advance.",
+        ),
         executionCount: null,
         stdout: "",
         stderr: "",

@@ -256,17 +256,17 @@ export async function init(api) {
   // ── ⌘K Palette Commands ──
   api.registerCommand({
     id: "recipes:manage",
-    title: api.tr("recipes.cmdManage"),
+    title: () => api.tr("recipes.cmdManage"),
     run: () => modal.open(),
   });
   api.registerCommand({
     id: "recipes:new-from-recipe",
-    title: api.tr("recipes.cmdNewFromRecipe"),
+    title: () => api.tr("recipes.cmdNewFromRecipe"),
     run: () => modal.open(),
   });
   api.registerCommand({
     id: "recipes:save-current",
-    title: api.tr("recipes.cmdSaveCurrent"),
+    title: () => api.tr("recipes.cmdSaveCurrent"),
     run: () => openSaveCurrentDraft(),
   });
 
@@ -419,10 +419,11 @@ export async function init(api) {
     if (sec && modalTargets.length > 1) sec.open = true;
 
     if (summaryEl) {
+      const isEn = api.state?.activeLang === "en";
       const tags = [];
-      if (recipe.envVarNames?.length) tags.push(`Env: ${recipe.envVarNames.join(", ")}`);
-      if (recipe.sync?.enabled && recipe.sync?.localDir) tags.push(`Sync: ${recipe.sync.localDir}`);
-      if (recipe.startupScript?.enabled) tags.push(`Script: ${recipe.startupScript.title || recipe.startupScript.runtime}`);
+      if (recipe.envVarNames?.length) tags.push(`${isEn ? "Env" : "环境变量"}: ${recipe.envVarNames.join(", ")}`);
+      if (recipe.sync?.enabled && recipe.sync?.localDir) tags.push(`${isEn ? "Sync" : "同步"}: ${recipe.sync.localDir}`);
+      if (recipe.startupScript?.enabled) tags.push(`${isEn ? "Script" : "脚本"}: ${recipe.startupScript.title || recipe.startupScript.runtime}`);
       summaryEl.textContent = tags.join(" · ") || recipe.description || "";
       summaryEl.hidden = !summaryEl.textContent;
     }

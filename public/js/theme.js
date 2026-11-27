@@ -91,6 +91,9 @@ export function applyLanguage(pref = state.languagePref, persist = false) {
     dom.meta.textContent = tr("ws.noSessionMeta");
   }
   renderSkinGrid();
+  if (window.webkit?.messageHandlers?.setLanguage) {
+    try { window.webkit.messageHandlers.setLanguage.postMessage(state.activeLang); } catch {}
+  }
   emit("language:changed", state.activeLang);
 
   if (persist) {

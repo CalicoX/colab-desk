@@ -1200,17 +1200,17 @@ export async function init(api) {
   // ── 6. Register ⌘K Commands ──
   api.registerCommand({
     id: "agentx.findInThread",
-    title: { "zh-CN": AGENTX_STRINGS["zh-CN"]["agentx.search.cmdFindInThread"], en: AGENTX_STRINGS.en["agentx.search.cmdFindInThread"] },
+    title: () => t("agentx.search.cmdFindInThread"),
     run: () => openFindBar(),
   });
   api.registerCommand({
     id: "agentx.openMcp",
-    title: { "zh-CN": AGENTX_STRINGS["zh-CN"]["agentx.search.cmdOpenMcp"], en: AGENTX_STRINGS.en["agentx.search.cmdOpenMcp"] },
+    title: () => t("agentx.search.cmdOpenMcp"),
     run: () => api.emit("ui:open-settings", "agentx-mcp"),
   });
   api.registerCommand({
     id: "agentx.openTemplates",
-    title: { "zh-CN": AGENTX_STRINGS["zh-CN"]["agentx.search.cmdOpenTemplates"], en: AGENTX_STRINGS.en["agentx.search.cmdOpenTemplates"] },
+    title: () => t("agentx.search.cmdOpenTemplates"),
     run: () => api.emit("ui:open-settings", "agentx-templates"),
   });
 

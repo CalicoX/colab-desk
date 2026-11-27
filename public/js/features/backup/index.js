@@ -607,7 +607,7 @@ export async function init(api) {
 
   api.registerCommand({
     id: "backup.runNow",
-    title: api.tr("backup.cmd.backupNow"),
+    title: () => api.tr("backup.cmd.backupNow"),
     run: () => triggerBackupNow(),
   });
 
@@ -632,7 +632,7 @@ export async function init(api) {
     api.showToast(`${api.tr("backup.toast.safetyNet")} (${payload.session})`);
   });
 
-  for (const ev of ["session:change", "sessions:updated", "session:selected", "ui:language-changed", "settings:mounted"]) {
+  for (const ev of ["session:change", "sessions:updated", "session:selected", "language:changed", "settings:mounted"]) {
     api.on?.(ev, () => {
       renderRail();
       renderSettings();

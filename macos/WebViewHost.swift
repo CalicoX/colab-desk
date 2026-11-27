@@ -51,6 +51,7 @@ extension AppDelegate: WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate {
         contentController.add(self, name: "windowZoom")
         contentController.add(self, name: "notify")
         contentController.add(self, name: "setTheme")
+        contentController.add(self, name: "setLanguage")
         contentController.add(self, name: "openExternal")
         contentController.add(self, name: "clipboardImage")
         config.userContentController = contentController

@@ -72,7 +72,7 @@ export function createJobsSettingsPane(api) {
       config.endpoints.push({
         id: `ep-${Math.random().toString(36).slice(2, 9)}`,
         kind: "feishu",
-        name: "Feishu Bot",
+        name: api.state?.activeLang === "en" ? "Feishu Bot" : "飞书机器人",
         enabled: true,
         url: "",
         token: "",
