@@ -5,6 +5,48 @@ import { emit, on } from "./events.js";
 import { renderMarkdownInto } from "./markdown.js";
 
 /* ── Native Colab Notebook Workbench ── */
+export const AUTO_COLLAPSE_LINES = 24;
+
+export function formatDuration(ms) {
+  if (typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) return "";
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+  const m = Math.floor(ms / 60_000);
+  const s = Math.round((ms % 60_000) / 1000);
+  return `${m}m ${s}s`;
+}
+
+export function formatStartTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+}
+
+function buildExecutionMetadata(cell) {
+  const started = cell?.startedAt ? new Date(cell.startedAt) : null;
+  if (!started || Number.isNaN(started.getTime())) return {};
+  const ex = { "iopub.execute_input": started.toISOString() };
+  if (typeof cell.durationMs === "number" && Number.isFinite(cell.durationMs)) {
+    const end = new Date(started.getTime() + cell.durationMs).toISOString();
+    ex["shell.execute_reply"] = end;
+    ex["iopub.status.idle"] = end;
+  }
+  return { execution: ex };
+}
+
+function readExecutionMetadata(meta) {
+  const ex = meta && typeof meta === "object" ? meta.execution : null;
+  if (!ex || typeof ex !== "object") return { startedAt: null, durationMs: null };
+  const start = Date.parse(ex["iopub.execute_input"] || ex["shell.execute_input"] || "");
+  if (Number.isNaN(start)) return { startedAt: null, durationMs: null };
+  const end = Date.parse(ex["shell.execute_reply"] || ex["iopub.status.idle"] || "");
+  return {
+    startedAt: new Date(start).toISOString(),
+    durationMs: Number.isNaN(end) ? null : Math.max(0, end - start),
+  };
+}
+
 export function defaultNotebookState() {
   return {
     name: "untitled.ipynb",
@@ -21,6 +63,9 @@ export function defaultNotebookState() {
         images: [],
         ok: true,
         durationMs: null,
+        startedAt: null,
+        outCollapsed: false,
+        outExpandedLong: false,
         editingMd: false,
       },
       {
@@ -33,6 +78,9 @@ export function defaultNotebookState() {
         images: [],
         ok: true,
         durationMs: null,
+        startedAt: null,
+        outCollapsed: false,
+        outExpandedLong: false,
       },
     ],
   };
@@ -43,7 +91,99 @@ if (!notebookState || !Array.isArray(notebookState.cells) || notebookState.cells
   notebookState = defaultNotebookState();
 }
 const nbRunningCells = new Set();
+const nbRunningStarts = new Map();
+let nbTimerId = null;
 let nbAiEditingCellId = null;
+let lastSavedIpynb = null;
+
+export function serializeCellsToIpynb(cells = notebookState.cells, metadata = {}) {
+  const split = (s) => (s ? String(s).split("\n").map((l, i, a) => (i < a.length - 1 ? `${l}\n` : l)) : []);
+  const nbCells = (Array.isArray(cells) ? cells : []).map((c) => {
+    if (c.type === "markdown") {
+      return { cell_type: "markdown", metadata: {}, source: split(c.source || "") };
+    }
+    const outputs = [];
+    if (c.stdout) outputs.push({ output_type: "stream", name: "stdout", text: split(c.stdout) });
+    if (c.stderr) outputs.push({ output_type: "stream", name: "stderr", text: split(c.stderr) });
+    for (const img of c.images || []) {
+      const m = String(img?.dataUrl || "").match(/^data:(image\/(?:png|jpeg));base64,(.+)$/i);
+      if (m) outputs.push({ output_type: "display_data", data: { [m[1].toLowerCase()]: m[2] }, metadata: {} });
+    }
+    return {
+      cell_type: "code",
+      execution_count: typeof c.executionCount === "number" ? c.executionCount : null,
+      metadata: buildExecutionMetadata(c),
+      source: split(c.source || ""),
+      outputs,
+    };
+  });
+  return {
+    nbformat: 4,
+    nbformat_minor: 5,
+    metadata: {
+      kernelspec: { display_name: "Python 3", language: "python", name: "python3" },
+      language_info: { name: "python" },
+      ...metadata,
+    },
+    cells: nbCells,
+  };
+}
+
+lastSavedIpynb = serializeCellsToIpynb(notebookState.cells);
+
+export function getNotebookSnapshot() {
+  return {
+    name: notebookState.name || "untitled.ipynb",
+    remotePath: notebookState.remotePath || "",
+    cells: notebookState.cells,
+    ipynb: serializeCellsToIpynb(notebookState.cells),
+    lastSaved: lastSavedIpynb,
+  };
+}
+
+export function markNotebookSaved(ipynbObj = null) {
+  lastSavedIpynb = ipynbObj || serializeCellsToIpynb(notebookState.cells);
+}
+
+export function getTotalNotebookRuntimeMs() {
+  let total = 0;
+  for (const c of notebookState.cells) {
+    if (c.type !== "code") continue;
+    if (nbRunningStarts.has(c.id)) {
+      total += Math.max(0, Date.now() - nbRunningStarts.get(c.id));
+    } else if (typeof c.durationMs === "number" && Number.isFinite(c.durationMs)) {
+      total += c.durationMs;
+    }
+  }
+  return total;
+}
+
+function updateRuntimeIndicators() {
+  const now = Date.now();
+  for (const [cellId, startedMs] of nbRunningStarts.entries()) {
+    const el = dom.nbCellsEl?.querySelector(`[data-running-timer="${cellId}"]`);
+    if (el) el.textContent = formatDuration(Math.max(0, now - startedMs));
+  }
+  const badge = document.querySelector("#nb-total-runtime");
+  if (badge) {
+    const total = getTotalNotebookRuntimeMs();
+    const isAnyRunning = nbRunningCells.size > 0;
+    badge.classList.toggle("is-running", isAnyRunning);
+    badge.hidden = total <= 0 && !isAnyRunning;
+    badge.textContent = `⏱ ${formatDuration(total) || "0.0s"}`;
+    badge.title = L("Notebook 累计运行耗时", "Total notebook runtime");
+  }
+}
+
+function syncNbTimer() {
+  if (nbRunningCells.size > 0 && !nbTimerId) {
+    nbTimerId = setInterval(updateRuntimeIndicators, 200);
+  } else if (nbRunningCells.size === 0 && nbTimerId) {
+    clearInterval(nbTimerId);
+    nbTimerId = null;
+  }
+  updateRuntimeIndicators();
+}
 
 export function persistNotebookState() {
   const compact = {
@@ -60,6 +200,9 @@ export function persistNotebookState() {
       images: Array.isArray(c.images) ? c.images.slice(0, 3) : [],
       ok: c.ok !== false,
       durationMs: c.durationMs ?? null,
+      startedAt: c.startedAt ?? null,
+      outCollapsed: !!c.outCollapsed,
+      outExpandedLong: !!c.outExpandedLong,
     })),
   };
   saveJsonStorage("colab-desk.notebook-v1", compact);
@@ -82,6 +225,9 @@ export function addNotebookCell(type = "code", source = "", atIndex = null) {
     images: [],
     ok: true,
     durationMs: null,
+    startedAt: null,
+    outCollapsed: false,
+    outExpandedLong: false,
     editingMd: type === "markdown",
   };
   if (typeof atIndex === "number" && atIndex >= 0 && atIndex <= notebookState.cells.length) {
@@ -107,11 +253,16 @@ export function moveNotebookCell(idx, delta) {
 
 export function deleteNotebookCell(idx) {
   if (notebookState.cells.length <= 1) {
-    notebookState.cells[0].source = "";
-    notebookState.cells[0].stdout = "";
-    notebookState.cells[0].stderr = "";
-    notebookState.cells[0].images = [];
-    notebookState.cells[0].executionCount = null;
+    const c = notebookState.cells[0];
+    c.source = "";
+    c.stdout = "";
+    c.stderr = "";
+    c.images = [];
+    c.executionCount = null;
+    c.durationMs = null;
+    c.startedAt = null;
+    c.outCollapsed = false;
+    c.outExpandedLong = false;
   } else {
     notebookState.cells.splice(idx, 1);
   }
@@ -140,8 +291,12 @@ export async function runNotebookCell(idx, advance = false) {
     showToast(L("请先连接一台 Colab 虚拟机再运行单元格", "Connect to a Colab VM first"));
     return;
   }
+  const startMs = Date.now();
+  cell.startedAt = new Date(startMs).toISOString();
   nbRunningCells.add(cell.id);
+  nbRunningStarts.set(cell.id, startMs);
   renderNotebook();
+  syncNbTimer();
   try {
     const res = await fetch("/api/notebook/exec", {
       method: "POST",
@@ -155,14 +310,19 @@ export async function runNotebookCell(idx, advance = false) {
     cell.stdout = data.stdout || "";
     cell.stderr = data.error || data.stderr || "";
     cell.images = Array.isArray(data.images) ? data.images : [];
-    cell.durationMs = data.durationMs ?? null;
+    cell.durationMs = typeof data.durationMs === "number" ? data.durationMs : Math.max(0, Date.now() - startMs);
+    cell.outCollapsed = false;
+    cell.outExpandedLong = false;
   } catch (err) {
     cell.ok = false;
     cell.stderr = err?.message || String(err);
+    cell.durationMs = Math.max(0, Date.now() - startMs);
   } finally {
     nbRunningCells.delete(cell.id);
+    nbRunningStarts.delete(cell.id);
     persistNotebookState();
     renderNotebook();
+    syncNbTimer();
     if (dom.nbVarsDrawer && !dom.nbVarsDrawer.hidden) inspectNotebookVars();
   }
   if (advance) {
@@ -198,6 +358,22 @@ export async function runAllNotebookCells(restartFirst = false) {
   }
 }
 
+export function clearCellOutput(idx) {
+  const c = notebookState.cells[idx];
+  if (!c) return;
+  c.executionCount = null;
+  c.stdout = "";
+  c.stderr = "";
+  c.images = [];
+  c.ok = true;
+  c.durationMs = null;
+  c.startedAt = null;
+  c.outCollapsed = false;
+  c.outExpandedLong = false;
+  persistNotebookState();
+  renderNotebook();
+}
+
 export function clearNotebookOutputs() {
   for (const c of notebookState.cells) {
     c.executionCount = null;
@@ -206,10 +382,31 @@ export function clearNotebookOutputs() {
     c.images = [];
     c.ok = true;
     c.durationMs = null;
+    c.startedAt = null;
+    c.outCollapsed = false;
+    c.outExpandedLong = false;
   }
   notebookState.execCounter = 0;
   persistNotebookState();
   renderNotebook();
+}
+
+export function setAllOutputsCollapsed(collapsed) {
+  let changed = 0;
+  for (const c of notebookState.cells) {
+    if (c.type === "code" && (c.stdout || c.stderr || (c.images && c.images.length > 0))) {
+      c.outCollapsed = !!collapsed;
+      if (!collapsed) c.outExpandedLong = true;
+      changed += 1;
+    }
+  }
+  persistNotebookState();
+  renderNotebook();
+  if (changed > 0) {
+    showToast(collapsed
+      ? L(`已折叠 ${changed} 个单元格输出`, `Collapsed ${changed} outputs`)
+      : L(`已展开 ${changed} 个单元格输出`, `Expanded ${changed} outputs`));
+  }
 }
 
 export async function inspectNotebookVars() {
@@ -329,31 +526,9 @@ export async function runCellAiEdit(idx, instruction, inputEl, goBtn) {
 }
 
 export function exportLocalIpynb() {
-  const cells = notebookState.cells.map((c) => {
-    if (c.type === "markdown") {
-      return { cell_type: "markdown", metadata: {}, source: (c.source || "").split("\n").map((l, i, a) => (i < a.length - 1 ? `${l}\n` : l)) };
-    }
-    const outputs = [];
-    if (c.stdout) outputs.push({ output_type: "stream", name: "stdout", text: c.stdout.split("\n").map((l, i, a) => (i < a.length - 1 ? `${l}\n` : l)) });
-    if (c.stderr) outputs.push({ output_type: "stream", name: "stderr", text: c.stderr.split("\n").map((l, i, a) => (i < a.length - 1 ? `${l}\n` : l)) });
-    for (const img of c.images || []) {
-      const m = String(img?.dataUrl || "").match(/^data:(image\/(?:png|jpeg));base64,(.+)$/i);
-      if (m) outputs.push({ output_type: "display_data", data: { [m[1].toLowerCase()]: m[2] }, metadata: {} });
-    }
-    return {
-      cell_type: "code",
-      execution_count: c.executionCount ?? null,
-      metadata: {},
-      source: (c.source || "").split("\n").map((l, i, a) => (i < a.length - 1 ? `${l}\n` : l)),
-      outputs,
-    };
-  });
-  const content = JSON.stringify({
-    nbformat: 4,
-    nbformat_minor: 5,
-    metadata: { kernelspec: { display_name: "Python 3", language: "python", name: "python3" }, language_info: { name: "python" } },
-    cells,
-  }, null, 2);
+  const ipynbObj = serializeCellsToIpynb(notebookState.cells);
+  const content = JSON.stringify(ipynbObj, null, 2);
+  markNotebookSaved(ipynbObj);
   const fname = (notebookState.name || "untitled.ipynb").endsWith(".ipynb") ? notebookState.name : `${notebookState.name}.ipynb`;
   const blob = new Blob([content], { type: "application/x-ipynb+json" });
   const url = URL.createObjectURL(blob);
@@ -391,8 +566,9 @@ export async function openCloudIpynb(presetPath = "") {
       name: data.name || "notebook.ipynb",
       remotePath: data.remotePath || remotePath.trim(),
       execCounter: 0,
-      cells: data.notebook.cells,
+      cells: data.notebook.cells.map((c) => ({ ...c, outCollapsed: false, outExpandedLong: false })),
     };
+    markNotebookSaved();
     persistNotebookState();
     renderNotebook();
     emit("composer:set-mode", "notebook");
@@ -427,6 +603,7 @@ export async function saveCloudIpynb() {
     }
     notebookState.remotePath = remotePath.trim();
     notebookState.name = remotePath.trim().split("/").pop() || defaultName;
+    markNotebookSaved();
     persistNotebookState();
     if (dom.nbTitleInput) dom.nbTitleInput.value = notebookState.name;
     showToast(L(`已保存到 ${notebookState.remotePath}`, `Saved to ${notebookState.remotePath}`));
@@ -457,6 +634,7 @@ export function parseLocalIpynbObject(parsed, fileName) {
         else if (d["text/plain"]) stdoutParts.push(joinSrc(d["text/plain"]));
       }
     }
+    const timing = readExecutionMetadata(cell?.metadata);
     return {
       id: String(cell?.id || `nb-${Date.now().toString(36)}-${idx}`),
       type,
@@ -466,7 +644,10 @@ export function parseLocalIpynbObject(parsed, fileName) {
       stderr: stderrParts.join("\n").trim(),
       images,
       ok: stderrParts.length === 0,
-      durationMs: null,
+      durationMs: timing.durationMs,
+      startedAt: timing.startedAt,
+      outCollapsed: false,
+      outExpandedLong: false,
       editingMd: false,
     };
   });
@@ -476,9 +657,119 @@ export function parseLocalIpynbObject(parsed, fileName) {
     execCounter: 0,
     cells: cells.length > 0 ? cells : defaultNotebookState().cells,
   };
+  markNotebookSaved(parsed);
   persistNotebookState();
   renderNotebook();
   showToast(L(`已加载 ${notebookState.name}（${notebookState.cells.length} 个单元格）`, `Loaded ${notebookState.name} (${notebookState.cells.length} cells)`));
+}
+
+function renderCellOutput(cell, idx) {
+  const out = document.createElement("div");
+  out.className = `nb-output${cell.outCollapsed ? " is-collapsed" : ""}`;
+
+  const stdoutLines = cell.stdout ? cell.stdout.split("\n") : [];
+  const stderrLines = cell.stderr ? cell.stderr.split("\n") : [];
+  const totalLines = stdoutLines.length + stderrLines.length;
+  const imgCount = Array.isArray(cell.images) ? cell.images.length : 0;
+
+  const outHead = document.createElement("div");
+  outHead.className = "nb-out-head";
+  const toggleOutBtn = document.createElement("button");
+  toggleOutBtn.type = "button";
+  toggleOutBtn.className = "nb-out-toggle";
+  toggleOutBtn.setAttribute("aria-expanded", String(!cell.outCollapsed));
+  const summaryParts = [];
+  if (totalLines > 0) summaryParts.push(L(`${totalLines} 行`, `${totalLines} lines`));
+  if (imgCount > 0) summaryParts.push(L(`${imgCount} 张图`, `${imgCount} fig`));
+  if (cell.stderr) summaryParts.push(L("含错误", "error"));
+  toggleOutBtn.textContent = `${cell.outCollapsed ? "▸" : "▾"} ${L("输出", "Output")}${summaryParts.length ? ` · ${summaryParts.join(" · ")}` : ""}`;
+  toggleOutBtn.addEventListener("click", () => {
+    cell.outCollapsed = !cell.outCollapsed;
+    persistNotebookState();
+    renderNotebook();
+  });
+
+  const clearOneBtn = document.createElement("button");
+  clearOneBtn.type = "button";
+  clearOneBtn.className = "nb-mini-btn";
+  clearOneBtn.title = L("清空此格输出", "Clear this cell output");
+  clearOneBtn.textContent = L("清空", "Clear");
+  clearOneBtn.addEventListener("click", () => clearCellOutput(idx));
+
+  outHead.append(toggleOutBtn, clearOneBtn);
+  out.append(outHead);
+
+  if (cell.outCollapsed) return out;
+
+  const isLongStdout = stdoutLines.length > AUTO_COLLAPSE_LINES && !cell.outExpandedLong;
+  if (cell.stdout) {
+    const pre = document.createElement("pre");
+    pre.className = `nb-stdout${isLongStdout ? " is-truncated" : ""}`;
+    pre.textContent = isLongStdout ? stdoutLines.slice(0, AUTO_COLLAPSE_LINES).join("\n") : cell.stdout;
+    out.append(pre);
+    if (stdoutLines.length > AUTO_COLLAPSE_LINES) {
+      const moreBtn = document.createElement("button");
+      moreBtn.type = "button";
+      moreBtn.className = "nb-show-more-btn";
+      const hiddenCount = stdoutLines.length - AUTO_COLLAPSE_LINES;
+      moreBtn.textContent = isLongStdout
+        ? L(`展开剩余 ${hiddenCount} 行…`, `Show ${hiddenCount} more lines…`)
+        : L("收起长输出", "Show less");
+      moreBtn.addEventListener("click", () => {
+        cell.outExpandedLong = !cell.outExpandedLong;
+        persistNotebookState();
+        renderNotebook();
+      });
+      out.append(moreBtn);
+    }
+  }
+
+  if (imgCount > 0) {
+    const imgWrap = document.createElement("div");
+    imgWrap.className = "nb-out-images";
+    for (const im of cell.images) {
+      if (!im?.dataUrl) continue;
+      const imgEl = document.createElement("img");
+      imgEl.src = im.dataUrl;
+      imgEl.alt = "Cell output figure";
+      imgWrap.append(imgEl);
+    }
+    out.append(imgWrap);
+  }
+
+  if (cell.stderr) {
+    const isLongErr = stderrLines.length > AUTO_COLLAPSE_LINES && !cell.outExpandedLong;
+    const errPre = document.createElement("pre");
+    errPre.className = `nb-stderr${isLongErr ? " is-truncated" : ""}`;
+    errPre.textContent = isLongErr ? stderrLines.slice(0, AUTO_COLLAPSE_LINES).join("\n") : cell.stderr;
+    out.append(errPre);
+    if (stderrLines.length > AUTO_COLLAPSE_LINES && !cell.stdout) {
+      const moreBtn = document.createElement("button");
+      moreBtn.type = "button";
+      moreBtn.className = "nb-show-more-btn";
+      const hiddenCount = stderrLines.length - AUTO_COLLAPSE_LINES;
+      moreBtn.textContent = isLongErr
+        ? L(`展开剩余 ${hiddenCount} 行报错…`, `Show ${hiddenCount} more error lines…`)
+        : L("收起报错输出", "Show less");
+      moreBtn.addEventListener("click", () => {
+        cell.outExpandedLong = !cell.outExpandedLong;
+        persistNotebookState();
+        renderNotebook();
+      });
+      out.append(moreBtn);
+    }
+    const foot = document.createElement("div");
+    foot.className = "nb-out-foot";
+    const fixBtn = document.createElement("button");
+    fixBtn.type = "button";
+    fixBtn.className = "nb-fix-btn";
+    fixBtn.textContent = tr("nb.fixWithAgent");
+    fixBtn.addEventListener("click", () => fixNotebookCellWithAgent(idx));
+    foot.append(fixBtn);
+    out.append(foot);
+  }
+
+  return out;
 }
 
 export function renderNotebook() {
@@ -512,10 +803,18 @@ export function renderNotebook() {
           ? `[${cell.executionCount}]`
           : "[ ]";
     gutter.append(runBtn, execLbl);
-    if (cell.durationMs != null && !isRunning) {
+    if (isRunning) {
+      const live = document.createElement("span");
+      live.className = "nb-exec-timer is-running";
+      live.dataset.runningTimer = cell.id;
+      const elapsed = Math.max(0, Date.now() - (nbRunningStarts.get(cell.id) || Date.now()));
+      live.textContent = formatDuration(elapsed) || "0.0s";
+      gutter.append(live);
+    } else if (cell.durationMs != null) {
       const dur = document.createElement("span");
-      dur.className = "nb-exec-count";
-      dur.textContent = `${(cell.durationMs / 1000).toFixed(1)}s`;
+      dur.className = "nb-exec-timer";
+      dur.textContent = formatDuration(cell.durationMs);
+      if (cell.startedAt) dur.title = `${L("上次运行：", "Last run: ")}${cell.startedAt}`;
       gutter.append(dur);
     }
 
@@ -524,9 +823,29 @@ export function renderNotebook() {
 
     const head = document.createElement("div");
     head.className = "nb-cell-head";
+    const headLeft = document.createElement("div");
+    headLeft.className = "nb-cell-head-left";
     const kindSpan = document.createElement("span");
     kindSpan.className = "nb-cell-kind";
     kindSpan.textContent = `${cell.type === "markdown" ? "Markdown" : "Python"} · #${idx + 1}`;
+    headLeft.append(kindSpan);
+    if (cell.type === "code" && (cell.durationMs != null || cell.startedAt || isRunning)) {
+      const metaSpan = document.createElement("span");
+      metaSpan.className = `nb-cell-timing${isRunning ? " is-running" : ""}`;
+      if (isRunning) {
+        metaSpan.textContent = L("运行中…", "Running…");
+      } else {
+        const parts = [];
+        if (cell.durationMs != null) parts.push(formatDuration(cell.durationMs));
+        const startedTxt = formatStartTime(cell.startedAt);
+        if (startedTxt) parts.push(`@ ${startedTxt}`);
+        if (cell.executionCount != null) parts.push(`#${cell.executionCount}`);
+        metaSpan.textContent = parts.join(" · ");
+        if (cell.startedAt) metaSpan.title = cell.startedAt;
+      }
+      headLeft.append(metaSpan);
+    }
+
     const actions = document.createElement("div");
     actions.className = "nb-cell-actions";
 
@@ -586,7 +905,7 @@ export function renderNotebook() {
     delBtn.addEventListener("click", () => deleteNotebookCell(idx));
 
     actions.append(aiBtn, toggleBtn, upBtn, downBtn, addBelowBtn, delBtn);
-    head.append(kindSpan, actions);
+    head.append(headLeft, actions);
     main.append(head);
 
     if (cell.type === "markdown" && !cell.editingMd) {
@@ -679,50 +998,58 @@ export function renderNotebook() {
     }
 
     if (cell.type === "code" && (cell.stdout || cell.stderr || (cell.images && cell.images.length > 0))) {
-      const out = document.createElement("div");
-      out.className = "nb-output";
-      if (cell.stdout) {
-        const pre = document.createElement("pre");
-        pre.className = "nb-stdout";
-        pre.textContent = cell.stdout;
-        out.append(pre);
-      }
-      if (cell.images && cell.images.length > 0) {
-        const imgWrap = document.createElement("div");
-        imgWrap.className = "nb-out-images";
-        for (const im of cell.images) {
-          if (!im?.dataUrl) continue;
-          const imgEl = document.createElement("img");
-          imgEl.src = im.dataUrl;
-          imgEl.alt = "Cell output figure";
-          imgWrap.append(imgEl);
-        }
-        out.append(imgWrap);
-      }
-      if (cell.stderr) {
-        const errPre = document.createElement("pre");
-        errPre.className = "nb-stderr";
-        errPre.textContent = cell.stderr;
-        out.append(errPre);
-        const foot = document.createElement("div");
-        foot.className = "nb-out-foot";
-        const fixBtn = document.createElement("button");
-        fixBtn.type = "button";
-        fixBtn.className = "nb-fix-btn";
-        fixBtn.textContent = tr("nb.fixWithAgent");
-        fixBtn.addEventListener("click", () => fixNotebookCellWithAgent(idx));
-        foot.append(fixBtn);
-        out.append(foot);
-      }
-      main.append(out);
+      main.append(renderCellOutput(cell, idx));
     }
 
     card.append(gutter, main);
     dom.nbCellsEl.append(card);
   });
+  updateRuntimeIndicators();
+}
+
+function mountToolbarExtras() {
+  const toolbar = document.querySelector("#notebook-view .nb-toolbar");
+  if (!toolbar || toolbar.querySelector("#nb-collapse-all")) return;
+
+  const collapseBtn = document.createElement("button");
+  collapseBtn.id = "nb-collapse-all";
+  collapseBtn.type = "button";
+  collapseBtn.className = "nb-btn";
+  collapseBtn.addEventListener("click", () => setAllOutputsCollapsed(true));
+
+  const expandBtn = document.createElement("button");
+  expandBtn.id = "nb-expand-all";
+  expandBtn.type = "button";
+  expandBtn.className = "nb-btn";
+  expandBtn.addEventListener("click", () => setAllOutputsCollapsed(false));
+
+  const runtimePill = document.createElement("span");
+  runtimePill.id = "nb-total-runtime";
+  runtimePill.className = "nb-runtime-pill";
+  runtimePill.hidden = true;
+
+  const clearBtn = toolbar.querySelector("#nb-clear-outputs");
+  if (clearBtn && clearBtn.nextSibling) {
+    toolbar.insertBefore(collapseBtn, clearBtn.nextSibling);
+    toolbar.insertBefore(expandBtn, collapseBtn.nextSibling);
+  } else {
+    toolbar.append(collapseBtn, expandBtn);
+  }
+  toolbar.append(runtimePill);
+
+  const syncLabels = () => {
+    collapseBtn.textContent = L("折叠全部", "Collapse all");
+    collapseBtn.title = L("折叠所有单元格输出", "Collapse all cell outputs");
+    expandBtn.textContent = L("展开全部", "Expand all");
+    expandBtn.title = L("展开所有单元格输出", "Expand all cell outputs");
+    updateRuntimeIndicators();
+  };
+  syncLabels();
+  on("language:changed", syncLabels);
 }
 
 export function initNotebook() {
+  mountToolbarExtras();
   on("language:changed", () => {
     if (state.composerMode === "notebook") renderNotebook();
   });

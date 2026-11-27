@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { IMAGE_DIR, IMAGE_EXT_MIME, UPLOAD_DIR } from "./constants.mjs";
+import { resolveSystemTemplateText } from "./templates.mjs";
 
 export function buildColabSystemRules(context = {}) {
   const session = context.colabSession || null;
@@ -26,6 +27,14 @@ export function buildColabSystemRules(context = {}) {
     `4. 如果代码生成图表/图片，请使用 \`colab exec -s <name> --output-image ${IMAGE_DIR}/plot_<timestamp>.png\` 保存图片，并在最终回复里用 Markdown 图片或原样路径给出该 \`${IMAGE_DIR}/...\` 路径，界面会自动内嵌显示图片。`,
     "5. 计费与安全护栏：除非用户明确要求，严禁主动执行 `colab new`（会产生计费）、`colab stop`（会销毁虚拟机）或 `colab rm`（会删除云端文件）。",
   );
+
+  const tpl = resolveSystemTemplateText(context);
+  if (tpl && tpl.content) {
+    const header = tpl.name
+      ? `\n\n[当前会话系统提示词模板：${tpl.name}]`
+      : "\n\n[当前会话系统提示词模板]";
+    lines.push(`${header}\n${tpl.content}`);
+  }
   return lines.join("\n");
 }
 

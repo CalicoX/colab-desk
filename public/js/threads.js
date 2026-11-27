@@ -5,6 +5,74 @@ import { emit, on } from "./events.js";
 import { flushStoreToDisk, persistDeskHistory, scheduleStoreSync } from "./store.js";
 import { renderStagedFiles } from "./agent-attachments.js";
 import { renderTranscript } from "./transcript.js";
+import { buildThreadIndex, rankThreadSearch, tokenizeQuery } from "./features/agentx/search-index.js";
+
+const THREAD_PAGE_SIZE = 40;
+let threadRenderLimit = THREAD_PAGE_SIZE;
+
+export function getThreadIndex() {
+  return buildThreadIndex(state.chatThreads, desk.bySession);
+}
+
+export function searchThreads(query = "", opts = {}) {
+  return rankThreadSearch(getThreadIndex(), query, opts);
+}
+
+export function jumpToThreadMessage(threadId, entryIndex = -1) {
+  if (!threadId) return false;
+  const target = state.chatThreads.find((tItem) => tItem.id === threadId);
+  if (!target) return false;
+  if (state.activeThreadId !== target.id) {
+    openChatThread(target.id);
+  }
+  if (typeof entryIndex === "number" && entryIndex >= 0) {
+    requestAnimationFrame(() => {
+      if (!dom.transcript) return;
+      const entries = dom.transcript.querySelectorAll(".entry");
+      const el = entries[entryIndex];
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.remove("agentx-jump-flash");
+      void el.offsetWidth;
+      el.classList.add("agentx-jump-flash");
+      setTimeout(() => el.classList.remove("agentx-jump-flash"), 1800);
+    });
+  }
+  return true;
+}
+
+function appendHighlightedText(container, text, tokens) {
+  const str = String(text || "");
+  if (!tokens || tokens.length === 0) {
+    container.textContent = str;
+    return;
+  }
+  const lower = str.toLowerCase();
+  let pos = 0;
+  while (pos < str.length) {
+    let bestIdx = -1;
+    let bestLen = 0;
+    for (const tok of tokens) {
+      const idx = lower.indexOf(tok, pos);
+      if (idx >= 0 && (bestIdx < 0 || idx < bestIdx)) {
+        bestIdx = idx;
+        bestLen = tok.length;
+      }
+    }
+    if (bestIdx < 0) {
+      container.append(document.createTextNode(str.slice(pos)));
+      break;
+    }
+    if (bestIdx > pos) {
+      container.append(document.createTextNode(str.slice(pos, bestIdx)));
+    }
+    const mark = document.createElement("mark");
+    mark.className = "agentx-hl";
+    mark.textContent = str.slice(bestIdx, bestIdx + bestLen);
+    container.append(mark);
+    pos = bestIdx + bestLen;
+  }
+}
 
 export function deriveThreadTitle(entries, fallback = "") {
   if (Array.isArray(entries)) {
@@ -87,6 +155,7 @@ export function openChatThread(threadId) {
   renderChatThreads();
   renderTranscript(state.activeThreadId);
   renderComposerQueue();
+  emit("threads:opened", { threadId: target.id });
   scheduleStoreSync();
 }
 
@@ -99,6 +168,7 @@ export async function createNewChatThread() {
   state.activeThreadId = null;
   renderChatThreads();
   renderTranscript("");
+  emit("threads:opened", { threadId: null });
   emit("sessions:render-inspector");
   renderComposerQueue();
   persistDeskHistory();
@@ -221,27 +291,36 @@ export function deleteChatThread(threadId) {
   showUndoDeleteToast(removed.title || L("新对话", "New Chat"));
 }
 
-export function renderChatThreads() {
+export function renderChatThreads(resetLimit = false) {
   if (!dom.chatThreadsListEl) return;
-  const q = (dom.filter ? dom.filter.value : "").trim().toLowerCase();
-  const sorted = state.chatThreads
-    .filter((tItem) => {
-      if (!q) return true;
-      return (tItem.title || "").toLowerCase().includes(q) || (tItem.sessionName || "").toLowerCase().includes(q);
-    })
-    .sort((a, b) => {
-      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-      return (b.updatedAt || 0) - (a.updatedAt || 0);
-    });
+  if (resetLimit) threadRenderLimit = THREAD_PAGE_SIZE;
+  const q = (dom.filter ? dom.filter.value : "").trim();
+  const tokens = tokenizeQuery(q);
+  const filters = state.agentxSearchFilters || {};
+  const hasFilter = Boolean(q || filters.provider || filters.sinceMs);
+  const searchRes = searchThreads(q, {
+    provider: filters.provider || "",
+    sinceMs: filters.sinceMs || 0,
+    limit: threadRenderLimit,
+    offset: 0,
+  });
+  const byId = new Map(state.chatThreads.map((tItem) => [tItem.id, tItem]));
+  emit("threads:search-meta", { total: searchRes.total, shown: searchRes.items.length, hasFilter });
+
   dom.chatThreadsListEl.replaceChildren();
-  if (!sorted.length) {
+  if (!searchRes.items.length) {
     const emptyEl = document.createElement("div");
     emptyEl.className = "chat-threads-empty";
-    emptyEl.textContent = tr("sidebar.chatsEmpty");
+    emptyEl.textContent = hasFilter
+      ? L("没有匹配的对话记录", "No matching chats")
+      : tr("sidebar.chatsEmpty");
     dom.chatThreadsListEl.append(emptyEl);
     return;
   }
-  for (const tItem of sorted) {
+
+  for (const hit of searchRes.items) {
+    const tItem = byId.get(hit.threadId);
+    if (!tItem) continue;
     const liveSession = tItem.sessionName
       ? state.sessions.find((s) => s.name === tItem.sessionName)
       : null;
@@ -254,7 +333,13 @@ export function renderChatThreads() {
       (tItem.id === state.activeThreadId ? " is-active" : "") +
       (tItem.pinned ? " is-pinned" : "") +
       (liveSession ? " is-vm-live" : "");
-    row.addEventListener("click", () => openChatThread(tItem.id));
+    row.addEventListener("click", () => {
+      if (tokens.length > 0 && hit.matches.length > 0) {
+        jumpToThreadMessage(tItem.id, hit.matches[0].entryIndex);
+      } else {
+        openChatThread(tItem.id);
+      }
+    });
 
     const main = document.createElement("div");
     main.className = "chat-thread-main";
@@ -278,8 +363,9 @@ export function renderChatThreads() {
     }
     const titleEl = document.createElement("span");
     titleEl.className = "chat-thread-title";
-    titleEl.textContent = tItem.title || L("新对话", "New Chat");
-    titleEl.title = titleEl.textContent;
+    const titleText = tItem.title || L("新对话", "New Chat");
+    appendHighlightedText(titleEl, titleText, tokens);
+    titleEl.title = titleText;
     titleLine.append(titleEl);
 
     const count = (desk.bySession[tItem.id] || []).length;
@@ -310,6 +396,23 @@ export function renderChatThreads() {
     }
     main.append(titleLine, metaEl);
 
+    if (tokens.length > 0 && hit.matches.length > 0) {
+      const snipList = document.createElement("div");
+      snipList.className = "agentx-thread-snippets";
+      for (const m of hit.matches.slice(0, 2)) {
+        const snipBtn = document.createElement("button");
+        snipBtn.type = "button";
+        snipBtn.className = "agentx-thread-snippet";
+        appendHighlightedText(snipBtn, m.snippet, tokens);
+        snipBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          jumpToThreadMessage(tItem.id, m.entryIndex);
+        });
+        snipList.append(snipBtn);
+      }
+      main.append(snipList);
+    }
+
     const actions = document.createElement("div");
     actions.className = "chat-thread-actions";
 
@@ -336,6 +439,19 @@ export function renderChatThreads() {
     actions.append(pinBtn, delBtn);
     row.append(main, actions);
     dom.chatThreadsListEl.append(row);
+  }
+
+  if (searchRes.total > searchRes.items.length) {
+    const moreBtn = document.createElement("button");
+    moreBtn.type = "button";
+    moreBtn.className = "agentx-load-more";
+    const rem = searchRes.total - searchRes.items.length;
+    moreBtn.textContent = L(`加载更多（剩余 ${rem} 条）`, `Show more (${rem} remaining)`);
+    moreBtn.addEventListener("click", () => {
+      threadRenderLimit += THREAD_PAGE_SIZE;
+      renderChatThreads(false);
+    });
+    dom.chatThreadsListEl.append(moreBtn);
   }
 }
 
@@ -564,9 +680,23 @@ export function initThreadsAndQueue() {
   });
 
   on("composer:sync-send", syncSendButton);
+  on("threads:render", (reset) => renderChatThreads(Boolean(reset)));
+  on("search:open-thread", (payload) => {
+    if (!payload) return;
+    if (typeof payload === "string") jumpToThreadMessage(payload, -1);
+    else jumpToThreadMessage(payload.threadId || payload.id, payload.entryIndex ?? -1);
+  });
   on("language:changed", () => {
     syncSendButton();
     renderComposerQueue();
     renderChatThreads();
   });
+  if (typeof window !== "undefined") {
+    window.__colabDeskAgentx = {
+      ...(window.__colabDeskAgentx || {}),
+      getThreadIndex,
+      searchThreads,
+      jumpToThreadMessage,
+    };
+  }
 }

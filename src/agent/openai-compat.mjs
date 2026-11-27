@@ -2,6 +2,7 @@ import { loadStore } from "../store.mjs";
 import { COLAB_OPENAI_TOOLS, formatCompact } from "./constants.mjs";
 import { buildColabSystemRules, buildOpenAiUserContent, formatTurnPrompt } from "./prompts.mjs";
 import { executeColabTool } from "./tools.mjs";
+import { mcpManager } from "./mcp.mjs";
 
 export function resolveOpenAiModelsEndpoints(baseUrl) {
   let clean = String(baseUrl || "").trim().replace(/\/+$/, "");
@@ -284,6 +285,7 @@ export async function runOpenAiCompatTurn({
   threads,
   pendingPermissions,
   executeTool = executeColabTool,
+  extraTools = null,
   provider,
   providerId,
   threadKey,
@@ -338,6 +340,17 @@ export async function runOpenAiCompatTurn({
     totalUsage.thoughtTokens += u.thoughtTokens ?? u.completion_tokens_details?.reasoning_tokens ?? 0;
   };
 
+  let activeTools = COLAB_OPENAI_TOOLS;
+  try {
+    const discovered = Array.isArray(extraTools) ? extraTools : await mcpManager.getOpenAiTools();
+    if (discovered.length > 0) {
+      activeTools = [
+        ...COLAB_OPENAI_TOOLS,
+        ...discovered.map((t) => ({ type: "function", function: t.function })),
+      ];
+    }
+  } catch {}
+
   const requestRound = async (messages, forceNonStream = false) => {
     let lastError = null;
     for (let i = 0; i < candidateEndpoints.length; i += 1) {
@@ -350,7 +363,7 @@ export async function runOpenAiCompatTurn({
           messages,
           stream: useStream,
         };
-        if (includeTools) payload.tools = COLAB_OPENAI_TOOLS;
+        if (includeTools) payload.tools = activeTools;
         if (useStream && includeStreamOptions) payload.stream_options = { include_usage: true };
 
         let res;

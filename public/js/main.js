@@ -34,6 +34,7 @@ import {
 } from "./cloud-rail.js";
 import { initGlobalShortcutsAndBridges } from "./shortcuts.js";
 import { initLazyTriggers } from "./lazy.js";
+import { initFeatureRegistry } from "./features/registry.js";
 
 // Lightweight startup Colab environment banner check (without eagerly loading settings.js)
 async function checkColabEnvBanner() {
@@ -152,3 +153,11 @@ hydrateFromLocalDisk().then((data) => {
   refreshAgentQuota(false);
   checkColabEnvBanner();
 });
+
+// Dynamically discover and initialize feature plugins after first paint
+const scheduleFeatures = () => setTimeout(() => { initFeatureRegistry(); }, 0);
+if (typeof requestAnimationFrame === "function") {
+  requestAnimationFrame(scheduleFeatures);
+} else {
+  scheduleFeatures();
+}

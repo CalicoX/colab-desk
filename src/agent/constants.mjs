@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-export const AGENT_CLIENT_VERSION = "0.7.0";
+export const AGENT_CLIENT_VERSION = "0.8.0";
 
 export const UPLOAD_DIR = path.join(os.tmpdir(), "colab-desk-uploads");
 export const IMAGE_DIR = path.join(os.tmpdir(), "colab-desk-images");

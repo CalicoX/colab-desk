@@ -11,6 +11,7 @@ import {
 } from "./openai-compat.mjs";
 import { execCapture, fetchAllQuotas, fetchGrokBilling } from "./quotas.mjs";
 import { executeColabTool } from "./tools.mjs";
+import { mcpManager } from "./mcp.mjs";
 
 export class AgentManager {
   constructor(cwd = process.cwd()) {
@@ -359,6 +360,9 @@ export class AgentManager {
       colabSession: colabSession || null,
       sessionInfo: input.sessionInfo || null,
       files: Array.isArray(input.files) ? input.files : [],
+      threadId: scopeKey || null,
+      templateId: input.templateId ? String(input.templateId).trim() : "",
+      lang: input.lang === "en" ? "en" : "zh-CN",
     };
 
     if (provider.transport === "openai-compat") {
@@ -441,5 +445,6 @@ export class AgentManager {
       client.stop();
     }
     this.acpClients.clear();
+    mcpManager.shutdown();
   }
 }

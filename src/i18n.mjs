@@ -247,7 +247,7 @@ export const TRANSLATIONS = {
     "settings.colab.bootScriptTitle": "自定义启动脚本（Bash，可选）",
     "settings.colab.bootScriptDesc": "每次初始化 VM 时在云端执行的额外命令（例如拉取仓库或启动后台服务）。",
     "settings.colab.bootRunNow": "对当前 VM 立即执行初始化",
-    "settings.about.updateCurrent": "当前版本 v0.7.0（GitHub: CalicoX/colab-desk）",
+    "settings.about.updateCurrent": "当前版本 v0.8.0（GitHub: CalicoX/colab-desk）",
     "settings.general.skinTitle": "配色皮肤",
     "settings.general.skinDesc": "选择你喜欢的界面配色方案，支持实时切换与自动保存。",
     "sidebar.skinTitle": "切换配色皮肤",
@@ -621,7 +621,7 @@ export const TRANSLATIONS = {
     "settings.colab.bootScriptTitle": "Custom startup script (Bash, optional)",
     "settings.colab.bootScriptDesc": "Extra Bash commands to run on the cloud VM during bootstrap (e.g. git clone or background setup).",
     "settings.colab.bootRunNow": "Bootstrap Current VM Now",
-    "settings.about.updateCurrent": "Current version v0.7.0 (GitHub: CalicoX/colab-desk)",
+    "settings.about.updateCurrent": "Current version v0.8.0 (GitHub: CalicoX/colab-desk)",
     "settings.general.skinTitle": "Color Skin",
     "settings.general.skinDesc": "Pick a curated color palette for the entire workbench.",
     "sidebar.skinTitle": "Switch Color Skin",
@@ -754,6 +754,16 @@ export const TRANSLATIONS = {
     "agent.authRequiredAction": "Sign in via Antigravity ACP",
   },
 };
+
+export function registerTranslations(bundles) {
+  if (!bundles || typeof bundles !== "object") return;
+  for (const lang of ["zh-CN", "en"]) {
+    const entries = bundles[lang];
+    if (!entries || typeof entries !== "object") continue;
+    if (!TRANSLATIONS[lang]) TRANSLATIONS[lang] = {};
+    Object.assign(TRANSLATIONS[lang], entries);
+  }
+}
 
 export function t(lang, key, vars = null) {
   const table = TRANSLATIONS[lang] || TRANSLATIONS["zh-CN"];

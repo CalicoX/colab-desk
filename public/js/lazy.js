@@ -21,6 +21,7 @@ export function ensureSettingsLoaded() {
     settingsPromise = import("./settings.js")
       .then((mod) => {
         mod.initSettings();
+        emit("settings:mounted", mod);
         return mod;
       })
       .catch((err) => {

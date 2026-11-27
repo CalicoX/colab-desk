@@ -5,13 +5,15 @@ import { AgentManager } from "./agent.mjs";
 import { TunnelManager } from "./cloud-ops.mjs";
 import { emptyState } from "./parse.mjs";
 import { handleAgentRoutes } from "./routes/agent.mjs";
+import { createFeatureHost } from "./features/loader.mjs";
 import { handleCloudRoutes } from "./routes/cloud.mjs";
-import { sendJson } from "./routes/http.mjs";
+import { handleFeatureRoutes } from "./routes/features.mjs";
+import { readJsonBodySafe, sendJson } from "./routes/http.mjs";
 import { handleSessionRoutes } from "./routes/sessions.mjs";
 import { createStaticHandler } from "./routes/static.mjs";
 import { TerminalManager } from "./terminal.mjs";
 
-const DEFAULT_APP_VERSION = "0.7.0";
+const DEFAULT_APP_VERSION = "0.8.0";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(rootDir, "..");
@@ -22,7 +24,7 @@ const tunnels = new TunnelManager();
 const terminals = new TerminalManager(projectRoot);
 
 const handleStatic = createStaticHandler({ rootDir, publicDir });
-const routeContext = {
+const baseContext = {
   rootDir,
   agents,
   tunnels,
@@ -30,15 +32,19 @@ const routeContext = {
   defaultVersion: DEFAULT_APP_VERSION,
 };
 
-async function handle(req, res) {
-  const url = new URL(req.url || "/", "http://127.0.0.1");
+function makeHandler(routeContext, featureHost, handleStatic) {
+  return async function handle(req, res) {
+    const url = new URL(req.url || "/", "http://127.0.0.1");
 
-  if (handleStatic(req, res, url)) return;
-  if (await handleSessionRoutes(req, res, url, routeContext)) return;
-  if (await handleAgentRoutes(req, res, url, routeContext)) return;
-  if (await handleCloudRoutes(req, res, url, routeContext)) return;
+    if (handleStatic(req, res, url)) return;
+    if (await handleFeatureRoutes(req, res, url, routeContext)) return;
+    if (await handleSessionRoutes(req, res, url, routeContext)) return;
+    if (await handleAgentRoutes(req, res, url, routeContext)) return;
+    if (await handleCloudRoutes(req, res, url, routeContext)) return;
+    if (await featureHost.handleRoutes(req, res, url)) return;
 
-  sendJson(res, 404, { ok: false, error: "not found", argv: [], state: emptyState() });
+    sendJson(res, 404, { ok: false, error: "not found", argv: [], state: emptyState() });
+  };
 }
 
 function shutdownManagers() {
@@ -47,7 +53,20 @@ function shutdownManagers() {
   terminals.shutdown();
 }
 
-export function createServer() {
+export function createServer(options = {}) {
+  const effectivePublicDir = options.publicDir || publicDir;
+  const staticHandler = options.publicDir
+    ? createStaticHandler({ rootDir, publicDir: effectivePublicDir })
+    : handleStatic;
+  const featureHost = createFeatureHost({
+    featuresDir: options.featuresDir || path.join(rootDir, "features"),
+    publicDir: effectivePublicDir,
+    ctxBase: baseContext,
+    configDir: options.configDir,
+    helpers: { http: { sendJson, readJsonBodySafe }, sendJson, readJsonBodySafe },
+  });
+  const routeContext = { ...baseContext, featureHost };
+  const handle = makeHandler(routeContext, featureHost, staticHandler);
   const server = http.createServer((req, res) => {
     handle(req, res).catch((err) => {
       if (res.headersSent) return;
@@ -67,17 +86,23 @@ export function createServer() {
     socket.destroy();
   });
 
-  server.on("close", shutdownManagers);
+  server.on("close", () => {
+    featureHost.shutdown();
+    shutdownManagers();
+  });
+  server.featureHost = featureHost;
   return server;
 }
 
 export function listen(port = Number(process.env.PORT ?? 4173)) {
   const server = createServer();
+  server.featureHost.load().catch(() => {});
   server.listen(port, "127.0.0.1", () => {
     const address = server.address();
     console.log(`colab-desk listening on http://127.0.0.1:${address.port}`);
   });
   const cleanup = () => {
+    server.featureHost.shutdown();
     shutdownManagers();
     process.exit(0);
   };

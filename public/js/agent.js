@@ -63,8 +63,22 @@ export async function sendAgentMessage(promptText, overrideFiles = null, overrid
   }
 
   const turnStartedAt = Date.now();
+  if (state.agentxPendingTemplateId) {
+    state.agentxThreadTemplates = state.agentxThreadTemplates || {};
+    state.agentxThreadTemplates[key] = state.agentxPendingTemplateId;
+    const assignedId = state.agentxPendingTemplateId;
+    state.agentxPendingTemplateId = "";
+    fetch("/api/agentx/templates/assign", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ scopeKey: key, templateId: assignedId }),
+    }).catch(() => {});
+  }
+  const activeTemplateId =
+    (state.agentxThreadTemplates && (state.agentxThreadTemplates[key] || state.agentxThreadTemplates[state.selected])) || "";
   const entry = {
     kind: "agent",
+    timestamp: turnStartedAt,
     label: text,
     files: attached,
     provider,
@@ -127,6 +141,8 @@ export async function sendAgentMessage(promptText, overrideFiles = null, overrid
         colabSession: state.selected,
         sessionInfo: currentSessionObject(),
         files: attached,
+        templateId: activeTemplateId,
+        lang: state.activeLang || "zh-CN",
       }),
       signal: controller.signal,
     });

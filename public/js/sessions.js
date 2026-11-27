@@ -602,6 +602,8 @@ export function checkCostAndIdleGuards() {
       sendDesktopNotification("Colab Desk — Idle GPU VM", msg);
     }
   }
+
+  emit("guard:check", { session: sess, usage: state.usageInfo, lastActivityAt: state.lastActivityAt });
 }
 
 export function clampSidebarWidth(px) {

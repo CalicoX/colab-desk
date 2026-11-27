@@ -1,7 +1,7 @@
 import { closeDialog, dom, openDialog } from "./dom.js";
 import { state } from "./state.js";
 import { L, escapeHtml } from "./utils.js";
-import { emit } from "./events.js";
+import { callRegistered, emit } from "./events.js";
 import { applyLanguage, applyTheme } from "./theme.js";
 import { selectSession, toggleRail, toggleSidebar } from "./sessions.js";
 import { mountModalTemplate } from "./templates/mount.js";
@@ -35,6 +35,13 @@ export function buildPaletteCommands() {
     { label: L("打开设置", "Open Settings"), kbd: "", run: () => emit("ui:open-settings", "general") },
     { label: L("打开环境变量保险箱与初始化", "Open Env Vault & Bootstrap"), kbd: "", run: () => emit("ui:open-settings", "colab") },
   ];
+  const extraCommands = callRegistered("features:get-commands") || [];
+  for (const cmd of extraCommands) {
+    if (!cmd || typeof cmd.run !== "function") continue;
+    const label = typeof cmd.title === "function" ? cmd.title() : String(cmd.title || cmd.id || "");
+    if (!label) continue;
+    cmds.push({ label, kbd: cmd.kbd || "", run: cmd.run });
+  }
   for (const s of state.sessions) {
     cmds.unshift({ label: L(`切换会话：${s.name} (${s.hardware})`, `Switch Session: ${s.name} (${s.hardware})`), kbd: "VM", run: () => selectSession(s.name) });
   }

@@ -1,6 +1,11 @@
 import { runAction } from "../run.mjs";
+import { mcpManager } from "./mcp.mjs";
 
 export async function executeColabTool(name, args, colabSession, signal) {
+  if (mcpManager.isMcpTool(name)) {
+    if (signal?.aborted) return { ok: false, output: "已取消执行" };
+    return mcpManager.callByName(name, args);
+  }
   const reqSession = () => {
     if (!colabSession) throw new Error("当前没有选中的 Colab 会话，请先创建一个会话");
     return colabSession;

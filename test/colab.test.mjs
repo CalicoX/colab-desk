@@ -43,6 +43,7 @@ import { parseCommandOutput } from "../src/parse.mjs";
 import { plan } from "../src/plan.mjs";
 import { runAction } from "../src/run.mjs";
 import { createServer } from "../src/server.mjs";
+import { installFakeAgentClis } from "./helpers/harness.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 
@@ -90,6 +91,7 @@ function installFake(dir) {
   const wrapper = path.join(bin, "colab");
   fs.writeFileSync(wrapper, `#!/bin/bash\nexec node ${JSON.stringify(script)} "$@"\n`);
   fs.chmodSync(wrapper, 0o755);
+  installFakeAgentClis(bin);
   return bin;
 }
 
@@ -844,6 +846,7 @@ function startEntry(bin) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ["src/server.mjs"], {
       cwd: root,
+      detached: process.platform !== "win32",
       env: {
         PATH: `${bin}${path.delimiter}${process.env.PATH}`,
         HOME: process.env.HOME,
@@ -857,7 +860,8 @@ function startEntry(bin) {
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
-      child.kill("SIGKILL");
+      try { if (process.platform !== "win32" && child.pid) process.kill(-child.pid, "SIGKILL"); } catch {}
+      try { child.kill("SIGKILL"); } catch {}
       reject(new Error(`entry did not listen\n${buf}`));
     }, 8000);
     const onData = (chunk) => {
@@ -882,9 +886,15 @@ function startEntry(bin) {
 
 function stopEntry(child) {
   return new Promise((resolve) => {
+    const killGroup = (sig) => {
+      if (process.platform !== "win32" && child?.pid) {
+        try { process.kill(-child.pid, sig); return; } catch {}
+      }
+      try { child.kill(sig); } catch {}
+    };
     child.once("exit", resolve);
-    child.kill("SIGTERM");
-    setTimeout(() => child.kill("SIGKILL"), 2000);
+    killGroup("SIGTERM");
+    setTimeout(() => killGroup("SIGKILL"), 2000).unref();
   });
 }
 
@@ -1270,4 +1280,76 @@ test("mac app does not start a login shell", () => {
   assert.match(plist, /ColabDesk/);
   assert.match(plist, /CFBundleIconFile/);
   assert.match(plist, /AppIcon/);
+});
+
+test("static crawler: feature modules, styles, 0 import cycles, and no duplicate exports", () => {
+  const walk = (dir, extRe) => {
+    const out = [];
+    if (!fs.existsSync(dir)) return out;
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, ent.name);
+      if (ent.isDirectory()) out.push(...walk(p, extRe));
+      else if (extRe.test(ent.name)) out.push(p);
+    }
+    return out;
+  };
+
+  const checkGraph = (rootDir) => {
+    const files = walk(rootDir, /\.(?:m?js)$/);
+    const graph = new Map();
+    for (const f of files) {
+      const src = fs.readFileSync(f, "utf8");
+      const deps = [];
+      for (const m of src.matchAll(/^\s*(?:import|export)\s+[^;]*?\s+from\s+["'](\.[^"']+)["']/gm)) {
+        const target = path.resolve(path.dirname(f), m[1]);
+        if (fs.existsSync(target)) deps.push(target);
+      }
+      graph.set(path.resolve(f), deps);
+
+      // Verify no duplicate top-level exported declarations in the same file
+      const seen = new Set();
+      for (const m of src.matchAll(/^export\s+(?:async\s+)?(?:function|const|let|var|class)\s+([A-Za-z_$][A-Za-z0-9_$]*)/gm)) {
+        assert.equal(seen.has(m[1]), false, `Duplicate export "${m[1]}" in ${path.relative(root, f)}`);
+        seen.add(m[1]);
+      }
+    }
+    const color = new Map();
+    const cycles = [];
+    const dfs = (u, stack) => {
+      color.set(u, 1);
+      for (const v of graph.get(u) || []) {
+        if (color.get(v) === 1) {
+          cycles.push(stack.slice(stack.indexOf(v)).concat(v).map((p) => path.relative(root, p)));
+        } else if (!color.get(v)) {
+          dfs(v, stack.concat(v));
+        }
+      }
+      color.set(u, 2);
+    };
+    for (const u of graph.keys()) if (!color.get(u)) dfs(u, [u]);
+    assert.deepEqual(cycles, [], `Import cycles found in ${path.relative(root, rootDir)}: ${JSON.stringify(cycles)}`);
+    return files;
+  };
+
+  const srcFiles = checkGraph(path.join(root, "src"));
+  const pubFiles = checkGraph(path.join(root, "public/js"));
+  assert.ok(srcFiles.some((f) => f.includes(`${path.sep}features${path.sep}`)), "expected src/features/** files");
+  assert.ok(pubFiles.some((f) => f.includes(`${path.sep}features${path.sep}`)), "expected public/js/features/** files");
+
+  const featCss = walk(path.join(root, "public/styles/features"), /\.css$/);
+  assert.ok(featCss.length >= 1, "expected public/styles/features/*.css files");
+
+  // Every backend feature index exports `feature`, every frontend feature index exports `init`
+  for (const ent of fs.readdirSync(path.join(root, "src/features"), { withFileTypes: true })) {
+    if (!ent.isDirectory()) continue;
+    const idx = path.join(root, "src/features", ent.name, "index.mjs");
+    if (!fs.existsSync(idx)) continue;
+    assert.match(fs.readFileSync(idx, "utf8"), /export\s+const\s+feature\b/, `${idx} must export feature`);
+  }
+  for (const ent of fs.readdirSync(path.join(root, "public/js/features"), { withFileTypes: true })) {
+    if (!ent.isDirectory()) continue;
+    const idx = path.join(root, "public/js/features", ent.name, "index.js");
+    if (!fs.existsSync(idx)) continue;
+    assert.match(fs.readFileSync(idx, "utf8"), /export\s+(?:async\s+)?function\s+init\b/, `${idx} must export init`);
+  }
 });

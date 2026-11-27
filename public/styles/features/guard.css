@@ -1,0 +1,217 @@
+/* Session Guard rail section & settings pane — uses tokens.css for dark/light/skin support. */
+
+.guard-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guard-rail[hidden] {
+  display: none;
+}
+
+.guard-rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.guard-rail-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.guard-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--muted);
+}
+
+.guard-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.guard-badge.is-ok {
+  color: var(--ok);
+}
+
+.guard-badge.is-ok::before {
+  background: var(--ok);
+}
+
+.guard-badge.is-warn {
+  color: var(--warn);
+}
+
+.guard-badge.is-warn::before {
+  background: var(--warn);
+}
+
+.guard-badge.is-danger {
+  color: var(--danger);
+}
+
+.guard-badge.is-danger::before {
+  background: var(--danger);
+}
+
+.guard-kv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.guard-kv-label {
+  color: var(--muted);
+}
+
+.guard-kv-val {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+.guard-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.guard-btn {
+  border: 1px solid var(--line-strong);
+  background: var(--rail-control);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.guard-btn:hover:not(:disabled) {
+  background: var(--rail-control-hover);
+}
+
+.guard-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.guard-btn.is-primary {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent-text);
+}
+
+.guard-btn.is-primary:hover:not(:disabled) {
+  background: var(--accent-soft-hover);
+}
+
+.guard-cu-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guard-cu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.guard-cu-svg {
+  width: 100%;
+  height: 68px;
+  display: block;
+}
+
+.guard-bar {
+  fill: var(--indigo-2);
+  opacity: 0.85;
+}
+
+.guard-bar.is-over {
+  fill: var(--danger);
+}
+
+.guard-cap-line {
+  stroke: var(--warn);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+.guard-axis {
+  fill: var(--faint);
+  font-size: 9px;
+  font-family: var(--mono);
+}
+
+.guard-cu-empty {
+  font-size: 11px;
+  color: var(--faint);
+  text-align: center;
+  padding: 12px 0;
+}
+
+.guard-cu-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.guard-confirm-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--warn);
+  padding-top: 4px;
+}
+
+.guard-confirm-row input[type="checkbox"] {
+  margin-top: 2px;
+}
+
+.guard-num-input {
+  width: 84px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--control);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+}
+
+.guard-save-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}

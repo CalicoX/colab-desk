@@ -7,6 +7,19 @@ export const NEW_SESSION_MODAL_HTML = `
           <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-close" /></svg>
         </button>
       </div>
+      <div class="modal-field recipe-picker-field" id="recipe-picker-row">
+        <div class="recipe-picker-head">
+          <label class="field-label" for="recipe-picker-select" data-i18n="recipes.pickerLabel">会话配方</label>
+          <div class="recipe-picker-actions">
+            <button id="save-as-recipe-btn" class="recipe-mini-btn" type="button" data-i18n="recipes.saveAs">存为配方</button>
+            <button id="manage-recipes-btn" class="recipe-mini-btn" type="button" data-i18n="recipes.manage">管理</button>
+          </div>
+        </div>
+        <select id="recipe-picker-select" class="recipe-select" aria-label="Session recipe">
+          <option value="" data-i18n="recipes.noneSelected">— 不使用配方（自定义配置）—</option>
+        </select>
+        <div id="recipe-picker-summary" class="recipe-picker-summary" hidden></div>
+      </div>
       <div class="modal-field">
         <label class="field-label" for="session-name" data-i18n="modal.newSession.name">会话名称</label>
         <input id="session-name" type="text" placeholder="train-t4" aria-label="session name" autocomplete="off" />
@@ -26,6 +39,43 @@ export const NEW_SESSION_MODAL_HTML = `
         <label class="high-mem"><input id="high-mem" type="checkbox" checked /> <span data-i18n="modal.newSession.highMem">high-mem（高内存规格）</span></label>
         <p class="high-mem-note" id="high-mem-note" hidden data-i18n="modal.newSession.highMemNote">L4 / TPU 仅提供单一内存规格，CLI 会忽略 --high-mem。</p>
       </fieldset>
+      <details id="snipe-queue-section" class="snipe-queue-section">
+        <summary class="snipe-queue-summary">
+          <span data-i18n="recipes.snipeQueueTitle">多规格抢卡优先级队列</span>
+          <span id="snipe-queue-badge" class="recipe-badge" hidden></span>
+        </summary>
+        <div class="snipe-queue-body">
+          <div id="snipe-target-list" class="snipe-target-list" role="list" aria-label="Snipe priority targets"></div>
+          <div class="snipe-add-row">
+            <select id="snipe-add-hw" class="recipe-select" aria-label="Add accelerator target">
+              <option value="A100">A100</option>
+              <option value="H100">H100</option>
+              <option value="L4">L4</option>
+              <option value="G4">G4</option>
+              <option value="T4">T4</option>
+              <option value="v6e1">v6e1 (TPU)</option>
+              <option value="v5e1">v5e1 (TPU)</option>
+              <option value="cpu">CPU</option>
+            </select>
+            <label class="snipe-add-hm"><input id="snipe-add-highmem" type="checkbox" checked /> <span>high-mem</span></label>
+            <button id="snipe-add-target-btn" class="recipe-mini-btn" type="button" data-i18n="recipes.addTarget">添加</button>
+          </div>
+          <div class="snipe-params-grid">
+            <label class="snipe-param">
+              <span data-i18n="recipes.intervalSec">重试间隔(秒)</span>
+              <input id="snipe-interval-sec" type="number" min="5" max="3600" value="10" />
+            </label>
+            <label class="snipe-param">
+              <span data-i18n="recipes.maxAttempts">最大轮次(0=不限)</span>
+              <input id="snipe-max-attempts" type="number" min="0" max="10000" value="0" />
+            </label>
+            <label class="snipe-param">
+              <span data-i18n="recipes.timeoutMin">超时(分钟,0=不限)</span>
+              <input id="snipe-timeout-min" type="number" min="0" max="10080" value="0" />
+            </label>
+          </div>
+        </div>
+      </details>
       <div id="new-session-cmd" class="modal-cmd">colab new -s &lt;name&gt;</div>
       <div id="new-session-status" class="modal-status" hidden></div>
       <p id="new-session-error" class="modal-error" hidden></p>

@@ -156,6 +156,32 @@ function splitIpynbLines(text) {
   return lines.map((line, i) => (i < lines.length - 1 ? `${line}\n` : line));
 }
 
+/** Jupyter-compatible `metadata.execution` block (ISO timestamps) from a cell's startedAt/durationMs. */
+export function executionMetadata(cell) {
+  const started = cell?.startedAt ? new Date(cell.startedAt) : null;
+  if (!started || Number.isNaN(started.getTime())) return {};
+  const out = { "iopub.execute_input": started.toISOString() };
+  if (typeof cell.durationMs === "number" && Number.isFinite(cell.durationMs)) {
+    const end = new Date(started.getTime() + cell.durationMs).toISOString();
+    out["shell.execute_reply"] = end;
+    out["iopub.status.idle"] = end;
+  }
+  return { execution: out };
+}
+
+/** Inverse of executionMetadata: returns { startedAt, durationMs } (nulls when absent). */
+export function readExecutionMetadata(meta) {
+  const ex = meta && typeof meta === "object" ? meta.execution : null;
+  if (!ex || typeof ex !== "object") return { startedAt: null, durationMs: null };
+  const start = Date.parse(ex["iopub.execute_input"] || ex["shell.execute_input"] || "");
+  if (Number.isNaN(start)) return { startedAt: null, durationMs: null };
+  const end = Date.parse(ex["shell.execute_reply"] || ex["iopub.status.idle"] || "");
+  return {
+    startedAt: new Date(start).toISOString(),
+    durationMs: Number.isNaN(end) ? null : Math.max(0, end - start),
+  };
+}
+
 export function parseIpynb(raw) {
   const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
   const rawCells = Array.isArray(parsed?.cells) ? parsed.cells : [];
@@ -192,6 +218,7 @@ export function parseIpynb(raw) {
         }
       }
     }
+    const timing = readExecutionMetadata(cell?.metadata);
     return {
       id: String(cell?.id || `cell-${Date.now().toString(36)}-${idx}`),
       type,
@@ -201,7 +228,8 @@ export function parseIpynb(raw) {
       stderr: stderrParts.join("\n").trim(),
       images,
       ok: stderrParts.length === 0,
-      durationMs: null,
+      durationMs: timing.durationMs,
+      startedAt: timing.startedAt,
     };
   });
   return {
@@ -262,7 +290,7 @@ export function serializeIpynb(cells, metadata = {}) {
     return {
       cell_type: "code",
       execution_count: typeof cell.executionCount === "number" ? cell.executionCount : null,
-      metadata: {},
+      metadata: executionMetadata(cell),
       source,
       outputs,
     };

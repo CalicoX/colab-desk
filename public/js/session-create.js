@@ -169,6 +169,21 @@ export function renderSnipeBanner() {
     dom.snipeBanner.hidden = false;
     return;
   }
+  if (state.activeSnipeJob && (state.activeSnipeJob.status === "running" || state.activeSnipeJob.status === "paused")) {
+    const job = state.activeSnipeJob;
+    const elapsed = Math.max(0, Math.floor((Date.now() - job.startedAt) / 1000));
+    const activeTarget = (job.targets || []).find((x) => x.active);
+    const targetList = (job.targets || []).map((x) => x.label).join(" > ");
+    const pausedTag = job.status === "paused" ? (isEn ? "Paused" : "已暂停") : (isEn ? "Sniping Queue" : "多规格抢卡中");
+    const detail = activeTarget
+      ? (isEn ? `trying ${activeTarget.label} (#${job.attempts})` : `尝试 ${activeTarget.label}（第 ${job.attempts} 次）`)
+      : (job.lastError ? job.lastError.slice(0, 64) : (isEn ? `attempts: ${job.attempts}` : `已尝试 ${job.attempts} 次`));
+    dom.snipeBannerText.textContent = `${pausedTag} · ${job.name} [${targetList}] · ${elapsed}s · ${detail}`;
+    if (dom.snipeTakeoverBtn) dom.snipeTakeoverBtn.hidden = true;
+    dom.snipeStopBtn.textContent = t(state.activeLang, "snipe.stop");
+    dom.snipeBanner.hidden = false;
+    return;
+  }
   if (state.agentCreate) {
     const elapsed = Math.max(0, Math.floor((Date.now() - state.agentCreate.startedAt) / 1000));
     if (state.agentCreate.failedRetryable) {
@@ -364,6 +379,7 @@ export function openNewSessionModal() {
   dom.modalStatus.className = "modal-status";
   dom.highMemInput.checked = state.defaultHighMem;
   syncHardwareChips();
+  emit("session-create:modal-opened");
   if (typeof dom.modal.showModal === "function") {
     if (!dom.modal.open) dom.modal.showModal();
   } else {
@@ -406,6 +422,7 @@ export function initSessionCreate() {
   sessionCreateInitialized = true;
   mountModalTemplate("new-session-modal", NEW_SESSION_MODAL_HTML);
   on("language:changed", renderSnipeBanner);
+  on("session-create:render-banner", renderSnipeBanner);
   on("session-create:sync-hardware", () => {
     if (dom.highMemInput) dom.highMemInput.checked = state.defaultHighMem;
     syncHardwareChips();
@@ -442,7 +459,20 @@ export function initSessionCreate() {
     }
     const hw = hardware();
     const hwLabel = (hw.gpu || hw.tpu || "CPU") + (hw.highMem ? " + high-mem" : "");
+    const queueCfg = state.snipeQueueConfig;
+    const hasMultiQueue = queueCfg && ((Array.isArray(queueCfg.targets) && queueCfg.targets.length > 0) || queueCfg.recipeId);
     closeNewSessionModal(true);
+    if (hasMultiQueue) {
+      emit("recipes:start-snipe", {
+        name,
+        targets: queueCfg.targets && queueCfg.targets.length ? queueCfg.targets : [hw],
+        intervalSec: queueCfg.intervalSec,
+        maxAttempts: queueCfg.maxAttempts,
+        timeoutSec: queueCfg.timeoutSec,
+        recipeId: queueCfg.recipeId || null,
+      });
+      return;
+    }
     startBgSnipe({ name, hw, hwLabel });
     showToast(state.activeLang === "en" ? `Background sniping started for ${name} (${hwLabel})` : `已开始后台抢卡：${name} (${hwLabel})，抢到后将发系统通知`);
   });
@@ -462,6 +492,8 @@ export function initSessionCreate() {
   dom.snipeStopBtn.addEventListener("click", () => {
     if (state.bgSnipe && !state.bgSnipe.stopped) {
       stopBgSnipe(false);
+    } else if (state.activeSnipeJob && (state.activeSnipeJob.status === "running" || state.activeSnipeJob.status === "paused")) {
+      emit("recipes:snipe-action", { id: state.activeSnipeJob.id, action: "cancel" });
     } else if (state.agentCreate) {
       const wasRunning = !state.agentCreate.failedRetryable;
       clearAgentCreate();
@@ -537,6 +569,10 @@ export function initSessionCreate() {
       const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
       const { cleanErr } = await completeSessionCreate({ name, hwLabel, result, elapsedSec, fromBg: false });
       if (result.ok) {
+        const recipeId = state.snipeQueueConfig?.recipeId || null;
+        if (recipeId) {
+          emit("recipes:post-acquire", { session: name, recipeId });
+        }
         closeNewSessionModal(true);
       } else {
         dom.modalError.textContent = cleanErr;
@@ -574,4 +610,5 @@ export function initSessionCreate() {
   dom.modal.addEventListener("click", (event) => { if (event.target === dom.modal) closeNewSessionModal(); });
   dom.sessionNameInput.addEventListener("input", () => { dom.modalError.hidden = true; dom.modalCmd.textContent = buildNewPreview(); });
   document.querySelector("#hardware-picker").addEventListener("change", syncHardwareChips);
+  emit("session-create:modal-mounted");
 }
