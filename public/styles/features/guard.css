@@ -96,12 +96,16 @@
 }
 
 .guard-btn {
+  align-items: center;
   border: 1px solid var(--line-strong);
   background: var(--rail-control);
   color: var(--text);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 11.5px;
+  border-radius: 8px;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 30px;
+  padding: 5px 11px;
+  font-size: 12.5px;
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
 }

@@ -21,8 +21,9 @@
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   color: var(--text);
-  font-size: 12.5px;
-  padding: 6px 9px;
+  font-size: 13px;
+  min-height: 34px;
+  padding: 6px 10px;
   width: 100%;
 }
 .recipe-select:focus {
@@ -30,14 +31,18 @@
   outline: none;
 }
 .recipe-mini-btn {
+  align-items: center;
   background: var(--control);
   border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--text);
   cursor: pointer;
-  font-size: 11.5px;
+  display: inline-flex;
+  font-size: 12.5px;
   font-weight: 500;
-  padding: 4px 9px;
+  justify-content: center;
+  min-height: 30px;
+  padding: 5px 12px;
   white-space: nowrap;
   transition: background 120ms ease, border-color 120ms ease;
 }
@@ -139,12 +144,18 @@
 }
 .snipe-target-btns {
   display: flex;
-  gap: 3px;
+  gap: 5px;
+}
+.snipe-target-btns .recipe-mini-btn {
+  min-height: 28px;
+  min-width: 30px;
+  padding: 0 7px;
+  font-size: 13px;
 }
 .snipe-add-row {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 .snipe-add-row .recipe-select {
   flex: 1;
@@ -153,8 +164,8 @@
   align-items: center;
   color: var(--muted);
   display: inline-flex;
-  font-size: 11.5px;
-  gap: 4px;
+  font-size: 12.5px;
+  gap: 6px;
   white-space: nowrap;
 }
 .snipe-params-grid {
@@ -165,17 +176,18 @@
 .snipe-param {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  font-size: 11px;
+  gap: 4px;
+  font-size: 12px;
   color: var(--muted);
 }
 .snipe-param input {
   background: var(--card);
   border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--text);
-  font-size: 12px;
-  padding: 4px 7px;
+  font-size: 13px;
+  min-height: 34px;
+  padding: 6px 10px;
   width: 100%;
 }
 
@@ -336,8 +348,19 @@ dialog.recipes-modal::backdrop {
 }
 .recipes-modal-toolbar {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
+}
+.recipes-modal-toolbar .recipe-mini-btn,
+.recipes-editor-foot .recipe-mini-btn {
+  font-size: 13px;
+  min-height: 34px;
+  padding: 0 14px;
+}
+.recipes-modal-toolbar .icon-btn {
+  font-size: 15px;
+  height: 32px;
+  width: 32px;
 }
 .recipes-modal-body {
   display: grid;
@@ -422,26 +445,28 @@ dialog.recipes-modal::backdrop {
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   color: var(--text);
-  font-size: 12.5px;
-  padding: 6px 9px;
+  font-size: 13px;
+  min-height: 34px;
+  padding: 6px 10px;
   width: 100%;
 }
 .recipes-field textarea {
   font-family: var(--mono);
-  min-height: 70px;
+  min-height: 76px;
   resize: vertical;
 }
 .recipes-checks {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .recipes-check {
   align-items: center;
   color: var(--text);
+  cursor: pointer;
   display: inline-flex;
-  font-size: 12px;
-  gap: 6px;
+  font-size: 13px;
+  gap: 8px;
 }
 .recipes-env-chips {
   display: flex;

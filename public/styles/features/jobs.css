@@ -145,9 +145,13 @@
 }
 
 .jobs-mini-btn {
-  padding: 2px 8px;
-  font-size: 11px;
-  border-radius: 6px;
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 7px;
   border: 1px solid var(--line);
   background: var(--rail-control);
   color: var(--text);

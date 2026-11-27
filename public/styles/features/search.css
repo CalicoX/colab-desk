@@ -89,8 +89,9 @@ dialog.search-modal::backdrop {
   color: var(--muted);
   cursor: pointer;
   font: inherit;
-  font-size: 11.5px;
-  padding: 4px 10px;
+  font-size: 12.5px;
+  min-height: 28px;
+  padding: 4px 12px;
   transition: background 120ms ease, color 120ms ease;
 }
 
@@ -114,11 +115,12 @@ dialog.search-modal::backdrop {
 .search-session-select {
   background: var(--control);
   border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--text);
   font: inherit;
-  font-size: 11.5px;
-  padding: 4px 8px;
+  font-size: 12.5px;
+  min-height: 30px;
+  padding: 4px 10px;
   outline: none;
 }
 

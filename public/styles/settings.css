@@ -214,11 +214,11 @@ dialog.settings-modal::backdrop {
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   color: var(--text);
-  font-size: 12.5px;
-  height: 32px;
-  min-width: 148px;
+  font-size: 13px;
+  min-height: 34px;
+  min-width: 156px;
   outline: none;
-  padding: 0 10px;
+  padding: 0 12px;
 }
 .s-input {
   background: var(--control);
@@ -253,14 +253,17 @@ dialog.settings-modal::backdrop {
 .s-preset:hover { background: var(--accent-soft); border-color: var(--accent-border); color: var(--text); }
 .s-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
 .s-btn {
+  align-items: center;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   color: var(--text);
   cursor: pointer;
-  font-size: 12.5px;
-  height: 32px;
-  padding: 0 12px;
+  display: inline-flex;
+  font-size: 13px;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
   white-space: nowrap;
 }
 .s-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
@@ -322,7 +325,8 @@ dialog.settings-modal::backdrop {
   position: relative;
   width: 40px;
 }
-.s-toggle input { opacity: 0; position: absolute; width: 0; height: 0; }
+.s-toggle input { opacity: 0; position: absolute; width: 0; height: 0; border: 0; padding: 0; }
+.s-toggle input::after { display: none; }
 .s-toggle-track {
   background: rgba(255, 255, 255, 0.14);
   border-radius: 999px;

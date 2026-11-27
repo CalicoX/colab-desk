@@ -247,10 +247,19 @@ export async function init(api) {
   // ── Workspace Tools Mount ──
   const toolBtn = document.createElement("button");
   toolBtn.type = "button";
-  toolBtn.className = "tools-menu-item";
+  toolBtn.className = "tools-dropdown-item";
+  toolBtn.setAttribute("role", "menuitem");
   toolBtn.id = "recipes-tool-btn";
-  toolBtn.textContent = api.tr("recipes.toolLabel");
-  toolBtn.addEventListener("click", () => modal.open());
+  toolBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`;
+  const toolLabelSpan = document.createElement("span");
+  toolLabelSpan.dataset.i18n = "recipes.toolLabel";
+  toolLabelSpan.textContent = api.tr("recipes.toolLabel");
+  toolBtn.append(toolLabelSpan);
+  toolBtn.addEventListener("click", () => {
+    const menu = document.getElementById("tools-dropdown-menu");
+    if (menu) menu.hidden = true;
+    modal.open();
+  });
   api.mount("workspace-tools", toolBtn);
 
   // ── ⌘K Palette Commands ──
@@ -518,7 +527,7 @@ export async function init(api) {
     } catch {}
   });
   api.on("language:changed", () => {
-    toolBtn.textContent = api.tr("recipes.toolLabel");
+    toolLabelSpan.textContent = api.tr("recipes.toolLabel");
     renderRail();
     populateNewSessionRecipePicker();
     renderModalTargetList();

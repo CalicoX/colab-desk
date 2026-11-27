@@ -225,8 +225,9 @@
   border-radius: 8px;
   color: var(--text);
   font-family: var(--sans);
-  font-size: 12.5px;
-  padding: 6px 9px;
+  font-size: 13px;
+  min-height: 34px;
+  padding: 6px 10px;
   outline: none;
 }
 

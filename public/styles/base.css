@@ -39,6 +39,55 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 button, input, select, textarea { font-family: inherit; }
+:root { accent-color: var(--indigo); }
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 1px;
+}
+input[type="radio"] {
+  accent-color: var(--indigo);
+}
+input[type="checkbox"] {
+  accent-color: var(--indigo);
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--control);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 4.5px;
+  cursor: pointer;
+  display: inline-grid;
+  flex: none;
+  height: 16px;
+  margin: 0;
+  place-content: center;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  vertical-align: middle;
+  width: 16px;
+}
+input[type="checkbox"]:hover:not(:disabled) {
+  border-color: var(--indigo-2);
+}
+input[type="checkbox"]:checked {
+  background: var(--indigo);
+  border-color: var(--indigo);
+}
+input[type="checkbox"]:checked::after {
+  border: 2px solid #fff;
+  border-left: 0;
+  border-top: 0;
+  content: "";
+  display: block;
+  height: 8.5px;
+  transform: rotate(45deg) translate(-0.5px, -1px);
+  width: 4.5px;
+}
+input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 [hidden] { display: none !important; }
 .shell { height: 100%; overflow: hidden; width: 100%; background: var(--bg); }
 .app {
