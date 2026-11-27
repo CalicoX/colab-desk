@@ -13,7 +13,7 @@ import { handleSessionRoutes } from "./routes/sessions.mjs";
 import { createStaticHandler } from "./routes/static.mjs";
 import { TerminalManager } from "./terminal.mjs";
 
-const DEFAULT_APP_VERSION = "0.8.3";
+const DEFAULT_APP_VERSION = "0.8.4";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(rootDir, "..");

@@ -501,7 +501,7 @@ export const SETTINGS_MODAL_HTML = `
               <div class="s-card">
                 <div class="s-row" data-search="关于 版本 协议 about version">
                   <div class="s-copy">
-                    <span class="s-title">Colab Desk 0.8.3</span>
+                    <span class="s-title">Colab Desk 0.8.4</span>
                     <span class="s-desc" data-i18n="settings.about.appDesc">基于官方 google-colab-cli 驱动的本地桌面工作台。支持 AGY (ACP)、Grok、OpenCode (ACP) 与内置 OpenAI 兼容 API 智能体。</span>
                   </div>
                 </div>
@@ -514,7 +514,7 @@ export const SETTINGS_MODAL_HTML = `
                 <div class="s-row" data-search="更新 版本 update release github">
                   <div class="s-copy">
                     <span class="s-title" data-i18n="settings.about.updateTitle">检查更新</span>
-                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.8.3（GitHub: CalicoX/colab-desk）</span>
+                    <span id="update-status-desc" class="s-desc" data-i18n="settings.about.updateCurrent">当前版本 v0.8.4（GitHub: CalicoX/colab-desk）</span>
                   </div>
                   <button id="check-updates-btn" class="s-btn" type="button" data-i18n="settings.about.updateBtn">检查更新</button>
                 </div>

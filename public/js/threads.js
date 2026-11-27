@@ -146,6 +146,12 @@ export function ensureActiveThread(firstPromptText = "") {
 export function openChatThread(threadId) {
   const target = state.chatThreads.find((tItem) => tItem.id === threadId);
   if (!target) return;
+  if (state.composerMode !== "agent") {
+    emit("composer:set-mode", "agent");
+  }
+  if (state.workspaceView === "terminal") {
+    emit("terminal:set-view", "chat");
+  }
   state.activeThreadId = target.id;
   if (target.sessionName && state.sessions.some((s) => s.name === target.sessionName) && state.selected !== target.sessionName) {
     state.selected = target.sessionName;
@@ -160,6 +166,12 @@ export function openChatThread(threadId) {
 }
 
 export async function createNewChatThread() {
+  if (state.composerMode !== "agent") {
+    emit("composer:set-mode", "agent");
+  }
+  if (state.workspaceView === "terminal") {
+    emit("terminal:set-view", "chat");
+  }
   if (state.activeAgentController) {
     state.stopReasonKind = "stop";
     state.activeAgentController.abort();
